@@ -1,73 +1,134 @@
-# Welcome to your Lovable project
 
-## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+# AlphaNext - Ready for the next level
 
-## How can I edit this code?
+A web-based application for online practice questions and tryout exams.  
+This project is built to support admin and user roles with a modern, responsive interface.
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## 📌 Project Overview
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+This application provides:
+- Online practice questions and tryout exams
+- Admin dashboard for content management
+- User dashboard for practice, tryout, and ranking
+- Scalable frontend architecture ready for backend integration
 
-Changes made via Lovable will be committed automatically to this repo.
+⚠️ **Note:**  
+This repository contains the **frontend only**. Backend services are handled separately.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠 Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Framework:** Next.js (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **UI Components:** shadcn/ui
+- **State Management:** Zustand / React Context
+- **API Handling:** Fetch API / Axios
+- **Theme Color:** Green
+- **Responsive:** Desktop & Mobile
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 👥 User Roles
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 1. Admin
+- Manage users
+- Manage questions
+- Manage packages & vouchers
+- Manage materials (ebook & video)
+- Manage tryout & mass tryout
+- View rankings
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 2. User
+- Access purchased packages
+- Practice questions
+- Join tryout & mass tryout
+- View learning materials
+- View history & rankings
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+---
+
+## 📄 Main Features
+
+### Landing Page
+- Hero section with CTA
+- Features overview
+- Pricing / packages
+- Login & Register navigation
+
+### Authentication
+- Login & Register pages
+- Mock authentication (frontend only)
+- User state stored globally
+
+### Admin Dashboard
+- Sidebar & top navigation
+- CRUD operations using tables & modals
+- Dashboard overview & analytics (dummy data)
+
+### User Dashboard
+- Practice & tryout system
+- Timer & navigation
+- Weighted scoring system
+- Ranking & history
+
+---
+
+## 🔁 Practice & Tryout System
+
+- Question navigation (next / previous)
+- Answered & unanswered indicators
+- Countdown timer
+- Multiple-choice questions
+- Each option has different score weight
+- Dummy score calculation
+
+## 📁 Project Structure
+
+app/
+├─ api/
+├─ (auth)/
+├─ admin/
+├─ user/
+├─ layout.tsx
+└─ page.tsx
+
+## 🚀 Getting Started
+
+### 1. Install Dependencies
+```bash
+npm install
+# or
+yarn install
+````
+
+### 2. Run Development Server
+
+```bash
 npm run dev
+# or
+yarn dev
 ```
 
-**Edit a file directly in GitHub**
+Open `http://localhost:3000` in your browser.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
 
-**Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## ⚠️ Important Notes
 
-## What technologies are used for this project?
+* This project uses **dummy data only**
+* No real authentication or payment integration
+* Ready to be connected with real backend APIs
+* Designed for demo and client presentation
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 📄 License
 
-## How can I deploy this project?
+This project is developed for client use.
+All rights reserved unless stated otherwise.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
