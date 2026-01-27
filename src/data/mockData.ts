@@ -141,21 +141,6 @@ export const questions: Question[] = [
     explanation: 'The Pacific Ocean is the largest and deepest ocean.',
     createdAt: '2024-01-15',
   },
-  {
-    id: '8',
-    text: 'In which year did World War II end?',
-    category: 'History',
-    difficulty: 'medium',
-    options: [
-      { id: 'a', text: '1943', score: 0 },
-      { id: 'b', text: '1944', score: 0 },
-      { id: 'c', text: '1945', score: 15 },
-      { id: 'd', text: '1946', score: 0 },
-    ],
-    correctOptionId: 'c',
-    explanation: 'World War II ended in 1945 with the surrender of Japan.',
-    createdAt: '2024-01-16',
-  },
 ];
 
 // Packages
@@ -275,7 +260,7 @@ export interface Tryout {
   duration: number; // minutes
   startTime?: string;
   endTime?: string;
-  type: 'regular' | 'mass';
+  type: string;
   maxParticipants?: number;
   currentParticipants: number;
   isActive: boolean;
@@ -284,11 +269,7 @@ export interface Tryout {
 
 export const tryouts: Tryout[] = [
   { id: '1', name: 'Weekly Tryout #1', description: 'General knowledge test', questionIds: ['1', '2', '3', '4', '5'], duration: 60, type: 'regular', currentParticipants: 150, isActive: true, createdAt: '2024-01-01' },
-  { id: '2', name: 'Mass Tryout - January', description: 'Monthly mass tryout event', questionIds: ['1', '2', '3', '4', '5', '6', '7', '8'], duration: 120, startTime: '2024-01-28T09:00:00', endTime: '2024-01-28T11:00:00', type: 'mass', maxParticipants: 1000, currentParticipants: 756, isActive: true, createdAt: '2024-01-15' },
-  { id: '3', name: 'Math Challenge', description: 'Mathematics focused tryout', questionIds: ['2', '6'], duration: 45, type: 'regular', currentParticipants: 89, isActive: true, createdAt: '2024-01-20' },
-  { id: '4', name: 'Science Bowl', description: 'Test your science knowledge', questionIds: ['3', '4'], duration: 30, type: 'regular', currentParticipants: 234, isActive: false, createdAt: '2024-01-25' },
-];
-
+]
 // Rankings
 export interface Ranking {
   id: string;

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { tryouts as initialTryouts, Tryout, questions } from "@/data/mockData";
+import { Tryout, questions } from "@/data/mockData";
+import { getApiBaseUrl } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +34,22 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, Users } from "lucide-react";
 
+// API Response Interface
+interface ApiTryout {
+  id: number;
+  name: string;
+  type: string;
+  category_id: number;
+  duration_seconds: number;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function AdminTryouts() {
-  const [tryouts, setTryouts] = useState<Tryout[]>(initialTryouts);
+  const [tryouts, setTryouts] = useState<Tryout[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -46,13 +61,53 @@ export default function AdminTryouts() {
     name: "",
     description: "",
     duration: 60,
-    type: "regular" as "regular" | "mass",
-    startTime: "",
-    endTime: "",
-    maxParticipants: 0,
+    type: "",
     isActive: true,
     questionIds: [] as string[],
   });
+
+  // Fetch tryouts from API
+  useEffect(() => {
+    const fetchTryouts = async () => {
+      try {
+        setIsLoading(true);
+        const baseUrl = getApiBaseUrl();
+        const response = await fetch(`${baseUrl}/packages`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch tryouts: ${response.statusText}`);
+        }
+        
+        const apiData: ApiTryout[] = await response.json();
+        
+        // Transform API data to Tryout format
+        const transformedTryouts: Tryout[] = apiData.map((item) => ({
+          id: String(item.id),
+          name: item.name,
+          description: `${item.type} package`,
+          questionIds: questions.slice(0, 5).map(q => q.id), // Default to first 5 questions
+          duration: Math.round(item.duration_seconds / 60), // Convert seconds to minutes
+          type: item.type,
+          currentParticipants: 0,
+          isActive: item.is_active === 1,
+          createdAt: new Date(item.created_at).toISOString().split("T")[0],
+        }));
+        
+        setTryouts(transformedTryouts);
+        setError(null);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+        setError(errorMessage);
+        console.error("Error fetching tryouts:", errorMessage);
+        // Fallback to empty array on error
+        setTryouts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchTryouts();
+  }, []);
 
   const filteredTryouts = tryouts.filter((t) =>
     t.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -66,9 +121,6 @@ export default function AdminTryouts() {
         description: tryout.description,
         duration: tryout.duration,
         type: tryout.type,
-        startTime: tryout.startTime || "",
-        endTime: tryout.endTime || "",
-        maxParticipants: tryout.maxParticipants || 0,
         isActive: tryout.isActive,
         questionIds: tryout.questionIds,
       });
@@ -78,10 +130,7 @@ export default function AdminTryouts() {
         name: "",
         description: "",
         duration: 60,
-        type: "regular",
-        startTime: "",
-        endTime: "",
-        maxParticipants: 0,
+        type: "",
         isActive: true,
         questionIds: [],
       });
@@ -106,11 +155,6 @@ export default function AdminTryouts() {
       type: formData.type,
       isActive: formData.isActive,
       questionIds: formData.questionIds.length ? formData.questionIds : questions.slice(0, 5).map(q => q.id),
-      ...(formData.type === "mass" && {
-        startTime: formData.startTime,
-        endTime: formData.endTime,
-        maxParticipants: formData.maxParticipants,
-      }),
     };
 
     if (editingTryout) {
@@ -167,14 +211,30 @@ export default function AdminTryouts() {
           />
         </div>
 
-        <div className="rounded-lg border bg-card">
+        {error && (
+          <div className="rounded-lg border border-destructive bg-destructive/5 p-4">
+            <p className="text-sm text-destructive">
+              Error loading tryouts: {error}
+            </p>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="rounded-lg border bg-card p-8 text-center">
+            <p className="text-muted-foreground">Loading tryouts...</p>
+          </div>
+        ) : filteredTryouts.length === 0 ? (
+          <div className="rounded-lg border bg-card p-8 text-center">
+            <p className="text-muted-foreground">No tryouts found.</p>
+          </div>
+        ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Tryout</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Duration</TableHead>
-                <TableHead>Participants</TableHead>
+                {/* <TableHead>Participants</TableHead> */}
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -185,26 +245,25 @@ export default function AdminTryouts() {
                   <TableCell>
                     <div>
                       <p className="font-medium">{tryout.name}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
+                      {/* <p className="text-sm text-muted-foreground line-clamp-1">
                         {tryout.description}
-                      </p>
+                      </p> */}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={tryout.type === "mass" ? "default" : "outline"}>
+                    <Badge variant="outline">
                       {tryout.type}
                     </Badge>
                   </TableCell>
                   <TableCell>{tryout.duration} min</TableCell>
-                  <TableCell>
+                  {/* <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span>
                         {tryout.currentParticipants}
-                        {tryout.maxParticipants && ` / ${tryout.maxParticipants}`}
                       </span>
                     </div>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell>
                     <Badge variant={tryout.isActive ? "default" : "secondary"}>
                       {tryout.isActive ? "Active" : "Inactive"}
@@ -235,7 +294,7 @@ export default function AdminTryouts() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}
@@ -270,20 +329,12 @@ export default function AdminTryouts() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Type</Label>
-                <Select
+                <Input
                   value={formData.type}
-                  onValueChange={(value: "regular" | "mass") =>
-                    setFormData({ ...formData, type: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="regular">Regular</SelectItem>
-                    <SelectItem value="mass">Mass Tryout</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  placeholder="e.g., tryout, practice, bundle"
+                  disabled={editingTryout ? true : false}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (minutes)</Label>
@@ -295,39 +346,6 @@ export default function AdminTryouts() {
                 />
               </div>
             </div>
-            {formData.type === "mass" && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startTime">Start Time</Label>
-                    <Input
-                      id="startTime"
-                      type="datetime-local"
-                      value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="endTime">End Time</Label>
-                    <Input
-                      id="endTime"
-                      type="datetime-local"
-                      value={formData.endTime}
-                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxParticipants">Max Participants</Label>
-                  <Input
-                    id="maxParticipants"
-                    type="number"
-                    value={formData.maxParticipants}
-                    onChange={(e) => setFormData({ ...formData, maxParticipants: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-              </>
-            )}
             <div className="flex items-center justify-between">
               <Label htmlFor="isActive">Active</Label>
               <Switch
