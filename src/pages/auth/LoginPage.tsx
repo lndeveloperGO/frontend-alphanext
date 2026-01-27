@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/authStore";
 import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAppName, getAppTagline } from "@/lib/env";
+
+const appName = getAppName();
+const appTagline = getAppTagline();
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -56,13 +60,13 @@ export default function LoginPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
                 <BookOpen className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold">EduLearn</span>
+              <span className="text-2xl font-bold">{appName}</span>
             </Link>
             <h2 className="mt-6 text-3xl font-bold tracking-tight">
-              Welcome back
+              Selamat Datang di {appName}
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Sign in to your account to continue learning
+             Masuk untuk melanjutkan ke belajar
             </p>
           </div>
 
@@ -138,9 +142,9 @@ export default function LoginPage() {
           </div>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Belum memiliki akun?{" "}
             <Link to="/register" className="font-medium text-primary hover:underline">
-              Sign up for free
+              daftar sekarang!
             </Link>
           </p>
         </div>
@@ -151,9 +155,9 @@ export default function LoginPage() {
         <div className="absolute inset-0 gradient-primary">
           <div className="flex h-full flex-col items-center justify-center p-12 text-primary-foreground">
             <div className="max-w-md text-center">
-              <h2 className="mb-4 text-3xl font-bold">Start Learning Today</h2>
+              <h2 className="mb-4 text-3xl font-bold">Belajar dimulai dari hari ini</h2>
               <p className="text-lg text-primary-foreground/80">
-                Access thousands of practice questions, take timed tryouts, and track your progress with our comprehensive learning platform.
+               akses ribuan kursus online dan tingkatkan keterampilanmu dengan {appName}.
               </p>
             </div>
           </div>
