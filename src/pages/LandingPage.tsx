@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getAppName, getThemePrimary, getAppTagline } from "@/lib/env";
+import { useHashNavigation } from "@/hooks/use-hash-navigation";
 import {
   BookOpen,
   Brain,
@@ -120,6 +121,8 @@ const primaryColor = getThemePrimary();
 const appTagline = getAppTagline();
 
 export default function LandingPage() {
+  useHashNavigation();
+  
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -143,7 +146,7 @@ export default function LandingPage() {
             <div className="animate-slide-up stagger-2 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="xl" variant="hero" asChild>
                 <Link to="/register">
-                  Start Learning Free
+                  Mulai Uji Coba Gratis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -253,7 +256,7 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20">
+      <section id="testimonial" className="py-20">
         <div className="container mx-auto px-4">
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">

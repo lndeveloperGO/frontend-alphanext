@@ -5,6 +5,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 150 10% 10%;
