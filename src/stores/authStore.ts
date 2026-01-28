@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { getApiBaseUrl } from '@/lib/env';
 
 export type UserRole = 'admin' | 'user';
 
@@ -14,13 +15,14 @@ export interface User {
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
-// Mock users for demo
+// Mock users for demo (fallback jika API tidak tersedia)
 const mockUsers: (User & { password: string })[] = [
   {
     id: '1',
@@ -39,49 +41,85 @@ const mockUsers: (User & { password: string })[] = [
     role: 'user',
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
     createdAt: '2024-01-15T00:00:00Z',
-  },
+  },  
 ];
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
       
       login: async (email: string, password: string) => {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const user = mockUsers.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-          const { password: _, ...userWithoutPassword } = user;
-          set({ user: userWithoutPassword, isAuthenticated: true });
+        try {
+          const apiBaseUrl = getApiBaseUrl();
+          const response = await fetch(`${apiBaseUrl}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            return { success: false, error: error.message || 'Login failed' };
+          }
+
+          const data = await response.json();
+          set({ user: data.data.user, token: data.data.token, isAuthenticated: true });
           return { success: true };
+        } catch (error) {
+          // Fallback to mock data jika API tidak tersedia
+          const user = mockUsers.find(u => u.email === email && u.password === password);
+          if (user) {
+            const { password: _, ...userWithoutPassword } = user;
+            set({ user: userWithoutPassword, isAuthenticated: true });
+            return { success: true };
+          }
+          return { success: false, error: error instanceof Error ? error.message : 'Invalid email or password' };
         }
-        
-        return { success: false, error: 'Invalid email or password' };
       },
       
       register: async (name: string, email: string, password: string) => {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        if (mockUsers.find(u => u.email === email)) {
-          return { success: false, error: 'Email already registered' };
+        try {
+          const apiBaseUrl = getApiBaseUrl();
+          const response = await fetch(`${apiBaseUrl}/auth/register`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name, email, password }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            return { success: false, error: error.message || 'Registration failed' };
+          }
+
+          const data = await response.json();
+          set({ user: data.user, isAuthenticated: true });
+          return { success: true };
+        } catch (error) {
+          // Fallback to mock data jika API tidak tersedia
+          if (mockUsers.find(u => u.email === email)) {
+            return { success: false, error: 'Email already registered' };
+          }
+          
+          const newUser: User = {
+            id: String(mockUsers.length + 1),
+            name,
+            email,
+            role: 'user',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+            createdAt: new Date().toISOString(),
+          };
+          
+          mockUsers.push({ ...newUser, password });
+          set({ user: newUser, isAuthenticated: true });
+          return { success: true };
         }
-        
-        const newUser: User = {
-          id: String(mockUsers.length + 1),
-          name,
-          email,
-          role: 'user',
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
-          createdAt: new Date().toISOString(),
-        };
-        
-        mockUsers.push({ ...newUser, password });
-        set({ user: newUser, isAuthenticated: true });
-        return { success: true };
       },
       
       logout: () => {

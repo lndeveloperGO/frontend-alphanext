@@ -8,6 +8,7 @@
 interface EnvVariables {
   APP_NAME: string;
   APP_TAGLINE: string;
+  API_BASE_URL: string;
   THEME_PRIMARY: string;
   THEME_SECONDARY: string;
   THEME_ACCENT: string;
@@ -19,6 +20,7 @@ interface EnvVariables {
 const getEnv = (): EnvVariables => {
   return {
     APP_NAME: import.meta.env.VITE_APP_NAME ,
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     APP_TAGLINE: import.meta.env.VITE_APP_TAGLINE ,
     THEME_PRIMARY: import.meta.env.VITE_THEME_PRIMARY || "#6366F1",
     THEME_SECONDARY: import.meta.env.VITE_THEME_SECONDARY || "#EC4899",
@@ -42,3 +44,4 @@ export const getThemeSecondary = (): string => env.THEME_SECONDARY;
 export const getThemeAccent = (): string => env.THEME_ACCENT;
 export const getThemeDarkBg = (): string => env.THEME_DARK_BG;
 export const getThemeLightBg = (): string => env.THEME_LIGHT_BG;
+export const getApiBaseUrl = (): string => env.API_BASE_URL;

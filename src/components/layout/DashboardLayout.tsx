@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   User,
+  Tag,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,16 +34,18 @@ const adminNavItems: NavItem[] = [
   { title: "Users", href: "/admin/users", icon: Users },
   { title: "Questions", href: "/admin/questions", icon: FileQuestion },
   { title: "Packages", href: "/admin/packages", icon: Package },
+  { title: "Categories", href: "/admin/categories", icon: Tag },
   { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
   { title: "Materials", href: "/admin/materials", icon: BookOpen },
   { title: "Tryouts", href: "/admin/tryouts", icon: ClipboardList },
   { title: "Rankings", href: "/admin/rankings", icon: Trophy },
+  { title: "My Profile", href: "/admin/profile", icon: User },
 ];
 
 const userNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "My Packages", href: "/dashboard/packages", icon: Package },
-  { title: "Practice", href: "/dashboard/practice", icon: FileQuestion },
+  // { title: "Practice", href: "/dashboard/practice", icon: FileQuestion },
   { title: "Tryouts", href: "/dashboard/tryouts", icon: ClipboardList },
   { title: "Materials", href: "/dashboard/materials", icon: BookOpen },
   { title: "My Profile", href: "/dashboard/profile", icon: User },
@@ -60,7 +63,7 @@ export function DashboardLayout({ children, type }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, token } = useAuthStore();
 
   const navItems = type === "admin" ? adminNavItems : userNavItems;
 

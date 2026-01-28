@@ -19,14 +19,16 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-              <BookOpen className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img 
+              src="/logoAlphanext.jpg" 
+              alt={appName}
+              className="h-9 w-9 rounded-xl"
+            />
             <span className="text-xl font-bold text-foreground">{appName}</span>
           </Link>
 
           {/* Desktop Navigation */}
-          {/* <div className="hidden items-center gap-8 md:flex">
+          <div className="hidden items-center gap-8 md:flex">
             <Link
               to="/#features"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -40,12 +42,12 @@ export function Navbar() {
               Pricing
             </Link>
             <Link
-              to="/#about"
+              to="/#testimonial"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              About
+              Testimonial
             </Link>
-          </div> */}
+          </div>
 
           {/* Auth Buttons */}
           <div className="hidden items-center gap-3 md:flex">

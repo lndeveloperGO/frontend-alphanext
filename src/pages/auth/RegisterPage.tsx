@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/authStore";
 import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getAppName, getAppTagline } from "@/lib/env";
+
+const appName = getAppName();
+const appTagline = getAppTagline();
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -84,13 +88,13 @@ export default function RegisterPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
                 <BookOpen className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold">EduLearn</span>
+              <span className="text-2xl font-bold">{appName}</span>
             </Link>
             <h2 className="mt-6 text-3xl font-bold tracking-tight">
-              Create your account
+              Daftar akun baru mu sekarang!
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Start your learning journey today
+              Mulai perjalanan belajarmu dengan {appName}
             </p>
           </div>
 
@@ -100,7 +104,7 @@ export default function RegisterPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="nama lengkap"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -113,7 +117,7 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="email kamu"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -127,7 +131,7 @@ export default function RegisterPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="buat password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -149,7 +153,7 @@ export default function RegisterPage() {
               <Input
                 id="confirmPassword"
                 type="password"
-                placeholder="Confirm your password"
+                placeholder="konfirmasi password kamu"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -169,14 +173,14 @@ export default function RegisterPage() {
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create account
+              Buat akun
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            Sudah punya akun?{" "}
             <Link to="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              Masuk
             </Link>
           </p>
         </div>
