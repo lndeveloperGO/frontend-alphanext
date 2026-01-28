@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { questions as initialQuestions, Question, QuestionOption } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,327 +21,785 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Loader2, Upload } from "lucide-react";
+import {
+  questionService,
+  Question,
+  QuestionOption,
+  CreateQuestionInput,
+  UpdateQuestionInput,
+  CreateOptionInput,
+  UpdateOptionInput,
+} from "@/lib/questionService";
+import { categoryService } from "@/lib/categoryService";
+import { getApiBaseUrl } from "@/lib/env";
+import { useAuthStore } from "@/stores/authStore";
+import { useNavigate } from "react-router-dom";
+
+type DialogMode = "create" | "edit" | null;
+type OptionMode = "create" | "edit" | null;
 
 export default function AdminQuestions() {
-  const [questions, setQuestions] = useState<Question[]>(initialQuestions);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [optionDialogOpen, setOptionDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<DialogMode>(null);
+  const [optionMode, setOptionMode] = useState<OptionMode>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedOption, setSelectedOption] = useState<QuestionOption | null>(null);
+  const [formData, setFormData] = useState<{
+    category_id: number;
+    question: string;
+    explanation?: string;
+  }>({ category_id: 0, question: "", explanation: "" });
+
+  const [optionFormData, setOptionFormData] = useState<{
+    label: string;
+    text: string;
+    score_value: number;
+  }>({ label: "", text: "", score_value: 0 });
+
+  const [categories, setCategories] = useState<Category[]>([]);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    text: "",
-    category: "",
-    difficulty: "easy" as "easy" | "medium" | "hard",
-    explanation: "",
-    options: [
-      { id: "a", text: "", score: 0 },
-      { id: "b", text: "", score: 0 },
-      { id: "c", text: "", score: 0 },
-      { id: "d", text: "", score: 0 },
-    ] as QuestionOption[],
-    correctOptionId: "a",
-  });
+  // Load questions
+  useEffect(() => {
+    loadQuestions();
+    loadCategories();
+  }, []);
 
-  const filteredQuestions = questions.filter(
-    (q) =>
-      q.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const loadQuestions = async () => {
+    try {
+      setLoading(true);
+      const data = await questionService.getQuestions();
 
-  const handleOpenDialog = (question?: Question) => {
-    if (question) {
-      setEditingQuestion(question);
-      setFormData({
-        text: question.text,
-        category: question.category,
-        difficulty: question.difficulty,
-        explanation: question.explanation || "",
-        options: question.options,
-        correctOptionId: question.correctOptionId,
+      setQuestions(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to load questions",
+        variant: "destructive",
       });
-    } else {
-      setEditingQuestion(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadCategories = async () => {
+    const getAuthHeader = () => {
+      const token = useAuthStore.getState().token;
+      return {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+    };
+    try {
+      // Sesuaikan dengan endpoint kategori Anda
+      const response = await fetch(`${getApiBaseUrl()}/admin/categories`, {
+        method: "GET",
+        headers: getAuthHeader(),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.data?.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to load categories", error);
+    }
+  };
+
+  const handleOpenDialog = (mode: DialogMode, question?: Question) => {
+    setDialogMode(mode);
+    if (mode === "create") {
+      setFormData({ category_id: 0, question: "", explanation: "" });
+    } else if (mode === "edit" && question) {
+      setSelectedQuestion(question);
       setFormData({
-        text: "",
-        category: "",
-        difficulty: "easy",
-        explanation: "",
-        options: [
-          { id: "a", text: "", score: 0 },
-          { id: "b", text: "", score: 0 },
-          { id: "c", text: "", score: 0 },
-          { id: "d", text: "", score: 0 },
-        ],
-        correctOptionId: "a",
+        category_id: question.category_id,
+        question: question.question,
+        explanation: question.explanation || "",
       });
     }
-    setIsDialogOpen(true);
+    setDialogOpen(true);
   };
 
-  const updateOption = (index: number, field: "text" | "score", value: string | number) => {
-    const newOptions = [...formData.options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
-    setFormData({ ...formData, options: newOptions });
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setDialogMode(null);
+    setSelectedQuestion(null);
+    setFormData({ category_id: 0, question: "", explanation: "" });
   };
 
-  const handleSave = () => {
-    if (!formData.text || !formData.category) {
+  const handleSubmit = async () => {
+    if (!formData.category_id) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Error",
+        description: "Please select a category",
         variant: "destructive",
       });
       return;
     }
 
-    if (editingQuestion) {
-      setQuestions(questions.map((q) =>
-        q.id === editingQuestion.id
-          ? { ...q, ...formData }
-          : q
-      ));
-      toast({ title: "Question updated successfully" });
-    } else {
-      const newQuestion: Question = {
-        id: String(questions.length + 1),
-        ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setQuestions([...questions, newQuestion]);
-      toast({ title: "Question created successfully" });
+    if (!formData.question.trim()) {
+      toast({
+        title: "Error",
+        description: "Question text is required",
+        variant: "destructive",
+      });
+      return;
     }
 
-    setIsDialogOpen(false);
-  };
+    try {
+      setSubmitting(true);
 
-  const handleDelete = () => {
-    if (deletingId) {
-      setQuestions(questions.filter((q) => q.id !== deletingId));
-      toast({ title: "Question deleted successfully" });
-      setIsDeleteDialogOpen(false);
-      setDeletingId(null);
+      if (dialogMode === "create") {
+        await questionService.createQuestion(
+          formData as CreateQuestionInput
+        );
+        toast({
+          title: "Success",
+          description: "Question created successfully",
+        });
+      } else if (dialogMode === "edit" && selectedQuestion) {
+        await questionService.updateQuestion(
+          selectedQuestion.id,
+          formData as UpdateQuestionInput
+        );
+        toast({
+          title: "Success",
+          description: "Question updated successfully",
+        });
+      }
+
+      handleCloseDialog();
+      loadQuestions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Operation failed",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const difficultyColors = {
-    easy: "bg-success/10 text-success",
-    medium: "bg-warning/10 text-warning",
-    hard: "bg-destructive/10 text-destructive",
+  const handleDeleteClick = (question: Question) => {
+    setSelectedQuestion(question);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedQuestion) return;
+
+    try {
+      setSubmitting(true);
+      await questionService.deleteQuestion(selectedQuestion.id);
+      toast({
+        title: "Success",
+        description: "Question deleted successfully",
+      });
+      setDeleteDialogOpen(false);
+      setSelectedQuestion(null);
+      loadQuestions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete question",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Option handlers
+  const handleOpenOptionDialog = (mode: OptionMode, option?: QuestionOption) => {
+    setOptionMode(mode);
+    if (mode === "create") {
+      // Auto-generate label berdasarkan jumlah options yang ada
+      const nextLabel = selectedQuestion?.options 
+        ? String.fromCharCode(65 + (selectedQuestion.options.length || 0))
+        : "A";
+      setOptionFormData({ label: nextLabel, text: "", score_value: 0 });
+    } else if (mode === "edit" && option) {
+      setSelectedOption(option);
+      setOptionFormData({
+        label: option.label,
+        text: option.text,
+        score_value: option.score_value,
+      });
+    }
+    setOptionDialogOpen(true);
+  };
+
+  const handleCloseOptionDialog = () => {
+    setOptionDialogOpen(false);
+    setOptionMode(null);
+    setSelectedOption(null);
+    setOptionFormData({ label: "", text: "", score_value: 0 });
+  };
+
+  const handleSubmitOption = async () => {
+    if (!optionFormData.label.trim()) {
+      toast({
+        title: "Error",
+        description: "Option label is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!optionFormData.text.trim()) {
+      toast({
+        title: "Error",
+        description: "Option text is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedQuestion) return;
+
+    try {
+      setSubmitting(true);
+
+      if (optionMode === "create") {
+        await questionService.createOption(
+          selectedQuestion.id,
+          optionFormData as CreateOptionInput
+        );
+        toast({
+          title: "Success",
+          description: "Option created successfully",
+        });
+      } else if (optionMode === "edit" && selectedOption?.id) {
+        await questionService.updateOption(
+          selectedOption.id,
+          optionFormData as UpdateOptionInput
+        );
+        toast({
+          title: "Success",
+          description: "Option updated successfully",
+        });
+      }
+
+      handleCloseOptionDialog();
+      // Re-fetch detail question untuk update options
+      const detailQuestion = await questionService.getQuestion(selectedQuestion.id);
+      setSelectedQuestion(detailQuestion);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Operation failed",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteOption = async (option: QuestionOption) => {
+    if (!option.id) return;
+
+    try {
+      await questionService.deleteOption(option.id);
+      toast({
+        title: "Success",
+        description: "Option deleted successfully",
+      });
+      loadQuestions();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to delete option",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const truncateText = (text: string | undefined, maxLength: number = 100) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
+  const getMaxScore = (options: QuestionOption[]): number => {
+    return Math.max(...options.map(o => o.score_value), 0);
+  };
+
+  const getOptionLabel = (index: number): string => {
+    return String.fromCharCode(65 + index); // A, B, C, D, E...
+  };
+
+  const handleOpenDetailDialog = async (question: Question) => {
+    try {
+      setLoading(true);
+      const detailQuestion = await questionService.getQuestion(question.id);
+      setSelectedQuestion(detailQuestion);
+      setDetailDialogOpen(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to load question details",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <DashboardLayout type="admin">
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Question Management</h1>
-            <p className="text-muted-foreground">Create and manage practice questions</p>
+            <h1 className="text-2xl font-bold">Questions</h1>
+            <p className="text-muted-foreground">
+              Manage questions and answer options
+            </p>
           </div>
-          <Button onClick={() => handleOpenDialog()}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Question
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => navigate("/admin/questions/bulk-import")}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Bulk Import
+            </Button>
+            <Button onClick={() => handleOpenDialog("create")}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Question
+            </Button>
+          </div>
         </div>
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search questions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        <div className="rounded-lg border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[40%]">Question</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Difficulty</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredQuestions.map((question) => (
-                <TableRow key={question.id}>
-                  <TableCell className="font-medium">
-                    <p className="line-clamp-2">{question.text}</p>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{question.category}</Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${difficultyColors[question.difficulty]}`}>
-                      {question.difficulty}
-                    </span>
-                  </TableCell>
-                  <TableCell>{question.createdAt}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleOpenDialog(question)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setDeletingId(question.id);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Questions Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Question List</CardTitle>
+            <CardDescription>
+              Total questions: {questions.length}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : questions.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                No questions found. Create one to get started.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Question</TableHead>
+                      <TableHead className="w-20 text-center">Options</TableHead>
+                      <TableHead className="w-24 text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {questions.map((question) => (
+                      <TableRow key={question.id}>
+                        <TableCell className="font-medium">
+                          {question.id}
+                        </TableCell>
+                        <TableCell>
+                          {truncateText(question.question)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">
+                            {question.options_count || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDetailDialog(question)}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenDialog("edit", question)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(question)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      {/* Question Form Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingQuestion ? "Edit Question" : "Add New Question"}</DialogTitle>
+            <DialogTitle>
+              {dialogMode === "create" ? "Create Question" : "Edit Question"}
+            </DialogTitle>
             <DialogDescription>
-              {editingQuestion ? "Update question details" : "Create a new practice question"}
+              {dialogMode === "create"
+                ? "Add a new question"
+                : "Update question information"}
             </DialogDescription>
           </DialogHeader>
+
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="text">Question Text</Label>
-              <Textarea
-                id="text"
-                value={formData.text}
-                onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-                placeholder="Enter the question"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Mathematics"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Difficulty</Label>
-                <Select
-                  value={formData.difficulty}
-                  onValueChange={(value: "easy" | "medium" | "hard") =>
-                    setFormData({ ...formData, difficulty: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="easy">Easy</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="hard">Hard</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <Label htmlFor="category_id">Category</Label>
+              <select
+                id="category_id"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={formData.category_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    category_id: parseInt(e.target.value) || 0,
+                  })
+                }
+                disabled={submitting}
+              >
+                <option value={0}>-- Select Category --</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
-              <Label>Answer Options</Label>
-              <div className="space-y-3">
-                {formData.options.map((option, index) => (
-                  <div key={option.id} className="flex items-center gap-3">
-                    <span className="w-6 text-center font-medium uppercase">{option.id}</span>
-                    <Input
-                      value={option.text}
-                      onChange={(e) => updateOption(index, "text", e.target.value)}
-                      placeholder={`Option ${option.id.toUpperCase()}`}
-                      className="flex-1"
-                    />
-                    <Input
-                      type="number"
-                      value={option.score}
-                      onChange={(e) => updateOption(index, "score", parseInt(e.target.value) || 0)}
-                      placeholder="Score"
-                      className="w-20"
-                    />
-                    <input
-                      type="radio"
-                      name="correctOption"
-                      checked={formData.correctOptionId === option.id}
-                      onChange={() => setFormData({ ...formData, correctOptionId: option.id })}
-                      className="h-4 w-4"
-                    />
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">Select the correct answer using the radio button</p>
+              <Label htmlFor="question">Question Text</Label>
+              <Textarea
+                id="question"
+                placeholder="Enter the question text"
+                value={formData.question}
+                onChange={(e) =>
+                  setFormData({ ...formData, question: e.target.value })
+                }
+                disabled={submitting}
+                rows={4}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="explanation">Explanation (Optional)</Label>
               <Textarea
                 id="explanation"
-                value={formData.explanation}
-                onChange={(e) => setFormData({ ...formData, explanation: e.target.value })}
-                placeholder="Explain the correct answer"
-                rows={2}
+                placeholder="Enter the explanation or answer key"
+                value={formData.explanation || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, explanation: e.target.value })
+                }
+                disabled={submitting}
+                rows={3}
               />
             </div>
           </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={handleCloseDialog}
+              disabled={submitting}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              {editingQuestion ? "Save Changes" : "Create Question"}
+            <Button onClick={handleSubmit} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+      {/* Question Detail Dialog with Options */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Delete Question</DialogTitle>
+            <DialogTitle>Question Details</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this question? This action cannot be undone.
+              Manage options for this question
             </DialogDescription>
           </DialogHeader>
+
+          {selectedQuestion && (
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="options">
+                  Options ({selectedQuestion.options?.length || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="details" className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Question</Label>
+                  <p className="text-sm p-3 bg-muted rounded-md">
+                    {selectedQuestion.question}
+                  </p>
+                </div>
+
+                {selectedQuestion.explanation && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Explanation</Label>
+                    <p className="text-sm p-3 bg-muted rounded-md">
+                      {selectedQuestion.explanation}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="options" className="space-y-4">
+                <div className="space-y-3">
+                  {(!selectedQuestion.options || selectedQuestion.options.length === 0) ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No options yet. Add one to get started.
+                    </p>
+                  ) : (
+                    selectedQuestion.options.map((option) => {
+                      const maxScore = Math.max(
+                        ...selectedQuestion.options!.map(o => o.score_value),
+                        0
+                      );
+                      const isHighest = option.score_value === maxScore && maxScore > 0;
+
+                      return (
+                        <div
+                          key={option.id}
+                          className={`p-3 rounded-md border ${isHighest ? "border-green-500 bg-green-50" : "bg-muted"
+                            }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-lg">
+                                  {option.label}.
+                                </span>
+                                <span className="font-medium">
+                                  {option.text}
+                                </span>
+                              </div>
+                              <div className="text-xs text-muted-foreground ml-6">
+                                Score: {option.score_value}
+                                {isHighest && (
+                                  <Badge className="ml-2" variant="default">
+                                    Highest
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenOptionDialog("edit", option)}
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteOption(option)}
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                <Button
+                  onClick={() => handleOpenOptionDialog("create")}
+                  className="w-full"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Option
+                </Button>
+              </TabsContent>
+            </Tabs>
+          )}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+            <Button onClick={() => setDetailDialogOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Option Form Dialog */}
+      <Dialog open={optionDialogOpen} onOpenChange={setOptionDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {optionMode === "create" ? "Add Option" : "Edit Option"}
+            </DialogTitle>
+            <DialogDescription>
+              {optionMode === "create"
+                ? "Add a new answer option"
+                : "Update option information"}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="label">Label (A, B, C, ...)</Label>
+              <Input
+                id="label"
+                placeholder="e.g., A"
+                value={optionFormData.label}
+                onChange={(e) =>
+                  setOptionFormData({
+                    ...optionFormData,
+                    label: e.target.value.toUpperCase(),
+                  })
+                }
+                disabled={submitting}
+                maxLength={1}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="text">Option Text</Label>
+              <Textarea
+                id="text"
+                placeholder="Enter the option text"
+                value={optionFormData.text}
+                onChange={(e) =>
+                  setOptionFormData({
+                    ...optionFormData,
+                    text: e.target.value,
+                  })
+                }
+                disabled={submitting}
+                rows={3}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="score_value">Score Value</Label>
+              <Input
+                id="score_value"
+                type="number"
+                placeholder="e.g., 5"
+                value={optionFormData.score_value}
+                onChange={(e) =>
+                  setOptionFormData({
+                    ...optionFormData,
+                    score_value: parseInt(e.target.value) || 0,
+                  })
+                }
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleCloseOptionDialog}
+              disabled={submitting}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button onClick={handleSubmitOption} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Delete Question</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this question? This action cannot
+            be undone.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={submitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

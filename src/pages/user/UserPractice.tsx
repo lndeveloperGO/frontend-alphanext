@@ -19,6 +19,11 @@ interface Package {
   is_active: number;
   created_at: string;
   updated_at: string;
+  questions_count: number;
+  category: {
+    id: number;
+    name: string;
+  };
 }
 
 export default function UserPractice() {
@@ -36,7 +41,7 @@ export default function UserPractice() {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiBaseUrl()}/packages`, {
+      const response = await fetch(`${getApiBaseUrl()}/catalog/packages`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -46,9 +51,9 @@ export default function UserPractice() {
         throw new Error("Failed to fetch packages");
       }
 
-      const data = await response.json();
-      // API returns array directly, not wrapped in data object
-      const packagesData = Array.isArray(data) ? data : data.data || [];
+      const result = await response.json();
+      // API returns paginated data with structure: { success, data: { data: [...] } }
+      const packagesData = result.data?.data || [];
       setPackages(packagesData);
     } catch (error) {
       console.error("Error fetching packages:", error);
@@ -63,12 +68,16 @@ export default function UserPractice() {
   };
 
   const categoryColors: Record<string, string> = {
-    Mathematics: "bg-blue-100 text-blue-700",
-    Science: "bg-green-100 text-green-700",
-    Geography: "bg-yellow-100 text-yellow-700",
-    History: "bg-purple-100 text-purple-700",
-    Literature: "bg-pink-100 text-pink-700",
-    tryout: "bg-indigo-100 text-indigo-700",
+    "Demo Category": "bg-indigo-100 text-indigo-700",
+    "Matematika": "bg-blue-100 text-blue-700",
+    "Sains": "bg-green-100 text-green-700",
+    "Geografi": "bg-yellow-100 text-yellow-700",
+    "Sejarah": "bg-purple-100 text-purple-700",
+    "Sastra": "bg-pink-100 text-pink-700",
+  };
+
+  const getCategoryColor = (categoryName: string): string => {
+    return categoryColors[categoryName] || "bg-gray-100 text-gray-700";
   };
 
   const getTypeLabel = (type: string): string => {
@@ -159,13 +168,17 @@ export default function UserPractice() {
             {packages.map((pkg) => (
               <Card
                 key={pkg.id}
-                className="hover-lift cursor-pointer transition-all hover:shadow-lg"
-                onClick={() => startPractice(pkg.id)}
+                className={`transition-all ${
+                  startingAttempt === null
+                    ? "hover-lift cursor-pointer hover:shadow-lg"
+                    : "cursor-not-allowed opacity-50"
+                }`}
+                onClick={() => startingAttempt === null && startPractice(pkg.id)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <Badge className="bg-indigo-100 text-indigo-700">
-                      {getTypeLabel(pkg.type)}
+                    <Badge className={getCategoryColor(pkg.category.name)}>
+                      {pkg.category.name}
                     </Badge>
                     {pkg.is_active ? (
                       <Badge className="bg-success/10 text-success">Active</Badge>
@@ -174,16 +187,24 @@ export default function UserPractice() {
                     )}
                   </div>
                   <CardTitle className="mt-2">{pkg.name}</CardTitle>
-                  <CardDescription>Package ID: {pkg.id}</CardDescription>
+                  <CardDescription>
+                    {pkg.questions_count} {pkg.questions_count === 1 ? "question" : "questions"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>{formatDuration(pkg.duration_seconds)}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      <span>{formatDuration(pkg.duration_seconds)}</span>
+                    </div>
+                    {startingAttempt === pkg.id && (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </div>
+                    )}
                   </div>
                   <div className="mt-3 text-xs text-muted-foreground">
-                    <p>Category ID: {pkg.category_id}</p>
-                    <p>Type: {pkg.type}</p>
+                    <p>Type: {getTypeLabel(pkg.type)}</p>
                   </div>
                 </CardContent>
               </Card>

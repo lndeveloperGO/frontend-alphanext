@@ -20,6 +20,9 @@ import AdminVouchers from "./pages/admin/AdminVouchers";
 import AdminMaterials from "./pages/admin/AdminMaterials";
 import AdminTryouts from "./pages/admin/AdminTryouts";
 import AdminRankings from "./pages/admin/AdminRankings";
+import AdminCategories from "./pages/admin/AdminCategories";
+import PackageQuestions from "./pages/admin/PackageQuestions";
+import BulkQuestionImport from "./pages/admin/BulkQuestionImport";
 
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
@@ -64,7 +67,10 @@ const App = () => (
           <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
           <Route path="/admin/questions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminQuestions /></ProtectedRoute>} />
+          <Route path="/admin/questions/bulk-import" element={<ProtectedRoute allowedRoles={["admin"]}><BulkQuestionImport /></ProtectedRoute>} />
           <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
+          <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
+          <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
           <Route path="/admin/vouchers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminVouchers /></ProtectedRoute>} />
           <Route path="/admin/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMaterials /></ProtectedRoute>} />
           <Route path="/admin/tryouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTryouts /></ProtectedRoute>} />

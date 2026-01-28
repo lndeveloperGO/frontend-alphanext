@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   User,
+  Tag,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,6 +34,7 @@ const adminNavItems: NavItem[] = [
   { title: "Users", href: "/admin/users", icon: Users },
   { title: "Questions", href: "/admin/questions", icon: FileQuestion },
   { title: "Packages", href: "/admin/packages", icon: Package },
+  { title: "Categories", href: "/admin/categories", icon: Tag },
   { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
   { title: "Materials", href: "/admin/materials", icon: BookOpen },
   { title: "Tryouts", href: "/admin/tryouts", icon: ClipboardList },

@@ -88,7 +88,7 @@ export default function AdminProfile() {
     .toUpperCase() || "U";
 
   return (
-    <DashboardLayout type="user">
+    <DashboardLayout type="admin">
       <div className="space-y-6">
         {/* Header */}
         <div>

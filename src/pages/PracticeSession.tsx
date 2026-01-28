@@ -35,11 +35,30 @@ export default function PracticeSession() {
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Submit response data
+  const [submitResponse, setSubmitResponse] = useState<{
+    attempt_id: number;
+    status: string;
+    submitted_at: string;
+    total_score: number;
+    summary: {
+      total_questions: number;
+      answered: number;
+      unanswered: number;
+      progress_percent: number;
+    };
+  } | null>(null);
+  
+  // Temporary answer storage (key: question_id, value: option_id)
+  const [tempAnswers, setTempAnswers] = useState<Record<number, number>>({});
+  // Temporary marked status (key: question_id, value: is_marked)
+  const [tempMarked, setTempMarked] = useState<Record<number, boolean>>({});
 
   // Redirect if no attemptId
   useEffect(() => {
     if (!attemptId) {
-      navigate("/dashboard/practice");
+      navigate("/dashboard");
       return;
     }
 
@@ -78,7 +97,7 @@ export default function PracticeSession() {
         description: "Failed to load attempt",
         variant: "destructive",
       });
-      navigate("/dashboard/practice");
+      navigate("/dashboard");
     } finally {
       setLoading(false);
     }
@@ -139,79 +158,115 @@ export default function PracticeSession() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleAnswer = async (optionId: number) => {
+  const handleAnswer = (optionId: number) => {
     if (!currentQuestion) return;
     if (currentQuestion.status !== "in_progress") return;
 
+    // Save answer to temporary storage (not sent to API yet)
+    setTempAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.question_id]: optionId,
+    }));
+
+    // Update local question state for UI
+    setCurrentQuestion({
+      ...currentQuestion,
+      selected_option_id: optionId,
+    });
+  };
+
+  // Submit answers and marked status to API for current question
+  const submitCurrentQuestionToAPI = async () => {
+    if (!currentQuestion) return;
+
     try {
-      const response = await attemptService.submitAnswer(
-        attemptId,
-        currentQuestion.question_id,
-        optionId
-      );
-
-      if (response.success) {
-        // Update local question state
-        setCurrentQuestion({
-          ...currentQuestion,
-          selected_option_id: optionId,
+      const questionId = currentQuestion.question_id;
+      let hasAnswered = false;
+      
+      // Submit answer if it was changed
+      if (tempAnswers[questionId] !== undefined) {
+        await attemptService.submitAnswer(
+          attemptId,
+          questionId,
+          tempAnswers[questionId]
+        );
+        hasAnswered = true;
+        // Clear from temp storage after successful submission
+        setTempAnswers((prev) => {
+          const updated = { ...prev };
+          delete updated[questionId];
+          return updated;
         });
+      }
 
-        // Refresh summary to update navigation
-        await fetchAttemptSummary();
+      // Submit marked status if it was changed
+      if (tempMarked[questionId] !== undefined && tempMarked[questionId] !== currentQuestion.is_marked) {
+        await attemptService.markQuestion(attemptId, questionId);
+        // Clear from temp storage after successful submission
+        setTempMarked((prev) => {
+          const updated = { ...prev };
+          delete updated[questionId];
+          return updated;
+        });
+      }
+
+      // Update the navigation item status if answer was submitted
+      if (hasAnswered) {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.question_id === questionId ? { ...q, done: true } : q
+          )
+        );
       }
     } catch (error) {
-      console.error("Error submitting answer:", error);
+      console.error("Error submitting question data:", error);
       toast({
         title: "Error",
-        description: "Failed to submit answer",
+        description: "Failed to save question data",
         variant: "destructive",
       });
     }
   };
 
-  const handleMark = async () => {
+  const handleMark = () => {
     if (!currentQuestion) return;
 
-    try {
-      const response = await attemptService.markQuestion(
-        attemptId,
-        currentQuestion.question_id
-      );
+    const isNowMarked = !currentQuestion.is_marked;
 
-      if (response.success) {
-        // Update local question state
-        setCurrentQuestion({
-          ...currentQuestion,
-          is_marked: response.data.is_marked,
-        });
+    // Save marked status to temporary storage
+    setTempMarked((prev) => ({
+      ...prev,
+      [currentQuestion.question_id]: isNowMarked,
+    }));
 
-        // Refresh summary to update navigation
-        await fetchAttemptSummary();
+    // Update local question state for UI
+    setCurrentQuestion({
+      ...currentQuestion,
+      is_marked: isNowMarked,
+    });
 
-        toast({
-          description: response.data.is_marked
-            ? "Question marked"
-            : "Question unmarked",
-        });
-      }
-    } catch (error) {
-      console.error("Error marking question:", error);
-      toast({
-        title: "Error",
-        description: "Failed to mark question",
-        variant: "destructive",
-      });
-    }
+    toast({
+      description: isNowMarked
+        ? "Question marked"
+        : "Question unmarked",
+    });
   };
 
   const handleNext = async () => {
     if (!questions || currentIndex >= questions.length - 1) return;
+    
+    // Submit current question to API before moving to next
+    await submitCurrentQuestionToAPI();
+    
     await fetchQuestion(currentIndex + 2);
   };
 
   const handlePrev = async () => {
     if (currentIndex <= 0) return;
+    
+    // Submit current question to API before moving to previous
+    await submitCurrentQuestionToAPI();
+    
     await fetchQuestion(currentIndex);
   };
 
@@ -224,9 +279,15 @@ export default function PracticeSession() {
 
     try {
       setSubmitting(true);
+      
+      // Submit current question to API before finishing
+      await submitCurrentQuestionToAPI();
+      
       const response = await attemptService.submitAttempt(attemptId);
 
       if (response.success) {
+        // Store submit response data
+        setSubmitResponse(response.data);
         setIsFinished(true);
         setShowResults(true);
       }
@@ -240,7 +301,7 @@ export default function PracticeSession() {
     } finally {
       setSubmitting(false);
     }
-  }, [attemptId, submitting]);
+  }, [attemptId, submitting, currentQuestion, tempAnswers, tempMarked]);
 
   if (loading) {
     return (
@@ -250,57 +311,104 @@ export default function PracticeSession() {
     );
   }
 
-  if (showResults && attemptSummary) {
-    const progress = attemptSummary.progress;
-    const percentage = Math.round(
-      (progress.done / progress.total) * 100
-    );
+  if (showResults && submitResponse) {
+    const summary = submitResponse.summary;
+    const passScore = 70;
+    const isPassed = submitResponse.total_score >= passScore;
 
     return (
       <div className="min-h-screen bg-background p-4">
-        <div className="mx-auto max-w-2xl">
+        <div className="mx-auto max-w-3xl">
           <Card className="text-center">
             <CardContent className="py-12">
+              {/* Result Icon */}
               <div
                 className={cn(
                   "mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full",
-                  attemptSummary.total_score >= 70
-                    ? "bg-success/20"
-                    : "bg-destructive/20"
+                  isPassed ? "bg-success/20" : "bg-destructive/20"
                 )}
               >
-                {attemptSummary.total_score >= 70 ? (
+                {isPassed ? (
                   <Check className="h-12 w-12 text-success" />
                 ) : (
                   <X className="h-12 w-12 text-destructive" />
                 )}
               </div>
+
+              {/* Header */}
               <h1 className="mb-2 text-3xl font-bold">Practice Complete!</h1>
               <p className="mb-8 text-muted-foreground">Here's how you did</p>
 
-              <div className="mb-8 grid grid-cols-3 gap-4">
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-3xl font-bold text-primary">
-                    {attemptSummary.total_score}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total Score</p>
-                </div>
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-3xl font-bold">
-                    {progress.done}/{progress.total}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Answered</p>
-                </div>
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-3xl font-bold">{percentage}%</p>
-                  <p className="text-sm text-muted-foreground">Progress</p>
+              {/* Main Score Card */}
+              <div className="mb-8 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-8 border border-primary/20">
+                <p className="text-5xl font-bold text-primary mb-2">
+                  {submitResponse.total_score}%
+                </p>
+                <p className="text-lg text-muted-foreground">Your Score</p>
+                <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full",
+                      isPassed ? "bg-success" : "bg-destructive"
+                    )}
+                    style={{ width: `${submitResponse.total_score}%` }}
+                  />
                 </div>
               </div>
 
+              {/* Summary Grid */}
+              <div className="mb-8 grid grid-cols-4 gap-4">
+                <div className="rounded-lg bg-muted p-4">
+                  <p className="text-3xl font-bold text-foreground">
+                    {summary.total_questions}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total Questions
+                  </p>
+                </div>
+                <div className="rounded-lg bg-success/10 p-4 border border-success/20">
+                  <p className="text-3xl font-bold text-success">
+                    {summary.answered}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Answered
+                  </p>
+                </div>
+                <div className="rounded-lg bg-destructive/10 p-4 border border-destructive/20">
+                  <p className="text-3xl font-bold text-destructive">
+                    {summary.unanswered}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Unanswered
+                  </p>
+                </div>
+                <div className="rounded-lg bg-primary/10 p-4 border border-primary/20">
+                  <p className="text-3xl font-bold text-primary">
+                    {summary.progress_percent}%
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Progress
+                  </p>
+                </div>
+              </div>
+
+              {/* Result Message */}
+              <div className="mb-8 rounded-lg bg-card p-6 border">
+                <p className="text-lg font-semibold text-foreground mb-1">
+                  {isPassed ? "Great Job! 🎉" : "Keep Practicing!"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {isPassed
+                    ? `You scored ${submitResponse.total_score}% and passed the practice session.`
+                    : `You scored ${submitResponse.total_score}%. Keep practicing to improve your score.`}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
               <div className="flex justify-center gap-4">
                 <Button
                   variant="outline"
-                  onClick={() => navigate("/dashboard/practice")}
+                  onClick={() => navigate("/dashboard")}
                 >
                   <Home className="mr-2 h-4 w-4" />
                   Back to Practice
@@ -324,7 +432,7 @@ export default function PracticeSession() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/dashboard/practice")}
+              onClick={() => navigate("/dashboard")}
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
               Exit
@@ -431,28 +539,31 @@ export default function PracticeSession() {
         </main>
 
         {/* Right Sidebar Navigation */}
-        <aside className="sticky top-16 w-32 border-l bg-card p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+        <aside className="sticky top-16 w-36 border-l bg-card p-4 h-[calc(100vh-4rem)] overflow-y-auto">
           <h3 className="mb-4 font-semibold text-xs text-center">
             Q ({attemptSummary.progress.done}/{attemptSummary.progress.total})
           </h3>
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-3 gap-5">
             {questions.map((q, idx) => (
               <button
                 key={q.question_id}
                 onClick={() => handleNavigateToQuestion(idx)}
                 className={cn(
-                  "h-12 w-12 rounded flex items-center justify-center text-sm font-semibold transition-all hover:scale-110",
+                  "h-10 w-10 rounded flex items-center justify-center text-xs font-semibold transition-all hover:scale-110 relative",
                   idx === currentIndex
                     ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1"
                     : q.done
-                    ? "bg-success/20 border-2 border-success text-foreground"
+                    ? "bg-green-500 text-white border-2 border-green-600 font-bold shadow-md"
                     : q.marked
-                    ? "bg-warning/20 border-2 border-warning text-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-yellow-400 text-yellow-900 border-2 border-yellow-500 font-bold"
+                    : "bg-gray-300 text-gray-700 border-2 border-gray-400"
                 )}
-                title={`Q${idx + 1}`}
+                title={`Q${idx + 1}${q.done ? " ✓ Answered" : ""}${q.marked ? " ⚑ Marked" : ""}`}
               >
                 <span>{idx + 1}</span>
+                {q.done && (
+                  <Check className="absolute -top-2 -right-2 h-4 w-4 bg-green-600 rounded-full text-white border border-white" />
+                )}
               </button>
             ))}
           </div>
