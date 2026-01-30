@@ -82,7 +82,7 @@ export default function AdminRankings() {
             {rankings.map((ranking) => (
               <div
                 key={ranking.id}
-                className="flex items-center justify-between p-4 hover:bg-muted/50"
+                className="flex flex-col gap-4 p-4 hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="flex items-center gap-4">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-semibold">
@@ -97,16 +97,16 @@ export default function AdminRankings() {
                     <p className="text-sm text-muted-foreground">{ranking.tryoutName}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right">
+                <div className="flex items-center justify-between gap-4 sm:justify-end sm:gap-6">
+                  <div className="text-center sm:text-right">
                     <p className="font-semibold">{ranking.correctAnswers}/{ranking.totalQuestions}</p>
                     <p className="text-xs text-muted-foreground">Correct</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-center sm:text-right">
                     <p className="font-semibold">{Math.round(ranking.timeSpent / 60)}m</p>
                     <p className="text-xs text-muted-foreground">Time</p>
                   </div>
-                  <Badge variant="default" className="ml-4">
+                  <Badge variant="default">
                     {ranking.score} pts
                   </Badge>
                 </div>

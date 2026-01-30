@@ -31,13 +31,13 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Questions", href: "/admin/questions", icon: FileQuestion },
-  { title: "Packages", href: "/admin/packages", icon: Package },
   { title: "Categories", href: "/admin/categories", icon: Tag },
+  { title: "Promo Codes", href: "/admin/promo-codes", icon: Ticket },
+  { title: "Packages", href: "/admin/packages", icon: Package },
+  { title: "Questions", href: "/admin/questions", icon: FileQuestion },
+  { title: "Users", href: "/admin/users", icon: Users },
   { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
   { title: "Materials", href: "/admin/materials", icon: BookOpen },
-  { title: "Tryouts", href: "/admin/tryouts", icon: ClipboardList },
   { title: "Rankings", href: "/admin/rankings", icon: Trophy },
   { title: "My Profile", href: "/admin/profile", icon: User },
 ];
@@ -79,7 +79,7 @@ export function DashboardLayout({ children, type }: DashboardLayoutProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
             <BookOpen className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-bold text-primary">EduLearn</span>
+          <span className="font-bold text-primary">AlphaNext</span>
         </Link>
         <Button
           variant="ghost"

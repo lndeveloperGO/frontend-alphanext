@@ -17,6 +17,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminPackages from "./pages/admin/AdminPackages";
 import AdminVouchers from "./pages/admin/AdminVouchers";
+import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import AdminMaterials from "./pages/admin/AdminMaterials";
 import AdminTryouts from "./pages/admin/AdminTryouts";
 import AdminRankings from "./pages/admin/AdminRankings";
@@ -71,6 +72,7 @@ const App = () => (
           <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
           <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
           <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
+          <Route path="/admin/promo-codes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPromoCodes /></ProtectedRoute>} />
           <Route path="/admin/vouchers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminVouchers /></ProtectedRoute>} />
           <Route path="/admin/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMaterials /></ProtectedRoute>} />
           <Route path="/admin/tryouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTryouts /></ProtectedRoute>} />
