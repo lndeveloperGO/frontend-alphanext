@@ -171,4 +171,51 @@ export const packageService = {
       throw new Error(error.message || "Failed to sync package questions");
     }
   },
+
+  // Get public products for landing page
+  async getPublicProducts(): Promise<{
+    success: boolean;
+    data: {
+      bundles: Array<{
+        id: number;
+        type: string;
+        name: string;
+        price: number;
+        is_active: boolean;
+        packages: Array<{
+          id: number;
+          name: string;
+          type: string;
+          category_id: number;
+          pivot: { qty: number; sort_order: number };
+        }>;
+      }>;
+      regular: Array<{
+        id: number;
+        type: string;
+        name: string;
+        price: number;
+        is_active: boolean;
+        package: {
+          id: number;
+          name: string;
+          type: string;
+          category_id: number;
+        };
+      }>;
+    };
+  }> {
+    const response = await fetch(`${getApiUrl()}/public/products`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch public products");
+    }
+
+    return await response.json();
+  },
 };

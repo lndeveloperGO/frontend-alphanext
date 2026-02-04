@@ -58,7 +58,11 @@ export default function LoginPage() {
           <div className="mb-8">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                <BookOpen className="h-6 w-6 text-primary-foreground" />
+                 <img
+                  src="/logoAlphanext.jpg"
+                  alt={appName}
+                  className=" rounded-xl"
+                />
               </div>
               <span className="text-2xl font-bold">{appName}</span>
             </Link>
@@ -151,8 +155,15 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image */}
-      <div className="relative hidden w-0 flex-1 lg:block">
-        <div className="absolute inset-0 gradient-primary">
+      <div 
+        className="relative hidden w-0 flex-1 lg:block"
+        style={{
+          backgroundImage: "url('https://cdn-prd.tongkolspace.com/hipwee/wp-content/uploads/2020/12/hipwee-Depositphotos_317220796_l-2015.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="absolute inset-0 bg-black/30">
           <div className="flex h-full flex-col items-center justify-center p-12 text-primary-foreground">
             <div className="max-w-md text-center">
               <h2 className="mb-4 text-3xl font-bold">Belajar dimulai dari hari ini</h2>

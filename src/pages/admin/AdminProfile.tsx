@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuthStore } from "@/stores/authStore";
+import { authService } from "@/lib/authService";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +14,13 @@ import { User, Mail, Lock, Calendar, Eye, EyeOff, Check } from "lucide-react";
 import { format } from "date-fns";
 
 export default function AdminProfile() {
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -26,6 +29,29 @@ export default function AdminProfile() {
     newPassword: "",
     confirmPassword: "",
   });
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      setIsLoading(true);
+      const result = await authService.getMe();
+      if (result.success && result.data) {
+        setUser(result.data);
+        setFormData((prev) => ({
+          ...prev,
+          name: result.data.name || "",
+          email: result.data.email || "",
+        }));
+      } else {
+        setErrorMessage(result.error || "Failed to load user data");
+      }
+      setIsLoading(false);
+    };
+
+    if (user?.id) {
+      fetchUserData();
+    }
+  }, [setUser]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,42 +64,57 @@ export default function AdminProfile() {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setSuccessMessage("Profile updated successfully!");
-    setTimeout(() => setSuccessMessage(""), 3000);
+    setErrorMessage("");
+
+    const result = await authService.updateProfile({
+      name: formData.name,
+      email: formData.email,
+    });
+
+    if (result.success) {
+      setUser(result.data);
+      setSuccessMessage("Profile updated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } else {
+      setErrorMessage(result.error || "Failed to update profile");
+    }
     setIsSaving(false);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setErrorMessage("");
+
     if (formData.newPassword !== formData.confirmPassword) {
-      alert("New passwords do not match");
+      setErrorMessage("New passwords do not match");
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      alert("Password must be at least 6 characters");
+      setErrorMessage("Password must be at least 6 characters");
       return;
     }
 
     setIsSaving(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setFormData((prev) => ({
-      ...prev,
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    }));
-    
-    setSuccessMessage("Password changed successfully!");
-    setTimeout(() => setSuccessMessage(""), 3000);
+
+    const result = await authService.changePassword({
+      currentPassword: formData.currentPassword,
+      newPassword: formData.newPassword,
+    });
+
+    if (result.success) {
+      setFormData((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+
+      setSuccessMessage("Password changed successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } else {
+      setErrorMessage(result.error || "Failed to change password");
+    }
     setIsSaving(false);
   };
 
@@ -86,6 +127,16 @@ export default function AdminProfile() {
     .map((n) => n[0])
     .join("")
     .toUpperCase() || "U";
+
+  if (isLoading) {
+    return (
+      <DashboardLayout type="admin">
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-muted-foreground">Loading profile...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout type="admin">
@@ -104,6 +155,15 @@ export default function AdminProfile() {
             <Check className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               {successMessage}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Message */}
+        {errorMessage && (
+          <Alert className="border-red-200 bg-red-50">
+            <AlertDescription className="text-red-800">
+              {errorMessage}
             </AlertDescription>
           </Alert>
         )}

@@ -4,6 +4,11 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { getAppName, getThemePrimary, getAppTagline } from "@/lib/env";
 import { useHashNavigation } from "@/hooks/use-hash-navigation";
+import { packageService } from "@/lib/packageService";
+import { useAuthStore } from "@/stores/authStore";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils"
+
 import {
   BookOpen,
   Brain,
@@ -46,53 +51,6 @@ const features = [
   },
 ];
 
-const pricingPlans = [
-  {
-    name: "Basic",
-    price: "Rp 50.000",
-    period: "/bulan",
-    description: "Perfect for getting started",
-    features: [
-      "100+ Practice Questions",
-      "Basic Analytics",
-      "Email Support",
-      "1 Tryout per Month",
-    ],
-    popular: false,
-  },
-  {
-    name: "Pro",
-    price: "Rp 150.000",
-    period: "/bulan",
-    description: "Best for serious learners",
-    features: [
-      "500+ Practice Questions",
-      "Advanced Analytics",
-      "Priority Support",
-      "Unlimited Tryouts",
-      "Video Explanations",
-      "Study Materials",
-    ],
-    popular: true,
-  },
-  {
-    name: "Ultimate",
-    price: "Rp 300.000",
-    period: "/bulan",
-    description: "Everything you need",
-    features: [
-      "1000+ Practice Questions",
-      "Full Analytics Suite",
-      "24/7 Priority Support",
-      "Unlimited Everything",
-      "Personal Mentor",
-      "Certificate",
-      "Mass Tryout Access",
-    ],
-    popular: false,
-  },
-];
-
 const testimonials = [
   {
     name: "Sarah Wijaya",
@@ -116,13 +74,77 @@ const testimonials = [
     rating: 5,
   },
 ];
+
+
+
 const appName = getAppName();
 const primaryColor = getThemePrimary();
 const appTagline = getAppTagline();
 
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  type: string;
+  is_active: boolean;
+  packages?: Array<{
+    id: number;
+    name: string;
+    type: string;
+  }>;
+  package?: {
+    id: number;
+    name: string;
+    type: string;
+  };
+}
+
 export default function LandingPage() {
   useHashNavigation();
-  
+  const { user } = useAuthStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await packageService.getPublicProducts();
+
+        // Combine bundles and regular products
+        const allProducts = [
+          ...response.data.bundles.map(b => ({
+            id: b.id,
+            name: b.name,
+            price: b.price,
+            type: b.type,
+            is_active: b.is_active,
+            packages: b.packages,
+          })),
+          ...response.data.regular.map(r => ({
+            id: r.id,
+            name: r.name,
+            price: r.price,
+            type: r.type,
+            is_active: r.is_active,
+            package: r.package,
+          })),
+        ];
+
+        setProducts(allProducts);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load products");
+        console.error("Error fetching products:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -141,7 +163,7 @@ export default function LandingPage() {
               <span className="text-gradient">{appName}</span>
             </h1>
             <p className="animate-slide-up stagger-1 mb-8 text-lg text-muted-foreground md:text-xl">
-             Persiapkan ujian masuk perguruan tinggi dengan latihan cerdas, analitik mendalam, dan materi komprehensif.
+              Persiapkan ujian masuk perguruan tinggi dengan latihan cerdas, analitik mendalam, dan materi komprehensif.
             </p>
             <div className="animate-slide-up stagger-2 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button size="xl" variant="hero" asChild>
@@ -210,48 +232,73 @@ export default function LandingPage() {
               Mudah, Harga <span className="text-primary">Terjangkau</span>
             </h2>
             <p className="text-lg text-muted-foreground">
-             Pilih paket yang sesuai dengan kebutuhan belajarmu dan mulai perjalanan sukses akademikmu hari ini.
+              Pilih paket yang sesuai dengan kebutuhan belajarmu dan mulai perjalanan sukses akademikmu hari ini.
             </p>
           </div>
-          <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
-            {pricingPlans.map((plan) => (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl border-2 bg-card p-6 transition-all hover-lift ${
-                  plan.popular ? "border-primary shadow-lg" : "border-border"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-sm font-medium text-primary-foreground">
-                    Most Popular
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <p className="text-muted-foreground">Loading packages...</p>
+            </div>
+          ) : error ? (
+            <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-center">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : products.length > 0 ? (
+            <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {products.slice(0, 3).map((product) => {
+                const packageInfo = product.packages?.[0] || product.package;
+                const typeLabel = packageInfo?.type || product.type;
+                const linkTo = user ? "/dashboard/packages" : "/register";
+
+                return (
+                  <div
+                    key={product.id}
+                    className="relative rounded-2xl border-2 border-border bg-card p-6 transition-all hover-lift"
+                  >
+                    <div className="mb-6">
+                      <h3 className="text-xl font-semibold">{product.name}</h3>
+                      <p className="text-sm text-muted-foreground capitalize">{typeLabel}</p>
+                    </div>
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold">
+                        Rp {product.price.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="mb-6 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                        <span className="text-sm">
+                          {product.packages ? `${product.packages.length} packages included` : "Single package"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                        <span className="text-sm">Access untuk belajar</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                        <span className="text-sm">Analitik pembelajaran</span>
+                      </div>
+                    </div>
+                    <Button
+                      className="w-full"
+                      variant="default"
+                      asChild
+                    >
+                      <Link to={linkTo}>
+                        {user ? "Lihat Paket" : "Daftar Sekarang"}
+                      </Link>
+                    </Button>
                   </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
-                </div>
-                <ul className="mb-6 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
-                  asChild
-                >
-                  <Link to="/register">Get Started</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">No packages available at the moment</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -263,7 +310,7 @@ export default function LandingPage() {
               Apa kata <span className="text-primary">Mereka</span>
             </h2>
             <p className="text-lg text-muted-foreground">
-             bergabung dengan ribuan pelajar yang telah sukses bersama AlphaNext
+              bergabung dengan ribuan pelajar yang telah sukses bersama AlphaNext
             </p>
           </div>
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
@@ -291,18 +338,26 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+            
+
+
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="gradient-primary py-20">
+      <section className="gradient-primary py-20"
+        style={{
+          backgroundImage: "url('/BackropAlphaNext_LandingPage.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="mb-4 text-3xl font-bold text-primary-foreground md:text-4xl">
             Siap Memulai Perjalananmu?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-lg text-primary-foreground/80">
-            Bergabung dengan ribuan pelajar yang telah sukses bersama AlphaNext. 
+            Bergabung dengan ribuan pelajar yang telah sukses bersama AlphaNext.
             Mulai uji coba gratis hari ini.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

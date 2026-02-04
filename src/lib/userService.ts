@@ -57,6 +57,47 @@ export interface GetUsersParams {
   page?: number;
 }
 
+export interface PackageItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+  is_active: boolean;
+  type: 'bundle' | 'single';
+  // For bundles
+  packages?: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    pivot: {
+      sort_order: number;
+    };
+  }>;
+  // For single packages
+  package?: {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+  };
+}
+
+export interface PromoItem {
+  id: string;
+  code: string;
+  status: string;
+  // other fields as needed
+}
+
+export interface DashboardResponse {
+  success: boolean;
+  data: {
+    bundles: PackageItem[];
+    regular: PackageItem[];
+    promos: PromoItem[];
+  };
+}
+
 const getAuthHeader = () => {
   const token = useAuthStore.getState().token;
   return {
@@ -182,6 +223,80 @@ export const userService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to delete user");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Get User Dashboard
+   * GET /api/user/dashboard
+   */
+  async getDashboard(): Promise<DashboardResponse> {
+    const response = await fetch(`${getApiUrl()}/user/dashboard`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${useAuthStore.getState().token}`,
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch dashboard");
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Get User Statistics Dashboard
+   * GET /api/user/statistics-dashboard
+   */
+  async getStatisticsDashboard(): Promise<{
+    success: boolean;
+    data: {
+      summary: {
+        active_packages: number;
+        in_progress_attempts: number;
+        completed_practices: number;
+        completed_tryouts: number;
+        average_score_percent: number;
+        current_rank: number;
+        study_time_minutes: number;
+      };
+      learning_progress: {
+        practice_questions_percent: number;
+        tryout_completion_percent: number;
+        materials_studied_percent: number;
+      };
+      active_packages: Array<{
+        package_id: number;
+        name: string;
+        type: string;
+        expires_at: string | null;
+        status: string;
+      }>;
+      recent_activity: Array<{
+        attempt_id: number;
+        package_id: number;
+        package_name: string;
+        package_type: string;
+        score_percent: number;
+        correct_count: number;
+        total_questions: number;
+        submitted_at: string;
+      }>;
+    };
+  }> {
+    const response = await fetch(`${getApiUrl()}/user/statistics-dashboard`, {
+      method: "GET",
+      headers: getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch statistics dashboard");
     }
 
     return await response.json();
