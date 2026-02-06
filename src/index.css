@@ -62,7 +62,7 @@
     --gradient-primary: linear-gradient(135deg, hsl(201, 97%, 52%) 0%, hsl(201, 97%, 45%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(201, 97%, 97%) 0%, hsl(0, 0%, 100%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%) 0%, hsl(150, 30%, 98%) 100%);
-    
+
     --shadow-sm: 0 1px 2px 0 hsl(150 10% 10% / 0.05);
     --shadow-md: 0 4px 6px -1px hsl(150 10% 10% / 0.1), 0 2px 4px -2px hsl(150 10% 10% / 0.1);
     --shadow-lg: 0 10px 15px -3px hsl(150 10% 10% / 0.1), 0 4px 6px -4px hsl(150 10% 10% / 0.1);
@@ -107,6 +107,10 @@
     --sidebar-accent-foreground: 201 97% 80%;
     --sidebar-border: 150 15% 18%;
     --sidebar-ring: 201 97% 60%;
+  }
+  .theme {
+    --animate-marquee: marquee var(--duration) infinite linear;
+    --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
   }
 }
 
@@ -200,4 +204,32 @@
   .stagger-3 { animation-delay: 0.3s; }
   .stagger-4 { animation-delay: 0.4s; }
   .stagger-5 { animation-delay: 0.5s; }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@theme inline {
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
 }

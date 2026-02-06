@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, ChevronLeft, ChevronRight, Check, X, Home, Loader2 } from "lucide-react";
+import { Clock, ChevronLeft, ChevronRight, Check, X, Home, Loader2, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   attemptService,
@@ -35,6 +35,7 @@ export default function PracticeSession() {
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Submit response data
   const [submitResponse, setSubmitResponse] = useState<{
@@ -272,6 +273,7 @@ export default function PracticeSession() {
 
   const handleNavigateToQuestion = async (index: number) => {
     await fetchQuestion(index + 1);
+    setIsSidebarOpen(false); // Close sidebar on mobile after navigation
   };
 
   const handleFinish = useCallback(async () => {
@@ -437,6 +439,14 @@ export default function PracticeSession() {
               <ChevronLeft className="mr-1 h-4 w-4" />
               Exit
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
             <Clock className="h-4 w-4 text-primary" />
@@ -452,6 +462,14 @@ export default function PracticeSession() {
         </div>
         <Progress value={progress} className="h-1 rounded-none" />
       </header>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-foreground/20 backdrop-blur-sm lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       <div className="flex">
         {/* Question */}
@@ -539,7 +557,12 @@ export default function PracticeSession() {
         </main>
 
         {/* Right Sidebar Navigation */}
-        <aside className="sticky top-16 w-36 border-l bg-card p-4 h-[calc(100vh-4rem)] overflow-y-auto">
+        <aside
+          className={cn(
+            "fixed right-0 top-16 z-50 h-[calc(100vh-4rem)] w-36 border-l bg-card p-4 overflow-y-auto lg:sticky lg:top-16 lg:z-auto",
+            isSidebarOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+          )}
+        >
           <h3 className="mb-4 font-semibold text-xs text-center">
             Q ({attemptSummary.progress.done}/{attemptSummary.progress.total})
           </h3>

@@ -530,7 +530,192 @@ DELETE /options/2
 
 ---
 
-## 5. PACKAGE QUESTIONS API
+## 5. PROMO CODES API
+
+### GET /promo-codes
+**List semua promo codes**
+
+**Request:**
+```
+GET /promo-codes?search={query}&is_active={true/false}&page={page}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "1",
+      "code": "WELCOME20",
+      "type": "percent",
+      "value": 20,
+      "max_uses": 100,
+      "used_count": 45,
+      "starts_at": "2024-01-01T00:00:00Z",
+      "ends_at": "2024-12-31T23:59:59Z",
+      "is_active": true,
+      "status": "active",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "pages": 5
+  }
+}
+```
+
+### POST /promo-codes
+**Create promo code baru**
+
+**Request:**
+```json
+{
+  "code": "SAVE50",
+  "type": "percent",
+  "value": 50,
+  "max_uses": 200,
+  "starts_at": "2024-01-01T00:00:00Z",
+  "ends_at": "2024-12-31T23:59:59Z",
+  "is_active": true
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "2",
+    "code": "SAVE50",
+    "type": "percent",
+    "value": 50,
+    "max_uses": 200,
+    "used_count": 0,
+    "starts_at": "2024-01-01T00:00:00Z",
+    "ends_at": "2024-12-31T23:59:59Z",
+    "is_active": true,
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+### GET /promo-codes/{id}
+**Get detail promo code**
+
+**Request:**
+```
+GET /promo-codes/1
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "1",
+    "code": "WELCOME20",
+    "type": "percent",
+    "value": 20,
+    "max_uses": 100,
+    "used_count": 45,
+    "starts_at": "2024-01-01T00:00:00Z",
+    "ends_at": "2024-12-31T23:59:59Z",
+    "is_active": true,
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+### PATCH /promo-codes/{id}
+**Update promo code**
+
+**Request:**
+```json
+{
+  "value": 25,
+  "max_uses": 150
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "1",
+    "code": "WELCOME20",
+    "type": "percent",
+    "value": 25,
+    "max_uses": 150,
+    "used_count": 45,
+    "starts_at": "2024-01-01T00:00:00Z",
+    "ends_at": "2024-12-31T23:59:59Z",
+    "is_active": true,
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-02T00:00:00Z"
+  }
+}
+```
+
+### DELETE /promo-codes/{id}
+**Delete promo code**
+
+**Request:**
+```
+DELETE /promo-codes/1
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": null
+}
+```
+
+### POST /promo/validate
+**Validate promo code**
+
+**Request:**
+```json
+{
+  "code": "WELCOME20",
+  "amount": 100000
+}
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "discount": 20000,
+    "final_amount": 80000
+  }
+}
+```
+
+**Response (400):**
+```json
+{
+  "success": false,
+  "message": "Invalid promo code"
+}
+```
+
+---
+
+## 6. PACKAGE QUESTIONS API
 
 ### GET /packages/{package_id}/questions
 **List soal dalam paket**

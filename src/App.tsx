@@ -7,6 +7,7 @@ import { useAuthStore } from "@/stores/authStore";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
+import PackagesPage from "./pages/PackagesPage";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import NotFound from "./pages/NotFound";
@@ -17,6 +18,7 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminQuestions from "./pages/admin/AdminQuestions";
 import AdminPackages from "./pages/admin/AdminPackages";
 import AdminVouchers from "./pages/admin/AdminVouchers";
+import AdminPromoCodes from "./pages/admin/AdminPromoCodes";
 import AdminMaterials from "./pages/admin/AdminMaterials";
 import AdminTryouts from "./pages/admin/AdminTryouts";
 import AdminRankings from "./pages/admin/AdminRankings";
@@ -33,6 +35,7 @@ import PracticeSession from "./pages/PracticeSession";
 import UserTest from "./pages/user/UserTest";
 import UserRankings from "./pages/user/UserRankings";
 import AdminProfile from "./pages/admin/AdminProfile";
+import UserCheckout from "./pages/user/UserCheckout";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +63,7 @@ const App = () => (
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/packages" element={<PackagesPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
@@ -71,6 +75,7 @@ const App = () => (
           <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
           <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
           <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
+          <Route path="/admin/promo-codes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPromoCodes /></ProtectedRoute>} />
           <Route path="/admin/vouchers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminVouchers /></ProtectedRoute>} />
           <Route path="/admin/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMaterials /></ProtectedRoute>} />
           <Route path="/admin/tryouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTryouts /></ProtectedRoute>} />
@@ -80,7 +85,8 @@ const App = () => (
           {/* User Routes */}
           <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/packages" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
-          <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
+         <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
+          <Route path="/dashboard/checkout" element={<ProtectedRoute allowedRoles={["user"]}><UserCheckout /></ProtectedRoute>} />
           <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
           <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/rankings" element={<ProtectedRoute allowedRoles={["user"]}><UserRankings /></ProtectedRoute>} />

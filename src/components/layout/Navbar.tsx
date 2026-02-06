@@ -36,6 +36,12 @@ export function Navbar() {
               Features
             </Link>
             <Link
+              to="/packages"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Paket
+            </Link>
+            <Link
               to="/#pricing"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
@@ -53,8 +59,10 @@ export function Navbar() {
           <div className="hidden items-center gap-3 md:flex">
             {isAuthenticated ? (
               <>
-                <Button variant="ghost" asChild>
-                  <Link to={dashboardLink}>Dashboard</Link>
+                <Button variant="outline" asChild>
+                  <Link to={dashboardLink}>
+                    {user?.role === "admin" ? "Admin Panel" : "Dashboard"}
+                  </Link>
                 </Button>
                 <Button variant="outline" onClick={logout}>
                   Logout
@@ -62,7 +70,7 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button variant="ghost" asChild>
+                <Button variant="outline" asChild>
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button asChild>
@@ -100,6 +108,13 @@ export function Navbar() {
             Features
           </Link>
           <Link
+            to="/packages"
+            className="text-sm font-medium text-muted-foreground"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Paket
+          </Link>
+          <Link
             to="/#pricing"
             className="text-sm font-medium text-muted-foreground"
             onClick={() => setIsMobileMenuOpen(false)}
@@ -107,18 +122,18 @@ export function Navbar() {
             Pricing
           </Link>
           <Link
-            to="/#about"
+            to="/#testimonial"
             className="text-sm font-medium text-muted-foreground"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            About
+            Testimonial
           </Link>
           <hr className="border-border" />
           {isAuthenticated ? (
             <>
               <Button variant="ghost" asChild className="justify-start">
                 <Link to={dashboardLink} onClick={() => setIsMobileMenuOpen(false)}>
-                  Dashboard
+                  {user?.role === "admin" ? "Admin Panel" : "Dashboard"}
                 </Link>
               </Button>
               <Button
@@ -140,7 +155,7 @@ export function Navbar() {
               </Button>
               <Button asChild>
                 <Link to="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                  Get Started
+                  Mulai Sekarang!
                 </Link>
               </Button>
             </>

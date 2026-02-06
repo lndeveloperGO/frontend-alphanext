@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthStore } from "@/stores/authStore";
+import { getAppName, getThemePrimary } from "@/lib/env";
+import { authService } from "@/lib/authService";
+const appName = getAppName();
 import {
   ChevronLeft,
   ChevronRight,
@@ -31,13 +34,13 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Questions", href: "/admin/questions", icon: FileQuestion },
-  { title: "Packages", href: "/admin/packages", icon: Package },
   { title: "Categories", href: "/admin/categories", icon: Tag },
+  { title: "Promo Codes", href: "/admin/promo-codes", icon: Ticket },
+  { title: "Packages", href: "/admin/packages", icon: Package },
+  { title: "Questions", href: "/admin/questions", icon: FileQuestion },
+  { title: "Users", href: "/admin/users", icon: Users },
   { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
   { title: "Materials", href: "/admin/materials", icon: BookOpen },
-  { title: "Tryouts", href: "/admin/tryouts", icon: ClipboardList },
   { title: "Rankings", href: "/admin/rankings", icon: Trophy },
   { title: "My Profile", href: "/admin/profile", icon: User },
 ];
@@ -49,9 +52,9 @@ const userNavItems: NavItem[] = [
   { title: "Tryouts", href: "/dashboard/tryouts", icon: ClipboardList },
   { title: "Materials", href: "/dashboard/materials", icon: BookOpen },
   { title: "My Profile", href: "/dashboard/profile", icon: User },
-  { title: "Test Page", href: "/dashboard/test", icon: FileQuestion },
+  // { title: "Test Page", href: "/dashboard/test", icon: FileQuestion },
   // { title: "History", href: "/dashboard/history", icon: BookOpen },
-  { title: "Rankings", href: "/dashboard/rankings", icon: Trophy },
+  // { title: "Rankings", href: "/dashboard/rankings", icon: Trophy },
 ];
 
 interface DashboardLayoutProps {
@@ -63,12 +66,22 @@ export function DashboardLayout({ children, type }: DashboardLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout, token } = useAuthStore();
 
   const navItems = type === "admin" ? adminNavItems : userNavItems;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    const result = await authService.logout();
+    if (result.success) {
+      logout();
+      navigate("/");
+    } else {
+      console.error("Logout failed:", result.error);
+      // Fallback: logout locally even if API call fails
+      logout();
+      navigate("/");
+    }
   };
 
   return (
@@ -77,9 +90,13 @@ export function DashboardLayout({ children, type }: DashboardLayoutProps) {
       <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b bg-card px-4 lg:hidden">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <BookOpen className="h-5 w-5 text-primary-foreground" />
+            <img
+              src="/logoAlphanext.jpg"
+              alt={appName}
+              className="h-9 w-9 rounded-xl"
+            />
           </div>
-          <span className="font-bold text-primary">EduLearn</span>
+          <span className="font-bold text-primary">{appName}</span>
         </Link>
         <Button
           variant="ghost"
@@ -112,10 +129,14 @@ export function DashboardLayout({ children, type }: DashboardLayoutProps) {
             <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
               <Link to="/" className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <BookOpen className="h-5 w-5 text-primary-foreground" />
+                  <img
+                    src="/logoAlphanext.jpg"
+                    alt={appName}
+                    className="h-9 w-9 rounded-xl"
+                  />
                 </div>
                 {!isCollapsed && (
-                  <span className="font-bold text-sidebar-foreground">EduLearn</span>
+                  <span className="font-bold text-sidebar-foreground">{appName}</span>
                 )}
               </Link>
               <Button

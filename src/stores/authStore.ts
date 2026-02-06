@@ -20,6 +20,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  setUser: (user: User) => void;
 }
 
 // Mock users for demo (fallback jika API tidak tersedia)
@@ -124,6 +125,10 @@ export const useAuthStore = create<AuthState>()(
       
       logout: () => {
         set({ user: null, isAuthenticated: false });
+      },
+
+      setUser: (user: User) => {
+        set({ user });
       },
     }),
     {

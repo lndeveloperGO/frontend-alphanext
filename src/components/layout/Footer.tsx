@@ -14,12 +14,16 @@ export function Footer() {
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
+                <img
+                  src="/logoAlphanext.jpg"
+                  alt={appName}
+                  className="h-9 w-9 rounded-xl"
+                />
               </div>
               <span className="text-xl font-bold">{appName}</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-             {appTagline}
+              {appTagline}
             </p>
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-primary">

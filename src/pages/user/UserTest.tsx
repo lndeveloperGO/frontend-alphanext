@@ -1,4 +1,5 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PromoCodeInput } from "@/components/PromoCodeInput";
 
 export default function UserTest() {
   return (
