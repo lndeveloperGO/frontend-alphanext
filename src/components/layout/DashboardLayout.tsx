@@ -53,6 +53,7 @@ const userNavItems: NavItem[] = [
   { title: "My Packages", href: "/dashboard/packages", icon: Package },
   { title: "Orders", href: "/dashboard/user/orders", icon: FileQuestion },
   { title: "Tryouts", href: "/dashboard/tryouts", icon: ClipboardList },
+  { title: "Tryout Akbar", href: "/dashboard/tryout-akbar", icon: Trophy },
   { title: "Materials", href: "/dashboard/materials", icon: BookOpen },
   { title: "Profile", href: "/dashboard/profile", icon: User },
   // { title: "Test Page", href: "/dashboard/test", icon: FileQuestion },

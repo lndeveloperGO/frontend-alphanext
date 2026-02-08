@@ -55,6 +55,7 @@ interface FormData {
   type: ProductType;
   name: string;
   price: number;
+  access_days: number | ""; // Hari, default 30 jika dikosongkan
   is_active: boolean;
   package_id?: number; // For single
   packages?: ProductPackage[]; // For bundle
@@ -64,6 +65,7 @@ const emptyFormData: FormData = {
   type: "single",
   name: "",
   price: 0,
+  access_days: "",
   is_active: true,
   package_id: undefined,
   packages: [],
@@ -122,6 +124,7 @@ export default function AdminProducts() {
         type: product.type,
         name: product.name,
         price: product.price,
+        access_days: product.access_days ?? "",
         is_active: product.is_active,
         package_id: product.package_id,
         packages: product.packages || [],
@@ -223,6 +226,7 @@ export default function AdminProducts() {
     try {
       setSubmitting(true);
 
+      const accessDaysValue = formData.access_days === "" ? undefined : Number(formData.access_days);
       const payload: CreateProductInput =
         formData.type === "single"
           ? {
@@ -230,12 +234,14 @@ export default function AdminProducts() {
               name: formData.name,
               package_id: formData.package_id!,
               price: formData.price,
+              access_days: accessDaysValue,
               is_active: formData.is_active,
             }
           : {
               type: "bundle",
               name: formData.name,
               price: formData.price,
+              access_days: accessDaysValue,
               is_active: formData.is_active,
               packages: formData.packages!,
             };
@@ -344,6 +350,7 @@ export default function AdminProducts() {
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-center">Masa Aktif</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Details</TableHead>
                       <TableHead className="w-24 text-right">Actions</TableHead>
@@ -361,6 +368,9 @@ export default function AdminProducts() {
                         </TableCell>
                         <TableCell className="text-right font-semibold">
                           Rp {product.price.toLocaleString("id-ID")}
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {product.access_days != null ? `${product.access_days} hari` : "30 hari"}
                         </TableCell>
                         <TableCell>
                           <Badge variant={product.is_active ? "outline" : "destructive"}>
@@ -475,6 +485,29 @@ export default function AdminProducts() {
                 disabled={submitting}
                 min="1"
               />
+            </div>
+
+            {/* Access Days */}
+            <div className="space-y-2">
+              <Label htmlFor="access_days">Masa Aktif (Hari)</Label>
+              <Input
+                id="access_days"
+                type="number"
+                placeholder="30"
+                value={formData.access_days === "" ? "" : formData.access_days}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setFormData({
+                    ...formData,
+                    access_days: v === "" ? "" : Math.max(1, parseInt(v, 10) || 1),
+                  });
+                }}
+                disabled={submitting}
+                min="1"
+              />
+              <p className="text-xs text-muted-foreground">
+                Default 30 hari jika dikosongkan. Masa akses user setelah order dibayar.
+              </p>
             </div>
 
             {/* Single Product Package Selection */}

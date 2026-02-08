@@ -274,8 +274,11 @@ export const userService = {
         package_id: number;
         name: string;
         type: string;
-        expires_at: string | null;
-        status: string;
+        category_id: number;
+        starts_at: string | null;
+        ends_at: string | null;
+        status: "active" | "expired";
+        is_free: boolean;
       }>;
       recent_activity: Array<{
         attempt_id: number;

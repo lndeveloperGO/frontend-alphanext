@@ -31,14 +31,18 @@ import BulkQuestionImport from "./pages/admin/BulkQuestionImport";
 import UserDashboard from "./pages/user/UserDashboard";
 import UserPackages from "./pages/user/UserPackages";
 import UserPractice from "./pages/user/UserPractice";
+import UserTryoutAkbar from "./pages/user/UserTryoutAkbar";
 import UserProfile from "./pages/user/UserProfile";
 import PracticeSession from "./pages/PracticeSession";
+import LockdownPracticeSession from "./pages/LockdownPracticeSession";
 import UserTest from "./pages/user/UserTest";
 import UserRankings from "./pages/user/UserRankings";
 import AdminProfile from "./pages/admin/AdminProfile";
 import UserCheckout from "./pages/user/UserCheckout";
 import AdminOrders from "./pages/admin/AdminOrders";
 import UserOrders from "./pages/user/UserOrders";
+
+
 
 const queryClient = new QueryClient();
 
@@ -92,6 +96,7 @@ const App = () => (
           <Route path="/dashboard/packages" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
           <Route path="/dashboard/user/orders" element={<ProtectedRoute allowedRoles={["user"]}><UserOrders /></ProtectedRoute>} />
           <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
+          <Route path="/dashboard/tryout-akbar" element={<ProtectedRoute allowedRoles={["user"]}><UserTryoutAkbar /></ProtectedRoute>} />
           <Route path="/dashboard/checkout" element={<ProtectedRoute allowedRoles={["user"]}><UserCheckout /></ProtectedRoute>} />
           <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
           <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
@@ -101,6 +106,7 @@ const App = () => (
 
           {/* Practice Session */}
           <Route path="/practice" element={<ProtectedRoute><PracticeSession /></ProtectedRoute>} />
+          <Route path="/lockdown-practice" element={<LockdownPracticeSession />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />

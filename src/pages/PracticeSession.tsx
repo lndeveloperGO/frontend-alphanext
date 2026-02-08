@@ -1,12 +1,35 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, ChevronLeft, ChevronRight, Check, X, Home, Loader2, Menu } from "lucide-react";
+import { 
+  Clock, 
+  ChevronLeft, 
+  ChevronRight, 
+  Check, 
+  X, 
+  Home, 
+  Loader2, 
+  Menu,
+  Save,
+  AlertCircle,
+  BookmarkCheck,
+  Keyboard
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   attemptService,
   type AttemptSummary,
@@ -17,6 +40,11 @@ interface NavigationItem {
   question_id: number;
   done: boolean;
   marked: boolean;
+}
+
+// Question cache type
+interface QuestionCache {
+  [questionNo: number]: QuestionData;
 }
 
 export default function PracticeSession() {
@@ -36,6 +64,10 @@ export default function PracticeSession() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [navigating, setNavigating] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   
   // Submit response data
   const [submitResponse, setSubmitResponse] = useState<{
@@ -55,6 +87,14 @@ export default function PracticeSession() {
   const [tempAnswers, setTempAnswers] = useState<Record<number, number>>({});
   // Temporary marked status (key: question_id, value: is_marked)
   const [tempMarked, setTempMarked] = useState<Record<number, boolean>>({});
+  
+  // NEW: Question cache for faster navigation
+  const [questionCache, setQuestionCache] = useState<QuestionCache>({});
+  
+  // NEW: Auto-save state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedAnswerRef = useRef<Record<number, number>>({});
 
   // Redirect if no attemptId
   useEffect(() => {
@@ -104,9 +144,24 @@ export default function PracticeSession() {
     }
   };
 
-  // Fetch specific question
-  const fetchQuestion = async (questionNo: number) => {
+  // NEW: Fetch specific question with caching
+  const fetchQuestion = async (questionNo: number, skipCache = false) => {
     try {
+      setNavigating(true);
+      
+      // Check cache first (unless skipCache is true)
+      if (!skipCache && questionCache[questionNo]) {
+        const cachedQuestion = questionCache[questionNo];
+        setCurrentQuestion(cachedQuestion);
+        setTimeLeft(cachedQuestion.remaining_seconds);
+        setCurrentIndex(questionNo - 1);
+        setNavigating(false);
+        
+        // Prefetch next question in background
+        prefetchQuestion(questionNo + 1);
+        return;
+      }
+
       const response = await attemptService.getQuestion(attemptId, questionNo);
 
       if (!response.success) {
@@ -119,12 +174,22 @@ export default function PracticeSession() {
       if (question.status !== "in_progress") {
         setIsFinished(true);
         setShowResults(true);
+        setNavigating(false);
         return;
       }
+
+      // Update cache
+      setQuestionCache(prev => ({
+        ...prev,
+        [questionNo]: question
+      }));
 
       setCurrentQuestion(question);
       setTimeLeft(question.remaining_seconds);
       setCurrentIndex(questionNo - 1);
+      
+      // Prefetch next question in background
+      prefetchQuestion(questionNo + 1);
     } catch (error) {
       console.error("Error fetching question:", error);
       toast({
@@ -132,6 +197,28 @@ export default function PracticeSession() {
         description: "Failed to load question",
         variant: "destructive",
       });
+    } finally {
+      setNavigating(false);
+    }
+  };
+
+  // NEW: Prefetch question for faster navigation
+  const prefetchQuestion = async (questionNo: number) => {
+    if (!attemptSummary) return;
+    if (questionNo < 1 || questionNo > attemptSummary.progress.total) return;
+    if (questionCache[questionNo]) return; // Already cached
+
+    try {
+      const response = await attemptService.getQuestion(attemptId, questionNo);
+      if (response.success) {
+        setQuestionCache(prev => ({
+          ...prev,
+          [questionNo]: response.data
+        }));
+      }
+    } catch (error) {
+      // Silent fail for prefetch
+      console.debug("Prefetch failed for question", questionNo);
     }
   };
 
@@ -163,18 +250,86 @@ export default function PracticeSession() {
     if (!currentQuestion) return;
     if (currentQuestion.status !== "in_progress") return;
 
+    const questionId = currentQuestion.question_id;
+    const questionNo = currentQuestion.no;
+
     // Save answer to temporary storage (not sent to API yet)
     setTempAnswers((prev) => ({
       ...prev,
-      [currentQuestion.question_id]: optionId,
+      [questionId]: optionId,
     }));
 
-    // Update local question state for UI
-    setCurrentQuestion({
+    // Update local question state for UI (optimistic update)
+    const updatedQuestion = {
       ...currentQuestion,
       selected_option_id: optionId,
-    });
+    };
+    setCurrentQuestion(updatedQuestion);
+    
+    // Update cache
+    setQuestionCache(prev => ({
+      ...prev,
+      [questionNo]: updatedQuestion
+    }));
+
+    // Trigger auto-save
+    scheduleAutoSave(questionId, optionId);
   };
+
+  // NEW: Auto-save with debounce
+  const scheduleAutoSave = (questionId: number, optionId: number) => {
+    // Clear existing timer
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    setAutoSaveStatus('idle');
+
+    // Set new timer (2 seconds debounce)
+    autoSaveTimerRef.current = setTimeout(async () => {
+      // Check if answer has changed since last save
+      if (lastSavedAnswerRef.current[questionId] === optionId) {
+        return;
+      }
+
+      setAutoSaveStatus('saving');
+      
+      try {
+        await attemptService.submitAnswer(attemptId, questionId, optionId);
+        lastSavedAnswerRef.current[questionId] = optionId;
+        setAutoSaveStatus('saved');
+        
+        // Update navigation status
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.question_id === questionId ? { ...q, done: true } : q
+          )
+        );
+
+        // Clear saved status after 2 seconds
+        setTimeout(() => {
+          setAutoSaveStatus('idle');
+        }, 2000);
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+        setAutoSaveStatus('error');
+        
+        // Keep error status visible for 3 seconds
+        setTimeout(() => {
+          setAutoSaveStatus('idle');
+        }, 3000);
+      }
+    }, 2000);
+  };
+
+  // Cleanup auto-save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   // Submit answers and marked status to API for current question
   const submitCurrentQuestionToAPI = async () => {
@@ -229,51 +384,75 @@ export default function PracticeSession() {
     }
   };
 
-  const handleMark = () => {
+  const handleMark = async () => {
     if (!currentQuestion) return;
 
+    const questionId = currentQuestion.question_id;
+    const questionNo = currentQuestion.no;
     const isNowMarked = !currentQuestion.is_marked;
 
-    // Save marked status to temporary storage
-    setTempMarked((prev) => ({
-      ...prev,
-      [currentQuestion.question_id]: isNowMarked,
-    }));
-
-    // Update local question state for UI
-    setCurrentQuestion({
+    // Optimistic update
+    const updatedQuestion = {
       ...currentQuestion,
       is_marked: isNowMarked,
-    });
+    };
+    setCurrentQuestion(updatedQuestion);
+    
+    // Update cache
+    setQuestionCache(prev => ({
+      ...prev,
+      [questionNo]: updatedQuestion
+    }));
+
+    // Update navigation
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.question_id === questionId ? { ...q, marked: isNowMarked } : q
+      )
+    );
 
     toast({
-      description: isNowMarked
-        ? "Question marked"
-        : "Question unmarked",
+      description: isNowMarked ? "Soal ditandai" : "Tanda dihapus",
     });
+
+    // Submit to API in background
+    try {
+      await attemptService.markQuestion(attemptId, questionId);
+    } catch (error) {
+      console.error("Failed to mark question:", error);
+      // Revert on error
+      setCurrentQuestion(currentQuestion);
+      setQuestionCache(prev => ({
+        ...prev,
+        [questionNo]: currentQuestion
+      }));
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.question_id === questionId ? { ...q, marked: !isNowMarked } : q
+        )
+      );
+      toast({
+        title: "Error",
+        description: "Gagal menandai soal",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleNext = async () => {
     if (!questions || currentIndex >= questions.length - 1) return;
-    
-    // Submit current question to API before moving to next
-    await submitCurrentQuestionToAPI();
-    
     await fetchQuestion(currentIndex + 2);
   };
 
   const handlePrev = async () => {
     if (currentIndex <= 0) return;
-    
-    // Submit current question to API before moving to previous
-    await submitCurrentQuestionToAPI();
-    
     await fetchQuestion(currentIndex);
   };
 
   const handleNavigateToQuestion = async (index: number) => {
+    if (index === currentIndex) return;
     await fetchQuestion(index + 1);
-    setIsSidebarOpen(false); // Close sidebar on mobile after navigation
+    setIsSidebarOpen(false);
   };
 
   const handleFinish = useCallback(async () => {
@@ -282,33 +461,106 @@ export default function PracticeSession() {
     try {
       setSubmitting(true);
       
-      // Submit current question to API before finishing
-      await submitCurrentQuestionToAPI();
+      // Force save any pending changes
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+      
+      // Submit any unsaved answers
+      const unsavedQuestions = Object.keys(tempAnswers).filter(
+        qId => lastSavedAnswerRef.current[parseInt(qId)] !== tempAnswers[parseInt(qId)]
+      );
+      
+      for (const qId of unsavedQuestions) {
+        try {
+          await attemptService.submitAnswer(
+            attemptId,
+            parseInt(qId),
+            tempAnswers[parseInt(qId)]
+          );
+        } catch (error) {
+          console.error(`Failed to save answer for question ${qId}:`, error);
+        }
+      }
       
       const response = await attemptService.submitAttempt(attemptId);
 
       if (response.success) {
-        // Store submit response data
         setSubmitResponse(response.data);
         setIsFinished(true);
         setShowResults(true);
+        setShowFinishDialog(false);
       }
     } catch (error) {
       console.error("Error submitting attempt:", error);
       toast({
         title: "Error",
-        description: "Failed to submit attempt",
+        description: "Gagal mengirim jawaban",
         variant: "destructive",
       });
     } finally {
       setSubmitting(false);
     }
-  }, [attemptId, submitting, currentQuestion, tempAnswers, tempMarked]);
+  }, [attemptId, submitting, tempAnswers]);
+
+  // NEW: Keyboard shortcuts
+  useEffect(() => {
+    if (isFinished || !currentQuestion) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          if (currentIndex > 0) handlePrev();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          if (currentIndex < questions.length - 1) handleNext();
+          break;
+        case 'm':
+        case 'M':
+          e.preventDefault();
+          handleMark();
+          break;
+        case '?':
+          e.preventDefault();
+          setShowKeyboardHelp(true);
+          break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+          e.preventDefault();
+          const optionIndex = parseInt(e.key) - 1;
+          if (currentQuestion.options[optionIndex]) {
+            handleAnswer(currentQuestion.options[optionIndex].id);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentQuestion, currentIndex, questions.length, isFinished]);
+
+  // NEW: Calculate statistics
+  const answeredCount = questions.filter(q => q.done).length;
+  const markedCount = questions.filter(q => q.marked).length;
+  const unansweredCount = questions.length - answeredCount;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Memuat sesi latihan...</p>
+        </div>
       </div>
     );
   }
@@ -427,17 +679,110 @@ export default function PracticeSession() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Keluar dari Latihan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Progress Anda akan tersimpan. Anda dapat melanjutkan latihan nanti.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate("/dashboard")}>
+              Ya, Keluar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Finish Confirmation Dialog */}
+      <AlertDialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Selesaikan Latihan?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Anda akan menyelesaikan latihan dengan status:</p>
+              <div className="grid grid-cols-3 gap-2 my-3">
+                <div className="text-center p-2 bg-green-50 rounded">
+                  <div className="text-2xl font-bold text-green-600">{answeredCount}</div>
+                  <div className="text-xs text-muted-foreground">Terjawab</div>
+                </div>
+                <div className="text-center p-2 bg-red-50 rounded">
+                  <div className="text-2xl font-bold text-red-600">{unansweredCount}</div>
+                  <div className="text-xs text-muted-foreground">Belum</div>
+                </div>
+                <div className="text-center p-2 bg-yellow-50 rounded">
+                  <div className="text-2xl font-bold text-yellow-600">{markedCount}</div>
+                  <div className="text-xs text-muted-foreground">Ditandai</div>
+                </div>
+              </div>
+              <p className="text-sm">Setelah selesai, Anda tidak dapat mengubah jawaban.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleFinish} disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Mengirim...
+                </>
+              ) : (
+                "Ya, Selesaikan"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Keyboard Help Dialog */}
+      <AlertDialog open={showKeyboardHelp} onOpenChange={setShowKeyboardHelp}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Keyboard className="h-5 w-5" />
+              Pintasan Keyboard
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-foreground">← →</span>
+                  <span>Navigasi soal</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-foreground">1-5</span>
+                  <span>Pilih jawaban A-E</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-foreground">M</span>
+                  <span>Tandai soal</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-foreground">?</span>
+                  <span>Tampilkan bantuan ini</span>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Mengerti</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card">
+      <header className="sticky top-0 z-50 border-b bg-card shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => setShowExitDialog(true)}
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
-              Exit
+              Keluar
             </Button>
             <Button
               variant="ghost"
@@ -447,20 +792,64 @@ export default function PracticeSession() {
             >
               <Menu className="h-4 w-4" />
             </Button>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
-            <Clock className="h-4 w-4 text-primary" />
-            <span
-              className={cn(
-                "font-mono font-semibold",
-                timeLeft < 60 && "text-destructive"
-              )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowKeyboardHelp(true)}
+              title="Pintasan Keyboard (?)"
             >
-              {formatTime(timeLeft)}
-            </span>
+              <Keyboard className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Auto-save indicator */}
+            {autoSaveStatus !== 'idle' && (
+              <div className="flex items-center gap-1.5 text-xs">
+                {autoSaveStatus === 'saving' && (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+                    <span className="text-blue-500">Menyimpan...</span>
+                  </>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <>
+                    <Check className="h-3 w-3 text-green-500" />
+                    <span className="text-green-500">Tersimpan</span>
+                  </>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <>
+                    <AlertCircle className="h-3 w-3 text-red-500" />
+                    <span className="text-red-500">Gagal</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Timer */}
+            <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
+              <Clock className="h-4 w-4 text-primary" />
+              <span
+                className={cn(
+                  "font-mono font-semibold",
+                  timeLeft < 60 && "text-destructive animate-pulse"
+                )}
+              >
+                {formatTime(timeLeft)}
+              </span>
+            </div>
           </div>
         </div>
-        <Progress value={progress} className="h-1 rounded-none" />
+
+        {/* Progress bar with stats */}
+        <div className="px-4 pb-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+            <span>Progress: {answeredCount}/{questions.length} soal</span>
+            <span>{Math.round(progress)}%</span>
+          </div>
+          <Progress value={progress} className="h-2" />
+        </div>
       </header>
 
       {/* Mobile Sidebar Backdrop */}
@@ -473,42 +862,98 @@ export default function PracticeSession() {
 
       <div className="flex">
         {/* Question */}
-        <main className="flex-1 px-4 py-8">
-          <div className="mb-6 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Question {currentIndex + 1} of {attemptSummary.progress.total}
-            </span>
+        <main className="flex-1 px-4 py-8 max-w-4xl mx-auto">
+          {/* Question Header with Stats */}
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="text-sm">
+                Soal {currentIndex + 1} dari {attemptSummary.progress.total}
+              </Badge>
+              {currentQuestion.is_marked && (
+                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                  ⚑ Ditandai
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2 text-xs">
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                ✓ {answeredCount} Terjawab
+              </Badge>
+              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                ✗ {unansweredCount} Belum
+              </Badge>
+              {markedCount > 0 && (
+                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                  ⚑ {markedCount} Ditandai
+                </Badge>
+              )}
+            </div>
           </div>
 
-          <Card className="mb-6">
-            <CardContent className="py-6">
-              <p className="text-lg font-medium">{currentQuestion.question}</p>
-            </CardContent>
-          </Card>
+          {/* Question Card with Loading State */}
+          {navigating ? (
+            <Card className="mb-6 animate-pulse">
+              <CardContent className="py-6">
+                <div className="h-6 bg-muted rounded w-3/4 mb-3"></div>
+                <div className="h-6 bg-muted rounded w-full"></div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="mb-6 border-2 shadow-sm">
+              <CardContent className="py-6">
+                <p className="text-lg font-medium leading-relaxed">{currentQuestion.question}</p>
+              </CardContent>
+            </Card>
+          )}
 
-          <div className="mb-8 space-y-3">
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option.id}
-                onClick={() => handleAnswer(option.id)}
-                disabled={currentQuestion.status !== "in_progress"}
-                className={cn(
-                  "w-full rounded-lg border-2 p-4 text-left transition-all",
-                  currentQuestion.status === "in_progress" &&
-                    "hover:border-primary cursor-pointer",
-                  currentQuestion.selected_option_id === option.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border",
-                  currentQuestion.status !== "in_progress" && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <span className="mr-3 inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                  {option.label}
-                </span>
-                {option.text}
-              </button>
-            ))}
-          </div>
+          {/* Options with Loading State */}
+          {navigating ? (
+            <div className="mb-8 space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="w-full rounded-lg border-2 p-4 animate-pulse">
+                  <div className="h-5 bg-muted rounded w-full"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mb-8 space-y-3">
+              {currentQuestion.options.map((option, idx) => (
+                <button
+                  key={option.id}
+                  onClick={() => handleAnswer(option.id)}
+                  disabled={currentQuestion.status !== "in_progress"}
+                  className={cn(
+                    "w-full rounded-lg border-2 p-4 text-left transition-all relative group",
+                    currentQuestion.status === "in_progress" &&
+                      "hover:border-primary hover:shadow-md cursor-pointer",
+                    currentQuestion.selected_option_id === option.id
+                      ? "border-primary bg-primary/10 shadow-md"
+                      : "border-border hover:bg-muted/50",
+                    currentQuestion.status !== "in_progress" && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className={cn(
+                      "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors",
+                      currentQuestion.selected_option_id === option.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground group-hover:bg-primary/20"
+                    )}>
+                      {option.label}
+                    </span>
+                    <span className="flex-1 pt-0.5">{option.text}</span>
+                    {currentQuestion.selected_option_id === option.id && (
+                      <Check className="flex-shrink-0 h-5 w-5 text-primary" />
+                    )}
+                  </div>
+                  {/* Keyboard hint */}
+                  <span className="absolute top-2 right-2 text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                    Tekan {idx + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex items-center justify-between">
@@ -516,41 +961,42 @@ export default function PracticeSession() {
               <Button
                 variant="outline"
                 onClick={handlePrev}
-                disabled={currentIndex === 0}
+                disabled={currentIndex === 0 || navigating}
               >
                 <ChevronLeft className="mr-1 h-4 w-4" />
-                Previous
+                Sebelumnya
               </Button>
               <Button
                 variant="outline"
                 onClick={handleMark}
-                className={cn(currentQuestion.is_marked && "bg-warning/10")}
+                className={cn(currentQuestion.is_marked && "bg-yellow-100 border-yellow-400")}
               >
-                {currentQuestion.is_marked ? "Marked" : "Mark"}
+                {currentQuestion.is_marked ? "Ditandai ⚑" : "Tandai"}
               </Button>
             </div>
 
             {currentIndex === attemptSummary.progress.total - 1 ? (
               <Button
-                onClick={handleFinish}
+                onClick={() => setShowFinishDialog(true)}
                 disabled={submitting}
+                className="bg-green-600 hover:bg-green-700"
               >
-                {submitting ? (
+                Selesaikan
+                <Check className="ml-1 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={handleNext} disabled={navigating}>
+                {navigating ? (
                   <>
                     <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                    Submitting...
+                    Loading...
                   </>
                 ) : (
                   <>
-                    Finish
-                    <Check className="ml-1 h-4 w-4" />
+                    Selanjutnya
+                    <ChevronRight className="ml-1 h-4 w-4" />
                   </>
                 )}
-              </Button>
-            ) : (
-              <Button onClick={handleNext}>
-                Next
-                <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             )}
           </div>

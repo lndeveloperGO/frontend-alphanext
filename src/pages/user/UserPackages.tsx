@@ -1,27 +1,50 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { purchases, packages } from "@/data/mockData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Package, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, Package, Loader2, AlertCircle, Play } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { userService, PackageItem, PromoItem } from "@/lib/userService";
 import { useCheckoutStore } from "@/stores/checkoutStore";
+import { attemptService } from "@/lib/attemptService";
+import { format, parseISO } from "date-fns";
+import { id } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+
+interface ActivePackage {
+  package_id: number;
+  name: string;
+  type: string;
+  category_id: number;
+  starts_at: string | null;
+  ends_at: string | null;
+  status: "active" | "expired";
+  is_free: boolean;
+}
+
+function formatEndsAt(isoDate: string | null): string {
+  if (!isoDate) return "Tanpa batas";
+  try {
+    return format(parseISO(isoDate), "d MMM yyyy", { locale: id });
+  } catch {
+    return isoDate;
+  }
+}
 
 export default function UserPackages() {
   const [bundles, setBundles] = useState<PackageItem[]>([]);
   const [regular, setRegular] = useState<PackageItem[]>([]);
   const [promos, setPromos] = useState<PromoItem[]>([]);
+  const [activePackages, setActivePackages] = useState<ActivePackage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startingPackageId, setStartingPackageId] = useState<number | null>(null);
 
   const navigate = useNavigate();
   const { setSelectedPackage } = useCheckoutStore();
-
-  const userPurchases = purchases.filter(p => p.userId === "2");
-  const availablePackages = packages.filter(p => p.isActive);
+  const { toast } = useToast();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -31,17 +54,42 @@ export default function UserPackages() {
     }).format(price);
   };
 
+  const handleStartAttempt = async (packageId: number) => {
+    try {
+      setStartingPackageId(packageId);
+      const response = await attemptService.startAttempt(packageId);
+      if (response.success) {
+        navigate(`/practice?attemptId=${response.data.attempt_id}`);
+      }
+    } catch (err) {
+      toast({
+        title: "Gagal memulai",
+        description: err instanceof Error ? err.message : "Tidak dapat memulai attempt",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingPackageId(null);
+    }
+  };
+
   useEffect(() => {
-    const fetchDashboard = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await userService.getDashboard();
-        if (response.success) {
-          setBundles(response.data.bundles.filter(b => b.is_active));
-          setRegular(response.data.regular.filter(r => r.is_active));
-          console.log(response.data.regular.filter(r => r.is_active));
-          setPromos(response.data.promos.filter(p => p.status === 'active'));
+        
+        // Fetch dashboard data (bundles, regular packages, promos)
+        const dashboardResponse = await userService.getDashboard();
+        if (dashboardResponse.success) {
+          setBundles(dashboardResponse.data.bundles.filter(b => b.is_active));
+          setRegular(dashboardResponse.data.regular.filter(r => r.is_active));
+          setPromos(dashboardResponse.data.promos.filter(p => p.status === 'active'));
+        }
+
+        // Fetch user's active packages from statistics dashboard
+        const statsResponse = await userService.getStatisticsDashboard();
+        if (statsResponse.success) {
+          setActivePackages(statsResponse.data.active_packages);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load packages');
@@ -50,7 +98,7 @@ export default function UserPackages() {
       }
     };
 
-    fetchDashboard();
+    fetchData();
   }, []);
 
   const handleSelectPackage = (product: PackageItem) => {
@@ -67,47 +115,98 @@ export default function UserPackages() {
           <p className="text-muted-foreground">View your purchased packages and explore more</p>
         </div>
 
-        {/* Purchased Packages */}
+        {/* Active Subscriptions - User's Purchased Packages */}
         <section>
           <h2 className="mb-4 text-lg font-semibold">Active Subscriptions</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {userPurchases.map((purchase) => {
-              const pkg = packages.find(p => p.id === purchase.packageId);
-              return (
-                <Card key={purchase.id} className="relative overflow-hidden">
-                  <div className="absolute right-0 top-0 rounded-bl-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                    Active
-                  </div>
-                  <CardHeader>
-                     <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
-                      <img src={`https://picsum.photos/1024/1024?random=${purchase.id}`} alt="package" className="h-full w-full object-cover" />
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">Loading your packages...</span>
+            </div>
+          ) : activePackages.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {activePackages.map((pkg) => {
+                const isActive = pkg.status === "active";
+                return (
+                  <Card key={pkg.package_id} className="relative overflow-hidden">
+                    <div className={`absolute right-0 top-0 rounded-bl-lg px-3 py-1 text-xs font-medium text-primary-foreground ${
+                      isActive ? "bg-green-600" : "bg-red-600"
+                    }`}>
+                      {isActive ? "Active" : "Expired"}
                     </div>
-                    <CardTitle className="mt-4">{purchase.packageName}</CardTitle>
-                    <CardDescription>{pkg?.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Purchase Date</span>
-                        <span>{purchase.purchaseDate}</span>
+                    <CardHeader>
+                      <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
+                        <img 
+                          src={`https://picsum.photos/1024/1024?random=${pkg.package_id}`} 
+                          alt={pkg.name} 
+                          className="h-full w-full object-cover" 
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Expiry Date</span>
-                        <span>{purchase.expiryDate}</span>
+                      <CardTitle className="mt-4">{pkg.name}</CardTitle>
+                      <CardDescription>
+                        <Badge variant="outline" className="mt-2">
+                          {pkg.type}
+                        </Badge>
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        {pkg.starts_at && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Mulai</span>
+                            <span>{formatEndsAt(pkg.starts_at)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            {pkg.ends_at ? "Berakhir" : "Masa Aktif"}
+                          </span>
+                          <span>{formatEndsAt(pkg.ends_at)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Status</span>
+                          <Badge 
+                            variant={isActive ? "default" : "destructive"}
+                            className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
+                          >
+                            {isActive ? "Aktif" : "Kadaluarsa"}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Questions</span>
-                        <span>{pkg?.questionCount}</span>
-                      </div>
-                    </div>
-                    <Button className="mt-4 w-full" variant="outline">
-                      Start Practice
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                      <Button 
+                        className="mt-4 w-full" 
+                        variant={isActive ? "default" : "outline"}
+                        disabled={!isActive || startingPackageId !== null}
+                        onClick={() => handleStartAttempt(pkg.package_id)}
+                      >
+                        {startingPackageId === pkg.package_id ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Memulai...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="mr-2 h-4 w-4" />
+                            {isActive ? "Mulai Latihan" : "Tidak Tersedia"}
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Package className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-lg font-medium mb-2">Belum Ada Paket Aktif</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Anda belum memiliki paket berlangganan. Pilih paket di bawah untuk memulai.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </section>
 
         {/* Loading State */}
@@ -167,8 +266,6 @@ export default function UserPackages() {
                   </CardContent>
                 </Card>
               ))}
-
-
             </div>
           </section>
         )}
@@ -199,72 +296,6 @@ export default function UserPackages() {
                   </CardContent>
                 </Card>
               ))}
-
-            </div>
-          </section>
-        )}
-
-        {/* Promo Codes */}
-        {/* {!loading && !error && promos.length > 0 && (
-          <section>
-            <h2 className="mb-4 text-lg font-semibold">Kode Promo Tersedia</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {promos.map((promo) => (
-                <Card key={promo.id}>
-                  <CardHeader>
-                    <Badge variant="secondary">Tersedia</Badge>
-                    <CardTitle className="mt-2 font-mono">{promo.code}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Kode promo ini dapat digunakan saat checkout.
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )} */}
-
-        {/* Available Packages (Fallback) */}
-        {!loading && !error && bundles.length === 0 && regular.length === 0 && (
-          <section>
-            <h2 className="mb-4 text-lg font-semibold">Available Packages</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {availablePackages.map((pkg) => {
-                const isPurchased = userPurchases.some(p => p.packageId === pkg.id);
-                return (
-                  <Card key={pkg.id} className={isPurchased ? "opacity-60" : ""}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <Badge variant="outline">{pkg.type}</Badge>
-                        {isPurchased && (
-                          <Badge variant="default">Owned</Badge>
-                        )}
-                      </div>
-                      <CardTitle className="mt-2">{pkg.name}</CardTitle>
-                      <CardDescription>{pkg.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="mb-4">
-                        <span className="text-3xl font-bold">{formatPrice(pkg.price)}</span>
-                        <span className="text-muted-foreground">/{pkg.duration} days</span>
-                      </div>
-                      <ul className="mb-4 space-y-2">
-                        {pkg.features.map((feature, index) => (
-                          <li key={index} className="flex items-center gap-2 text-sm">
-                            <CheckCircle2 className="h-4 w-4 text-primary" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                      <Button className="w-full" disabled={isPurchased}>
-                        {isPurchased ? "Already Owned" : "Purchase"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })}
             </div>
           </section>
         )}

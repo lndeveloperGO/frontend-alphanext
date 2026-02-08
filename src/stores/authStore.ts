@@ -99,32 +99,29 @@ export const useAuthStore = create<AuthState>()(
             return { success: false, error: error.message || 'Registration failed' };
           }
 
-          const data = await response.json();
-          set({ user: data.user, isAuthenticated: true });
+          // Registrasi berhasil — tidak auto-login; user harus login di halaman login
           return { success: true };
         } catch (error) {
           // Fallback to mock data jika API tidak tersedia
           if (mockUsers.find(u => u.email === email)) {
             return { success: false, error: 'Email already registered' };
           }
-          
-          const newUser: User = {
+          // Mock: hanya simulasikan akun terbuat, tidak set state login
+          const newUser = {
             id: String(mockUsers.length + 1),
             name,
             email,
-            role: 'user',
+            role: 'user' as const,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
             createdAt: new Date().toISOString(),
           };
-          
           mockUsers.push({ ...newUser, password });
-          set({ user: newUser, isAuthenticated: true });
           return { success: true };
         }
       },
       
       logout: () => {
-        set({ user: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false });
       },
 
       setUser: (user: User) => {

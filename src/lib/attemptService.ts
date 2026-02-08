@@ -81,22 +81,56 @@ export interface MarkResponse {
 export interface SubmitResponse {
   success: boolean;
   data: {
+    attempt_id: number;
     status: "submitted";
+    submitted_at: string;
     total_score: number;
+    summary: {
+      total_questions: number;
+      answered: number;
+      unanswered: number;
+      progress_percent: number;
+    };
   };
 }
 
 export interface AttemptHistory {
   id: number;
-  status: "submitted" | "expired";
+  package_id: number;
+  status: "in_progress" | "submitted" | "expired";
+  started_at: string;
+  ends_at: string;
+  submitted_at: string | null;
   total_score: number;
-  [key: string]: any;
+  package: {
+    id: number;
+    name: string;
+    type: "latihan" | "tryout" | "akbar";
+    category_id: number;
+  };
 }
 
 export interface AttemptHistoryResponse {
   success: boolean;
   data: {
+    current_page: number;
     data: AttemptHistory[];
+    first_page_url: string;
+    from: number;
+    last_page: number;
+    last_page_url: string;
+    links: Array<{
+      url: string | null;
+      label: string;
+      page: number | null;
+      active: boolean;
+    }>;
+    next_page_url: string | null;
+    path: string;
+    per_page: number;
+    prev_page_url: string | null;
+    to: number;
+    total: number;
   };
 }
 

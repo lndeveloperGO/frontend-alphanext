@@ -16,6 +16,7 @@ export interface Product {
   type: ProductType;
   name: string;
   price: number;
+  access_days?: number; // Masa aktif akses (hari), default 30
   is_active: boolean;
   package_id?: number; // For single products
   packages?: ProductPackage[]; // For bundle products
@@ -28,6 +29,7 @@ export interface CreateSingleProductInput {
   name: string;
   package_id: number;
   price: number;
+  access_days?: number; // default 30 jika tidak dikirim
   is_active?: boolean;
 }
 
@@ -35,6 +37,7 @@ export interface CreateBundleProductInput {
   type: "bundle";
   name: string;
   price: number;
+  access_days?: number; // default 30 jika tidak dikirim
   is_active?: boolean;
   packages: ProductPackage[];
 }
@@ -46,6 +49,7 @@ export interface UpdateSingleProductInput {
   name?: string;
   package_id?: number;
   price?: number;
+  access_days?: number;
   is_active?: boolean;
 }
 
@@ -53,6 +57,7 @@ export interface UpdateBundleProductInput {
   type?: "bundle";
   name?: string;
   price?: number;
+  access_days?: number;
   is_active?: boolean;
   packages?: ProductPackage[];
 }
@@ -126,6 +131,23 @@ export const productService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to update product");
+    }
+
+    const data = await response.json();
+    return data.data.data || data.data || data;
+  },
+
+  // Update access_days only (PATCH)
+  async updateProductAccessDays(id: number, access_days: number): Promise<Product> {
+    const response = await fetch(`${getApiUrl()}/admin/products/${id}`, {
+      method: "PATCH",
+      headers: getAuthHeader(),
+      body: JSON.stringify({ access_days }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to update access days");
     }
 
     const data = await response.json();
