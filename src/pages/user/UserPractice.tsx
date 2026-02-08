@@ -4,35 +4,29 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Clock, ArrowRight, Loader2 } from "lucide-react";
-import { getApiBaseUrl } from "@/lib/env";
-import { useAuthStore } from "@/stores/authStore";
+import { Brain, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { userService } from "@/lib/userService";
 import { attemptService } from "@/lib/attemptService";
 import { useToast } from "@/hooks/use-toast";
 
 interface Package {
-  id: number;
+  package_id: number;
   name: string;
   type: string;
   category_id: number;
-  duration_seconds: number;
-  is_active: number;
-  created_at: string;
-  updated_at: string;
-  questions_count: number;
-  category: {
-    id: number;
-    name: string;
-  };
+  is_free: boolean;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
 }
 
 export default function UserPractice() {
   const navigate = useNavigate();
-  const { token } = useAuthStore();
   const { toast } = useToast();
   const [packages, setPackages] = useState<Package[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingAttempt, setStartingAttempt] = useState<number | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   useEffect(() => {
     fetchPackages();
@@ -41,20 +35,8 @@ export default function UserPractice() {
   const fetchPackages = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${getApiBaseUrl()}/catalog/packages`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch packages");
-      }
-
-      const result = await response.json();
-      // API returns paginated data with structure: { success, data: { data: [...] } }
-      const packagesData = result.data?.data || [];
-      setPackages(packagesData);
+      const response = await userService.getUserPackages();
+      setPackages(response.data);
     } catch (error) {
       console.error("Error fetching packages:", error);
       toast({
@@ -67,33 +49,32 @@ export default function UserPractice() {
     }
   };
 
-  const categoryColors: Record<string, string> = {
-    "Demo Category": "bg-indigo-100 text-indigo-700",
-    "Matematika": "bg-blue-100 text-blue-700",
-    "Sains": "bg-green-100 text-green-700",
-    "Geografi": "bg-yellow-100 text-yellow-700",
-    "Sejarah": "bg-purple-100 text-purple-700",
-    "Sastra": "bg-pink-100 text-pink-700",
-  };
-
-  const getCategoryColor = (categoryName: string): string => {
-    return categoryColors[categoryName] || "bg-gray-100 text-gray-700";
-  };
-
   const getTypeLabel = (type: string): string => {
-    return type === "tryout" ? "Tryout" : "Practice";
+    return type === "tryout" ? "Tryout" : "Latihan";
   };
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.ceil(seconds / 60);
-    return `${minutes} min`;
+  const getFilteredPackages = (): Package[] => {
+    if (selectedType === "all") {
+      return packages;
+    }
+    return packages.filter((pkg) => pkg.type === selectedType);
+  };
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return "No expiry date";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   const startPractice = async (packageId: number) => {
     try {
       setStartingAttempt(packageId);
       const response = await attemptService.startAttempt(packageId);
-      
+
       if (response.success) {
         navigate(`/practice?attemptId=${response.data.attempt_id}`);
       }
@@ -118,8 +99,32 @@ export default function UserPractice() {
           <p className="text-muted-foreground">Choose a package to start practicing</p>
         </div>
 
+        {/* Filter by Type */}
+        {!loading && packages.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant={selectedType === "all" ? "default" : "outline"}
+              onClick={() => setSelectedType("all")}
+            >
+              All
+            </Button>
+            <Button
+              variant={selectedType === "latihan" ? "default" : "outline"}
+              onClick={() => setSelectedType("latihan")}
+            >
+              Practice
+            </Button>
+            <Button
+              variant={selectedType === "tryout" ? "default" : "outline"}
+              onClick={() => setSelectedType("tryout")}
+            >
+              Tryout
+            </Button>
+          </div>
+        )}
+
         {/* Quick Start */}
-        {packages.length > 0 && (
+        {getFilteredPackages().length > 0 && (
           <Card className="gradient-primary text-primary-foreground">
             <CardContent className="flex items-center justify-between py-6">
               <div className="flex items-center gap-4">
@@ -136,10 +141,10 @@ export default function UserPractice() {
               <Button
                 variant="hero-outline"
                 size="lg"
-                onClick={() => startPractice(packages[0].id)}
+                onClick={() => startPractice(getFilteredPackages()[0].package_id)}
                 disabled={startingAttempt !== null}
               >
-                {startingAttempt === packages[0].id ? (
+                {startingAttempt === getFilteredPackages()[0].package_id ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Starting...
@@ -163,48 +168,50 @@ export default function UserPractice() {
         )}
 
         {/* Packages Grid */}
-        {!loading && packages.length > 0 && (
+        {!loading && getFilteredPackages().length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {packages.map((pkg) => (
+            {getFilteredPackages().map((pkg) => (
               <Card
-                key={pkg.id}
+                key={pkg.package_id}
                 className={`transition-all ${
                   startingAttempt === null
                     ? "hover-lift cursor-pointer hover:shadow-lg"
                     : "cursor-not-allowed opacity-50"
                 }`}
-                onClick={() => startingAttempt === null && startPractice(pkg.id)}
+                onClick={() => startingAttempt === null && startPractice(pkg.package_id)}
               >
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <Badge className={getCategoryColor(pkg.category.name)}>
-                      {pkg.category.name}
-                    </Badge>
-                    {pkg.is_active ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge className={pkg.is_free ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}>
+                        {pkg.is_free ? "Free" : "Paid"}
+                      </Badge>
+                    </div>
+                    {pkg.status === "active" ? (
                       <Badge className="bg-success/10 text-success">Active</Badge>
                     ) : (
-                      <Badge className="bg-destructive/10 text-destructive">Inactive</Badge>
+                      <Badge className="bg-destructive/10 text-destructive">{pkg.status}</Badge>
                     )}
                   </div>
                   <CardTitle className="mt-2">{pkg.name}</CardTitle>
                   <CardDescription>
-                    {pkg.questions_count} {pkg.questions_count === 1 ? "question" : "questions"}
+                    Type: {getTypeLabel(pkg.type)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{formatDuration(pkg.duration_seconds)}</span>
-                    </div>
-                    {startingAttempt === pkg.id && (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <div className="space-y-3">
+                    {pkg.ends_at && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>Expires: {formatDate(pkg.ends_at)}</span>
                       </div>
                     )}
-                  </div>
-                  <div className="mt-3 text-xs text-muted-foreground">
-                    <p>Type: {getTypeLabel(pkg.type)}</p>
+                    {startingAttempt === pkg.package_id && (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-sm">Starting...</span>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -213,10 +220,14 @@ export default function UserPractice() {
         )}
 
         {/* Empty State */}
-        {!loading && packages.length === 0 && (
+        {!loading && getFilteredPackages().length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No packages available yet</p>
+              <p className="text-muted-foreground">
+                {packages.length === 0
+                  ? "No packages available yet"
+                  : `No ${selectedType === "all" ? "" : selectedType} packages available`}
+              </p>
             </CardContent>
           </Card>
         )}

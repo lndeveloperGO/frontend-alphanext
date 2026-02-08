@@ -67,12 +67,14 @@ export default function AdminPackages() {
     category_id: number;
     duration_seconds: number;
     is_active: boolean;
+    is_free: boolean;
   }>({
     name: "",
     type: "latihan",
     category_id: 0,
     duration_seconds: 0,
     is_active: true,
+    is_free: false,
   });
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -112,6 +114,7 @@ export default function AdminPackages() {
         category_id: categories.length > 0 ? categories[0].id : 0,
         duration_seconds: 0,
         is_active: true,
+        is_free: false,
       });
     } else if (mode === "edit" && pkg) {
       setSelectedPackage(pkg);
@@ -121,6 +124,7 @@ export default function AdminPackages() {
         category_id: pkg.category_id,
         duration_seconds: pkg.duration_seconds,
         is_active: pkg.is_active,
+        is_free: pkg.is_free,
       });
     }
     setDialogOpen(true);
@@ -136,6 +140,7 @@ export default function AdminPackages() {
       category_id: categories.length > 0 ? categories[0].id : 0,
       duration_seconds: 0,
       is_active: true,
+      is_free: false,
     });
   };
 
@@ -296,6 +301,8 @@ export default function AdminPackages() {
                       <TableHead>Type</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead>Duration</TableHead>
+                      <TableHead>Questions</TableHead>
+                      <TableHead>Free</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-32 text-right">Actions</TableHead>
                     </TableRow>
@@ -310,8 +317,14 @@ export default function AdminPackages() {
                             {pkg.type}
                           </Badge>
                         </TableCell>
-                        <TableCell>{getCategoryName(pkg.category_id)}</TableCell>
+                        <TableCell>{pkg.category?.name || getCategoryName(pkg.category_id)}</TableCell>
                         <TableCell>{formatDuration(pkg.duration_seconds)}</TableCell>
+                        <TableCell className="text-center">{pkg.questions_count}</TableCell>
+                        <TableCell>
+                          <Badge variant={pkg.is_free ? "secondary" : "outline"}>
+                            {pkg.is_free ? "Free" : "Paid"}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={pkg.is_active ? "default" : "secondary"}>
                             {pkg.is_active ? "Active" : "Inactive"}
@@ -453,6 +466,18 @@ export default function AdminPackages() {
                 disabled={submitting}
               />
               <Label htmlFor="is_active">Active</Label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Switch
+                id="is_free"
+                checked={formData.is_free}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, is_free: checked })
+                }
+                disabled={submitting}
+              />
+              <Label htmlFor="is_free">Free Package</Label>
             </div>
           </div>
 

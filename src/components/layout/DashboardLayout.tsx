@@ -24,6 +24,7 @@ import {
   X,
   User,
   Tag,
+  ShoppingCart,
 } from "lucide-react";
 
 interface NavItem {
@@ -35,26 +36,28 @@ interface NavItem {
 const adminNavItems: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { title: "Categories", href: "/admin/categories", icon: Tag },
+  { title: "Products", href: "/admin/products", icon: ShoppingCart },
   { title: "Promo Codes", href: "/admin/promo-codes", icon: Ticket },
   { title: "Packages", href: "/admin/packages", icon: Package },
   { title: "Questions", href: "/admin/questions", icon: FileQuestion },
   { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
+  { title: "Orders", href: "/admin/orders", icon: FileQuestion },
+  // { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
   { title: "Materials", href: "/admin/materials", icon: BookOpen },
-  { title: "Rankings", href: "/admin/rankings", icon: Trophy },
-  { title: "My Profile", href: "/admin/profile", icon: User },
+  // { title: "Rankings", href: "/admin/rankings", icon: Trophy },
+  { title: "Profile", href: "/admin/profile", icon: User },
 ];
 
 const userNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "My Packages", href: "/dashboard/packages", icon: Package },
-  // { title: "Practice", href: "/dashboard/practice", icon: FileQuestion },
+  { title: "Orders", href: "/dashboard/user/orders", icon: FileQuestion },
   { title: "Tryouts", href: "/dashboard/tryouts", icon: ClipboardList },
   { title: "Materials", href: "/dashboard/materials", icon: BookOpen },
-  { title: "My Profile", href: "/dashboard/profile", icon: User },
+  { title: "Profile", href: "/dashboard/profile", icon: User },
   // { title: "Test Page", href: "/dashboard/test", icon: FileQuestion },
   // { title: "History", href: "/dashboard/history", icon: BookOpen },
-  // { title: "Rankings", href: "/dashboard/rankings", icon: Trophy },
+   { title: "Rankings", href: "/dashboard/rankings", icon: Trophy },
 ];
 
 interface DashboardLayoutProps {

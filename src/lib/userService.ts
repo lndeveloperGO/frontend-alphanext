@@ -301,4 +301,34 @@ export const userService = {
 
     return await response.json();
   },
+
+  /**
+   * Get User Purchased Packages
+   * GET /api/user/packages
+   */
+  async getUserPackages(): Promise<{
+    success: boolean;
+    data: Array<{
+      package_id: number;
+      name: string;
+      type: string;
+      category_id: number;
+      is_free: boolean;
+      status: string;
+      starts_at: string | null;
+      ends_at: string | null;
+    }>;
+  }> {
+    const response = await fetch(`${getApiUrl()}/user/packages`, {
+      method: "GET",
+      headers: getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to fetch user packages");
+    }
+
+    return await response.json();
+  },
 };

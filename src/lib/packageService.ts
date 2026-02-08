@@ -13,8 +13,10 @@ export interface Package {
   category?: Category;
   duration_seconds: number;
   is_active: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  is_free: boolean;
+  questions_count: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface CreatePackageInput {
@@ -23,6 +25,7 @@ export interface CreatePackageInput {
   category_id: number;
   duration_seconds: number;
   is_active?: boolean;
+  is_free?: boolean;
 }
 
 export interface UpdatePackageInput {
@@ -31,6 +34,7 @@ export interface UpdatePackageInput {
   category_id?: number;
   duration_seconds?: number;
   is_active?: boolean;
+  is_free?: boolean;
 }
 
 export interface PackageQuestion {
