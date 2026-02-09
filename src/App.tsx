@@ -30,6 +30,8 @@ import BulkQuestionImport from "./pages/admin/BulkQuestionImport";
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
 import UserPackages from "./pages/user/UserPackages";
+import UserMaterials from "./pages/user/UserMaterials";
+import MaterialDetail from "./pages/user/MaterialDetail";
 import UserPractice from "./pages/user/UserPractice";
 import UserTryoutAkbar from "./pages/user/UserTryoutAkbar";
 import UserProfile from "./pages/user/UserProfile";
@@ -98,7 +100,8 @@ const App = () => (
           <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
           <Route path="/dashboard/tryout-akbar" element={<ProtectedRoute allowedRoles={["user"]}><UserTryoutAkbar /></ProtectedRoute>} />
           <Route path="/dashboard/checkout" element={<ProtectedRoute allowedRoles={["user"]}><UserCheckout /></ProtectedRoute>} />
-          <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
+          <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserMaterials /></ProtectedRoute>} />
+          <Route path="/dashboard/materials/:id" element={<ProtectedRoute allowedRoles={["user"]}><MaterialDetail /></ProtectedRoute>} />
           <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/rankings" element={<ProtectedRoute allowedRoles={["user"]}><UserRankings /></ProtectedRoute>} />
           <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><UserProfile /></ProtectedRoute>} />
