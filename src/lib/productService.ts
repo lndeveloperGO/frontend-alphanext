@@ -11,6 +11,28 @@ export interface ProductPackage {
   sort_order: number;
 }
 
+export interface ProductPackageWithPivot {
+  id: number;
+  name: string;
+  type: string;
+  category_id: number;
+  pivot: {
+    product_id: number;
+    package_id: number;
+    qty: number;
+    sort_order: number;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+export interface ProductPackageSingle {
+  id: number;
+  name: string;
+  type: string;
+  category_id: number;
+}
+
 export interface Product {
   id: number;
   type: ProductType;
@@ -19,7 +41,9 @@ export interface Product {
   access_days?: number; // Masa aktif akses (hari), default 30
   is_active: boolean;
   package_id?: number; // For single products
-  packages?: ProductPackage[]; // For bundle products
+  package?: ProductPackageSingle; // For single products
+  packages?: ProductPackageWithPivot[]; // For bundle products
+  material_ids?: string[]; // Attached materials for premium access
   created_at?: string;
   updated_at?: string;
 }
@@ -31,6 +55,7 @@ export interface CreateSingleProductInput {
   price: number;
   access_days?: number; // default 30 jika tidak dikirim
   is_active?: boolean;
+  material_ids?: string[]; // Attached materials for premium access
 }
 
 export interface CreateBundleProductInput {
@@ -40,6 +65,7 @@ export interface CreateBundleProductInput {
   access_days?: number; // default 30 jika tidak dikirim
   is_active?: boolean;
   packages: ProductPackage[];
+  material_ids?: string[]; // Attached materials for premium access
 }
 
 export type CreateProductInput = CreateSingleProductInput | CreateBundleProductInput;

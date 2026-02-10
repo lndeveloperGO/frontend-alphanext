@@ -48,6 +48,7 @@ import { Loader2, Trash2, Pencil, Plus, Trash, ChevronDown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { productService, Product, ProductType, ProductPackage, CreateProductInput } from "@/lib/productService";
 import { packageService, Package } from "@/lib/packageService";
+import { materialService, Material } from "@/lib/materialService";
 
 type DialogMode = "create" | "edit" | null;
 
@@ -59,6 +60,7 @@ interface FormData {
   is_active: boolean;
   package_id?: number; // For single
   packages?: ProductPackage[]; // For bundle
+  selectedMaterialIds: string[]; // Attached materials
 }
 
 const emptyFormData: FormData = {
@@ -69,11 +71,13 @@ const emptyFormData: FormData = {
   is_active: true,
   package_id: undefined,
   packages: [],
+  selectedMaterialIds: [],
 };
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [packages, setPackages] = useState<Package[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -96,12 +100,14 @@ export default function AdminProducts() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [productsData, packagesData] = await Promise.all([
+      const [productsData, packagesData, materialsData] = await Promise.all([
         productService.getProducts(),
         packageService.getPackages(),
+        materialService.getAdminMaterials(),
       ]);
       setProducts(productsData);
       setPackages(packagesData);
+      setMaterials(materialsData.data || []);
     } catch (error) {
       toast({
         title: "Error",
@@ -127,7 +133,14 @@ export default function AdminProducts() {
         access_days: product.access_days ?? "",
         is_active: product.is_active,
         package_id: product.package_id,
-        packages: product.packages || [],
+        packages: product.type === "bundle"
+          ? product.packages?.map(pkg => ({
+              package_id: pkg.pivot.package_id,
+              qty: pkg.pivot.qty,
+              sort_order: pkg.pivot.sort_order,
+            })) || []
+          : [],
+        selectedMaterialIds: [], // TODO: Load from product if available
       });
     }
     setDialogOpen(true);
@@ -236,6 +249,7 @@ export default function AdminProducts() {
               price: formData.price,
               access_days: accessDaysValue,
               is_active: formData.is_active,
+              material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
             }
           : {
               type: "bundle",
@@ -244,6 +258,7 @@ export default function AdminProducts() {
               access_days: accessDaysValue,
               is_active: formData.is_active,
               packages: formData.packages!,
+              material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
             };
 
       if (dialogMode === "create") {
@@ -631,6 +646,93 @@ export default function AdminProducts() {
                 </div>
               </div>
             )}
+
+            {/* Material Selection */}
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+              <div className="space-y-3">
+                <Label>Attached Materials (Premium Access)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Select materials that users will get access to when they purchase this product.
+                  Materials will automatically be set as premium (is_free=false).
+                </p>
+
+                {/* Add Material Section */}
+                <div className="space-y-2 p-3 bg-background rounded border">
+                  <Label htmlFor="product-material" className="text-sm">
+                    Add Material
+                  </Label>
+                  <Select
+                    value=""
+                    onValueChange={(value) => {
+                      if (!formData.selectedMaterialIds.includes(value)) {
+                        setFormData({
+                          ...formData,
+                          selectedMaterialIds: [...formData.selectedMaterialIds, value],
+                        });
+                      }
+                    }}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger id="product-material">
+                      <SelectValue placeholder="Select material to attach..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {materials
+                        .filter(material => !formData.selectedMaterialIds.includes(material.id.toString()))
+                        .map((material) => (
+                          <SelectItem key={material.id} value={material.id.toString()}>
+                            {material.title} ({material.type})
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Selected Materials List */}
+                <div className="space-y-2">
+                  {formData.selectedMaterialIds.length > 0 ? (
+                    <div className="space-y-2">
+                      {formData.selectedMaterialIds.map((materialId) => {
+                        const material = materials.find(m => m.id.toString() === materialId);
+                        return (
+                          <div
+                            key={materialId}
+                            className="flex items-center justify-between p-2 bg-background rounded border"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">
+                                {material ? material.title : `Material #${materialId}`}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {material?.type} • {material?.is_free === 1 ? 'Free' : 'Premium'}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setFormData({
+                                  ...formData,
+                                  selectedMaterialIds: formData.selectedMaterialIds.filter(id => id !== materialId),
+                                });
+                              }}
+                              disabled={submitting}
+                            >
+                              <Trash className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No materials attached yet
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Is Active Switch */}
             <div className="flex items-center justify-between p-3 border rounded-lg">

@@ -1,32 +1,19 @@
-# Materi Belajar Implementation TODO
+# Video Playback Implementation TODO
 
-## Phase 1: Data Structures & API Layer
-- [x] Update Material interface in mockData.ts (add cover_url, is_free, is_active, parts, package_ids)
-- [x] Add MaterialPart interface
-- [x] Create materialService.ts with API functions
-- [x] Create MATERIALS_API_CONTRACT.md
+## Current Status
+- Video materials now support YouTube and MP4 playback
+- UI clearly indicates video types and provides play buttons
 
-## Phase 2: Admin Side
-- [x] Update AdminMaterials.tsx table (add Status, Access Type columns)
-- [x] Add dynamic form fields (is_free, is_active, package mapping)
-- [ ] Implement Manage Parts view for videos
-- [ ] Add drag&drop for parts ordering
-- [ ] Inline editing for parts
+## Tasks
+- [x] Add utility functions for video type detection (isYouTube, isMP4, getYouTubeVideoId)
+- [x] Implement YouTube embed player in MaterialDetail.tsx
+- [x] Implement HTML5 video player for MP4 URLs in MaterialDetail.tsx
+- [x] Add video type indicators in MaterialDetail UI
+- [x] Add play button overlay on video covers in UserMaterials.tsx
+- [x] Test video playback functionality
+- [x] Ensure responsive design for video players
 
-## Phase 3: User Side
-- [x] Create UserMaterials.tsx (library page with grid/list, search, filters)
-- [x] Create MaterialDetail.tsx (video player + playlist or ebook viewer)
-- [x] Handle 403 locked content error
-- [x] Implement infinite scroll/pagination
-
-## Phase 4: Integration
-- [x] Add routes in App.tsx
-- [x] Update Navbar with Materials menu
-- [x] Ensure Bearer token in API calls
-
-## Phase 5: Testing & Polish
-- [x] Test all CRUD operations (build successful)
-- [x] Test video player and PDF viewer (placeholder implemented)
-- [x] Test authentication flows (Bearer token implemented)
-- [x] Test responsive design (responsive components used)
-- [x] Add loading states and error handling (implemented)
+## Files Modified
+- src/lib/utils.ts: Added video utility functions
+- src/pages/user/MaterialDetail.tsx: Implemented video players with type detection
+- src/pages/user/UserMaterials.tsx: Added play button overlay for videos

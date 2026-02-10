@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { packages } from "@/data/mockData";
-import { materialService, Material } from "@/lib/materialService";
+import { Material } from "@/lib/materialService";
+import { useMaterialStore } from "@/stores/materialStore";
+import ManageVideoParts from "./ManageVideoParts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,27 +36,39 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Search, BookOpen, Video, Settings, Lock, Unlock } from "lucide-react";
 
 export default function AdminMaterials() {
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const {
+    materials,
+    isLoadingMaterials,
+    isCreatingMaterial,
+    isUpdatingMaterial,
+    isDeletingMaterial,
+    loadMaterials,
+    createMaterial,
+    updateMaterial,
+    deleteMaterial,
+    error,
+    clearError,
+  } = useMaterialStore();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "ebook" | "video">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPartsDialogOpen, setIsPartsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [managingPartsMaterial, setManagingPartsMaterial] = useState<Material | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     type: "ebook" as "ebook" | "video",
-    category: "",
     cover_url: "",
     ebook_url: "",
     is_free: true,
     is_active: true,
-    package_ids: [] as string[],
     duration: 0,
     pages: 0,
   });
@@ -64,25 +77,8 @@ export default function AdminMaterials() {
     loadMaterials();
   }, []);
 
-  const loadMaterials = async () => {
-    try {
-      setLoading(true);
-      const response = await materialService.getAdminMaterials();
-      setMaterials(response.data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load materials",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredMaterials = materials.filter((m) => {
-    const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         m.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === "all" || m.type === typeFilter;
     const matchesStatus = statusFilter === "all" ||
                          (statusFilter === "active" && m.is_active) ||
@@ -95,14 +91,12 @@ export default function AdminMaterials() {
       setEditingMaterial(material);
       setFormData({
         title: material.title,
-        description: material.description,
+        description: material.description || "",
         type: material.type,
-        category: material.category,
-        cover_url: material.cover_url,
+        cover_url: material.cover_url || "",
         ebook_url: material.ebook_url || "",
         is_free: material.is_free,
         is_active: material.is_active,
-        package_ids: material.package_ids || [],
         duration: material.duration || 0,
         pages: material.pages || 0,
       });
@@ -112,12 +106,10 @@ export default function AdminMaterials() {
         title: "",
         description: "",
         type: "ebook",
-        category: "",
         cover_url: "",
         ebook_url: "",
         is_free: true,
         is_active: true,
-        package_ids: [],
         duration: 0,
         pages: 0,
       });
@@ -126,7 +118,7 @@ export default function AdminMaterials() {
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.category || !formData.cover_url) {
+    if (!formData.title || !formData.cover_url) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -144,54 +136,52 @@ export default function AdminMaterials() {
       return;
     }
 
-    try {
-      const materialData = {
-        title: formData.title,
-        description: formData.description,
-        type: formData.type,
-        category: formData.category,
-        cover_url: formData.cover_url,
-        ebook_url: formData.type === "ebook" ? formData.ebook_url : undefined,
-        is_free: formData.is_free,
-        is_active: formData.is_active,
-        package_ids: formData.is_free ? [] : formData.package_ids,
-        ...(formData.type === "video" ? { duration: formData.duration } : { pages: formData.pages }),
-      };
+    const materialData = {
+      title: formData.title,
+      description: formData.description,
+      type: formData.type,
+      cover_url: formData.cover_url,
+      ebook_url: formData.type === "ebook" ? formData.ebook_url : undefined,
+      is_free: formData.is_free,
+      is_active: formData.is_active,
+      ...(formData.type === "video" ? { duration: formData.duration } : { pages: formData.pages }),
+    };
 
-      if (editingMaterial) {
-        await materialService.updateMaterial(editingMaterial.id, materialData);
-        toast({ title: "Material updated successfully" });
-      } else {
-        await materialService.createMaterial(materialData);
-        toast({ title: "Material created successfully" });
-      }
+    let result;
+    if (editingMaterial) {
+      result = await updateMaterial(editingMaterial.id.toString(), materialData);
+    } else {
+      result = await createMaterial(materialData);
+    }
 
+    if (result) {
+      toast({ title: editingMaterial ? "Material updated successfully" : "Material created successfully" });
       setIsDialogOpen(false);
-      loadMaterials();
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "Failed to save material",
+        description: error || "Failed to save material",
         variant: "destructive",
       });
+      clearError();
     }
   };
 
   const handleDelete = async () => {
     if (!deletingId) return;
 
-    try {
-      await materialService.deleteMaterial(deletingId);
+    await deleteMaterial(deletingId.toString());
+    if (!error) {
       toast({ title: "Material deleted successfully" });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
-      loadMaterials();
-    } catch (error) {
+    } else {
       toast({
         title: "Error",
-        description: "Failed to delete material",
+        description: error || "Failed to delete material",
         variant: "destructive",
       });
+      clearError();
     }
   };
 
@@ -252,21 +242,20 @@ export default function AdminMaterials() {
                 <TableHead>Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Access</TableHead>
-                <TableHead>Category</TableHead>
                 <TableHead>Details</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoadingMaterials ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     Loading materials...
                   </TableCell>
                 </TableRow>
               ) : filteredMaterials.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     No materials found
                   </TableCell>
                 </TableRow>
@@ -301,25 +290,14 @@ export default function AdminMaterials() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {material.is_free ? (
-                        <Badge variant="outline" className="text-green-600">
-                          <Unlock className="mr-1 h-3 w-3" />
-                          Free
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-amber-600">
-                          <Lock className="mr-1 h-3 w-3" />
-                          Premium
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{material.category}</Badge>
+                       <Badge variant={material.is_free ? "default" : "secondary"}>
+                        {material.is_free ? "Free" : "Premium"}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       {material.type === "video"
-                        ? `${material.duration} min`
-                        : `${material.pages} pages`}
+                        ? `${material.duration || 0} min`
+                        : `${material.pages || 0} pages`}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -328,8 +306,8 @@ export default function AdminMaterials() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              // TODO: Open manage parts dialog
-                              toast({ title: "Manage Parts - Coming Soon" });
+                              setManagingPartsMaterial(material);
+                              setIsPartsDialogOpen(true);
                             }}
                           >
                             <Settings className="h-4 w-4" />
@@ -372,25 +350,14 @@ export default function AdminMaterials() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Material title"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Category *</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Mathematics"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Material title"
+              />
             </div>
 
             <div className="space-y-2">
@@ -475,50 +442,6 @@ export default function AdminMaterials() {
               <Label htmlFor="is_free">Free Access</Label>
             </div>
 
-            {!formData.is_free && (
-              <div className="space-y-2">
-                <Label>Premium Packages</Label>
-                <Select
-                  value=""
-                  onValueChange={(value) => {
-                    if (!formData.package_ids.includes(value)) {
-                      setFormData({
-                        ...formData,
-                        package_ids: [...formData.package_ids, value]
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select packages" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {packages.map((pkg) => (
-                      <SelectItem key={pkg.id} value={pkg.id}>
-                        {pkg.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {formData.package_ids.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {formData.package_ids.map((pkgId) => {
-                      const pkg = packages.find(p => p.id === pkgId);
-                      return (
-                        <Badge key={pkgId} variant="secondary" className="cursor-pointer"
-                               onClick={() => setFormData({
-                                 ...formData,
-                                 package_ids: formData.package_ids.filter(id => id !== pkgId)
-                               })}>
-                          {pkg?.name} ×
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="flex items-center space-x-2">
               <Switch
                 id="is_active"
@@ -532,8 +455,8 @@ export default function AdminMaterials() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              {editingMaterial ? "Save Changes" : "Create Material"}
+            <Button onClick={handleSave} disabled={isCreatingMaterial || isUpdatingMaterial}>
+              {isCreatingMaterial || isUpdatingMaterial ? "Saving..." : (editingMaterial ? "Save Changes" : "Create Material")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -552,12 +475,25 @@ export default function AdminMaterials() {
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeletingMaterial}>
+              {isDeletingMaterial ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Manage Video Parts Dialog */}
+      {managingPartsMaterial && (
+        <ManageVideoParts
+          materialId={managingPartsMaterial.id}
+          materialTitle={managingPartsMaterial.title}
+          isOpen={isPartsDialogOpen}
+          onClose={() => {
+            setIsPartsDialogOpen(false);
+            setManagingPartsMaterial(null);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }
