@@ -93,9 +93,11 @@ export default function PackageQuestions() {
       setCategoriesLoading(true);
       const data = await categoryService.getCategories();
       setCategories(data);
-      if (data.length > 0) {
+      if (data.length > 0 && !selectedCategory) {
         setSelectedCategory(data[0].id);
-        loadCategoryQuestions(data[0].id);
+        await loadCategoryQuestions(data[0].id);
+      } else if (data.length > 0 && selectedCategory) {
+        await loadCategoryQuestions(selectedCategory);
       }
     } catch (error) {
       toast({
@@ -344,18 +346,23 @@ export default function PackageQuestions() {
                         <div className="flex items-center justify-center py-8">
                           <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
+                      ) : categories.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                          No categories available
+                        </div>
                       ) : (
                         <Tabs
-                          value={selectedCategory?.toString() || ""}
+                          value={selectedCategory?.toString() || categories[0]?.id.toString() || ""}
                           onValueChange={(value) =>
                             handleCategoryChange(parseInt(value))
                           }
                         >
-                          <TabsList className="grid w-full overflow-x-auto">
+                          <TabsList className="flex w-full h-auto flex-wrap justify-start overflow-y-visible overflow-x-auto">
                             {categories.map((category) => (
                               <TabsTrigger
                                 key={category.id}
                                 value={category.id.toString()}
+                                className="text-xs sm:text-sm"
                               >
                                 {category.name}
                               </TabsTrigger>

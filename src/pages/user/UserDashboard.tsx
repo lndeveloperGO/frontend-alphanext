@@ -1,12 +1,18 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/ui/stat-card";
 import { useAuthStore } from "@/stores/authStore";
-import { Package, FileQuestion, ClipboardList, Trophy, Clock, TrendingUp } from "lucide-react";
+import { Package, FileQuestion, ClipboardList, Trophy, Clock, TrendingUp, Play, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { userService } from "@/lib/userService";
+import { attemptService } from "@/lib/attemptService";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format, parseISO } from "date-fns";
+import { id } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 interface DashboardData {
   summary: {
@@ -27,8 +33,9 @@ interface DashboardData {
     package_id: number;
     name: string;
     type: string;
-    expires_at: string | null;
-    status: string;
+    starts_at: string | null;
+    ends_at: string | null;
+    status: "active" | "expired";
   }>;
   recent_activity: Array<{
     attempt_id: number;
@@ -42,11 +49,41 @@ interface DashboardData {
   }>;
 }
 
+function formatEndsAt(isoDate: string | null): string {
+  if (!isoDate) return "Tanpa batas";
+  try {
+    return format(parseISO(isoDate), "d MMM yyyy", { locale: id });
+  } catch {
+    return isoDate;
+  }
+}
+
 export default function UserDashboard() {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [startingPackageId, setStartingPackageId] = useState<number | null>(null);
+
+  const handleStartAttempt = async (packageId: number) => {
+    try {
+      setStartingPackageId(packageId);
+      const response = await attemptService.startAttempt(packageId);
+      if (response.success) {
+        navigate(`/practice?attemptId=${response.data.attempt_id}`);
+      }
+    } catch (err) {
+      toast({
+        title: "Gagal memulai",
+        description: err instanceof Error ? err.message : "Tidak dapat memulai attempt",
+        variant: "destructive",
+      });
+    } finally {
+      setStartingPackageId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -165,30 +202,61 @@ export default function UserDashboard() {
 
             {/* Recent Activity */}
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Active Packages */}
+              {/* Paket Saya / Masa Aktif */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Active Packages</CardTitle>
-                  <CardDescription>Your current subscriptions</CardDescription>
+                  <CardTitle>Paket Saya</CardTitle>
+                  <CardDescription>Daftar paket dan masa aktif akses Anda</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {data.active_packages.length > 0 ? (
                       data.active_packages.map((pkg) => (
-                        <div key={pkg.package_id} className="flex items-center justify-between rounded-lg border p-3">
-                          <div>
+                        <div
+                          key={pkg.package_id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+                        >
+                          <div className="min-w-0 flex-1">
                             <p className="font-medium">{pkg.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {pkg.expires_at ? `Expires: ${pkg.expires_at}` : "No expiry date"}
+                              {pkg.ends_at
+                                ? `Berakhir pada ${formatEndsAt(pkg.ends_at)}`
+                                : "Tanpa batas waktu"}
                             </p>
                           </div>
-                          <Badge variant={pkg.status === "active" ? "default" : "secondary"}>
-                            {pkg.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={pkg.status === "active" ? "default" : "destructive"}
+                              className={
+                                pkg.status === "active"
+                                  ? "bg-green-600 hover:bg-green-600"
+                                  : "bg-red-600 hover:bg-red-600"
+                              }
+                            >
+                              {pkg.status === "active" ? "Aktif" : "Kadaluarsa"}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              disabled={pkg.status !== "active" || startingPackageId !== null}
+                              onClick={() => handleStartAttempt(pkg.package_id)}
+                            >
+                              {startingPackageId === pkg.package_id ? (
+                                <>
+                                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                  Memulai...
+                                </>
+                              ) : (
+                                <>
+                                  <Play className="mr-1 h-4 w-4" />
+                                  Mulai
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No active packages</p>
+                      <p className="text-sm text-muted-foreground">Belum ada paket aktif</p>
                     )}
                   </div>
                 </CardContent>

@@ -229,26 +229,124 @@ export const vouchers: Voucher[] = [
 ];
 
 // Materials
+export interface MaterialPart {
+  id: string;
+  title: string;
+  url: string;
+  duration: number; // seconds
+  sort_order: number;
+  is_active: boolean;
+}
+
 export interface Material {
   id: string;
   title: string;
   description: string;
   type: 'ebook' | 'video';
   category: string;
-  url: string;
-  thumbnail?: string;
-  duration?: number; // minutes for video
+  cover_url: string;
+  ebook_url?: string; // for ebooks
+  is_free: boolean;
+  is_active: boolean;
+  package_ids?: string[]; // for package mapping
+  parts?: MaterialPart[]; // for videos
+  duration?: number; // total minutes for video
   pages?: number; // for ebook
   createdAt: string;
 }
 
 export const materials: Material[] = [
-  { id: '1', title: 'Mathematics Fundamentals', description: 'Complete guide to basic mathematics', type: 'ebook', category: 'Mathematics', url: '#', pages: 150, createdAt: '2024-01-01' },
-  { id: '2', title: 'Physics Made Easy', description: 'Understanding physics concepts', type: 'video', category: 'Science', url: '#', duration: 120, createdAt: '2024-01-05' },
-  { id: '3', title: 'English Grammar Guide', description: 'Master English grammar rules', type: 'ebook', category: 'Language', url: '#', pages: 200, createdAt: '2024-01-10' },
-  { id: '4', title: 'History of Indonesia', description: 'Learn about Indonesian history', type: 'video', category: 'History', url: '#', duration: 90, createdAt: '2024-01-15' },
-  { id: '5', title: 'Chemistry Basics', description: 'Introduction to chemistry', type: 'ebook', category: 'Science', url: '#', pages: 180, createdAt: '2024-01-20' },
-  { id: '6', title: 'Geography World Tour', description: 'Explore world geography', type: 'video', category: 'Geography', url: '#', duration: 150, createdAt: '2024-01-25' },
+  {
+    id: '1',
+    title: 'Mathematics Fundamentals',
+    description: 'Complete guide to basic mathematics',
+    type: 'ebook',
+    category: 'Mathematics',
+    cover_url: 'https://picsum.photos/400/225?random=1',
+    ebook_url: '#',
+    is_free: true,
+    is_active: true,
+    pages: 150,
+    createdAt: '2024-01-01'
+  },
+  {
+    id: '2',
+    title: 'Physics Made Easy',
+    description: 'Understanding physics concepts',
+    type: 'video',
+    category: 'Science',
+    cover_url: 'https://picsum.photos/400/225?random=2',
+    is_free: false,
+    is_active: true,
+    package_ids: ['1', '2'],
+    parts: [
+      { id: 'p1', title: 'Introduction to Physics', url: '#', duration: 300, sort_order: 1, is_active: true },
+      { id: 'p2', title: 'Newton\'s Laws', url: '#', duration: 450, sort_order: 2, is_active: true },
+      { id: 'p3', title: 'Energy and Work', url: '#', duration: 400, sort_order: 3, is_active: true },
+    ],
+    duration: 120,
+    createdAt: '2024-01-05'
+  },
+  {
+    id: '3',
+    title: 'English Grammar Guide',
+    description: 'Master English grammar rules',
+    type: 'ebook',
+    category: 'Language',
+    cover_url: 'https://picsum.photos/400/225?random=3',
+    ebook_url: '#',
+    is_free: true,
+    is_active: true,
+    pages: 200,
+    createdAt: '2024-01-10'
+  },
+  {
+    id: '4',
+    title: 'History of Indonesia',
+    description: 'Learn about Indonesian history',
+    type: 'video',
+    category: 'History',
+    cover_url: 'https://picsum.photos/400/225?random=4',
+    is_free: false,
+    is_active: true,
+    package_ids: ['3'],
+    parts: [
+      { id: 'p4', title: 'Ancient Kingdoms', url: '#', duration: 600, sort_order: 1, is_active: true },
+      { id: 'p5', title: 'Colonial Era', url: '#', duration: 500, sort_order: 2, is_active: true },
+    ],
+    duration: 90,
+    createdAt: '2024-01-15'
+  },
+  {
+    id: '5',
+    title: 'Chemistry Basics',
+    description: 'Introduction to chemistry',
+    type: 'ebook',
+    category: 'Science',
+    cover_url: 'https://picsum.photos/400/225?random=5',
+    ebook_url: '#',
+    is_free: true,
+    is_active: true,
+    pages: 180,
+    createdAt: '2024-01-20'
+  },
+  {
+    id: '6',
+    title: 'Geography World Tour',
+    description: 'Explore world geography',
+    type: 'video',
+    category: 'Geography',
+    cover_url: 'https://picsum.photos/400/225?random=6',
+    is_free: true,
+    is_active: true,
+    parts: [
+      { id: 'p6', title: 'Continents Overview', url: '#', duration: 300, sort_order: 1, is_active: true },
+      { id: 'p7', title: 'Asia Deep Dive', url: '#', duration: 400, sort_order: 2, is_active: true },
+      { id: 'p8', title: 'Europe Exploration', url: '#', duration: 350, sort_order: 3, is_active: true },
+    ],
+    duration: 150,
+    createdAt: '2024-01-25'
+  },
 ];
 
 // Tryouts

@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Package, ArrowLeft, CreditCard, Tag } from "lucide-react";
+import { CheckCircle2, Package, ArrowLeft, CreditCard, Tag, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCheckoutStore } from "@/stores/checkoutStore";
 import { promoService } from "@/lib/promoService";
+import { orderService } from "@/lib/orderService";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function UserCheckout() {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ export default function UserCheckout() {
   const [promoError, setPromoError] = useState("");
   const [finalAmount, setFinalAmount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -68,11 +73,42 @@ export default function UserCheckout() {
     }
   };
 
-  const handlePurchase = () => {
-    // TODO: Implement actual purchase logic
-    alert(`Pembelian berhasil! Total: ${formatPrice(finalAmount)}`);
-    clearSelection();
-    navigate("/dashboard");
+  const handlePurchase = async () => {
+    if (!selectedPackage) {
+      setOrderError("Paket tidak ditemukan");
+      return;
+    }
+
+    setIsCreatingOrder(true);
+    setOrderError("");
+
+    try {
+      const orderInput = {
+        product_id: parseInt(selectedPackage.id, 10),
+        ...(promoCode.trim() && { promo_code: promoCode }),
+      };
+
+      const response = await orderService.createOrder(orderInput);
+
+      if (response.success && response.data) {
+        setOrderSuccess(true);
+        // Clear cart and wait a moment before navigating
+        clearSelection();
+        setTimeout(() => {
+          navigate("/dashboard/user/orders", {
+            state: { orderId: response.data.id, successMessage: "Order berhasil dibuat. Status: Menunggu pembayaran" },
+          });
+        }, 1000);
+      } else {
+        setOrderError("Gagal membuat order. Silakan coba lagi.");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Terjadi kesalahan saat membuat order";
+      setOrderError(message);
+      console.error("Order creation error:", error);
+    } finally {
+      setIsCreatingOrder(false);
+    }
   };
 
   if (!selectedPackage) {
@@ -222,13 +258,31 @@ export default function UserCheckout() {
                   </div>
                 </div>
 
+                {orderError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm">{orderError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {orderSuccess && (
+                  <Alert>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Order berhasil dibuat! Mengalihkan ke daftar order...
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <Button
                   className="w-full h-12 text-base font-semibold"
                   onClick={handlePurchase}
-                  disabled={finalAmount === 0}
+                  disabled={finalAmount === 0 || isCreatingOrder || orderSuccess}
                 >
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  Bayar Sekarang
+                  {isCreatingOrder ? "Memproses..." : <>
+                    <CreditCard className="h-5 w-5 mr-2" />
+                    Bayar Sekarang
+                  </>}
                 </Button>
               </CardContent>
             </Card>

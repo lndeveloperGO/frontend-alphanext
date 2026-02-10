@@ -49,14 +49,14 @@ export default function RegisterPage() {
 
     if (result.success) {
       toast({
-        title: "Account created!",
-        description: "Welcome to EduLearn. Let's start learning!",
+        title: "Akun berhasil dibuat",
+        description: "Silakan masuk dengan email dan password Anda.",
       });
-      navigate("/dashboard");
+      navigate("/login", { replace: true });
     } else {
       toast({
-        title: "Registration failed",
-        description: result.error || "Something went wrong",
+        title: "Pendaftaran gagal",
+        description: result.error || "Terjadi kesalahan. Coba lagi.",
         variant: "destructive",
       });
     }
