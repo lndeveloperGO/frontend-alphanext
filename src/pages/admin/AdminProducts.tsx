@@ -648,7 +648,7 @@ export default function AdminProducts() {
             )}
 
             {/* Material Selection */}
-            <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+            {/* <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
               <div className="space-y-3">
                 <Label>Attached Materials (Premium Access)</Label>
                 <p className="text-xs text-muted-foreground">
@@ -656,7 +656,7 @@ export default function AdminProducts() {
                   Materials will automatically be set as premium (is_free=false).
                 </p>
 
-                {/* Add Material Section */}
+               
                 <div className="space-y-2 p-3 bg-background rounded border">
                   <Label htmlFor="product-material" className="text-sm">
                     Add Material
@@ -688,7 +688,7 @@ export default function AdminProducts() {
                   </Select>
                 </div>
 
-                {/* Selected Materials List */}
+                
                 <div className="space-y-2">
                   {formData.selectedMaterialIds.length > 0 ? (
                     <div className="space-y-2">
@@ -732,7 +732,7 @@ export default function AdminProducts() {
                   )}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Is Active Switch */}
             <div className="flex items-center justify-between p-3 border rounded-lg">

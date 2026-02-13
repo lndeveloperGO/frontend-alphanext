@@ -39,7 +39,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Settings, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Settings, Loader2, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   packageService,
@@ -302,6 +302,7 @@ export default function AdminPackages() {
                       <TableHead>Category</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Questions</TableHead>
+                      <TableHead>Materials</TableHead>
                       <TableHead>Free</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-32 text-right">Actions</TableHead>
@@ -320,6 +321,7 @@ export default function AdminPackages() {
                         <TableCell>{pkg.category?.name || getCategoryName(pkg.category_id)}</TableCell>
                         <TableCell>{formatDuration(pkg.duration_seconds)}</TableCell>
                         <TableCell className="text-center">{pkg.questions_count}</TableCell>
+                        <TableCell className="text-center">{pkg.material_count || 0}</TableCell>
                         <TableCell>
                           <Badge variant={pkg.is_free ? "secondary" : "outline"}>
                             {pkg.is_free ? "Free" : "Paid"}
@@ -337,9 +339,22 @@ export default function AdminPackages() {
                               size="sm"
                               onClick={() =>
                                 navigate(
+                                  `/admin/packages/${pkg.id}/materials`
+                                )
+                              }
+                              title="Manage Materials"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
                                   `/admin/packages/${pkg.id}/questions`
                                 )
                               }
+                              title="Manage Questions"
                             >
                               <Settings className="h-4 w-4" />
                             </Button>

@@ -10,11 +10,15 @@ export interface Package {
   name: string;
   type: PackageType;
   category_id: number;
-  category?: Category;
+  category?: {
+    id: number;
+    name: string;
+  };
   duration_seconds: number;
   is_active: boolean;
   is_free: boolean;
   questions_count: number;
+  material_count?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -46,6 +50,24 @@ export interface PackageQuestionDetail {
   question_id: number;
   order_no: number;
   question: string;
+}
+
+export interface PackageMaterial {
+  id: string;
+  title: string;
+  description: string | null;
+  type: 'ebook' | 'video';
+  cover_url: string | null;
+  is_free: boolean;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PackageMaterialInput {
+  material_id: number;
+  sort_order: number;
 }
 
 const getAuthHeader = () => {
@@ -174,6 +196,47 @@ export const packageService = {
       const error = await response.json();
       throw new Error(error.message || "Failed to sync package questions");
     }
+  },
+
+  // Get materials in a package
+  async getPackageMaterials(packageId: number): Promise<PackageMaterial[]> {
+    const response = await fetch(
+      `${getApiUrl()}/admin/packages/${packageId}/materials`,
+      {
+        method: "GET",
+        headers: getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch package materials`);
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.data || []);
+  },
+
+  // Attach materials to a package
+  async attachMaterialsToPackage(
+    packageId: number,
+    materials: PackageMaterialInput[]
+  ): Promise<PackageMaterial[]> {
+    const response = await fetch(
+      `${getApiUrl()}/admin/packages/${packageId}/materials`,
+      {
+        method: "PUT",
+        headers: getAuthHeader(),
+        body: JSON.stringify({ materials }),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to attach materials to package");
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.data || []);
   },
 
   // Get public products for landing page
