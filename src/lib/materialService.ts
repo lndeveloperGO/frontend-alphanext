@@ -4,74 +4,75 @@ import { useAuthStore } from "@/stores/authStore";
 const getApiUrl = () => getApiBaseUrl();
 
 export interface MaterialPart {
-  id: string;
+  id: number;
+  material_id: number;
   title: string;
-  url: string;
-  duration: number; // seconds
+  video_url: string;
+  duration_seconds: number;
   sort_order: number;
   is_active: boolean;
-}
-
-export interface Material {
-  id: string;
-  title: string;
-  description: string;
-  type: 'ebook' | 'video';
-  category: string;
-  cover_url: string;
-  ebook_url?: string; // for ebooks
-  is_free: boolean;
-  is_active: boolean;
-  package_ids?: string[]; // for package mapping
-  parts?: MaterialPart[]; // for videos
-  duration?: number; // total minutes for video
-  pages?: number; // for ebook
   created_at?: string;
   updated_at?: string;
 }
 
-export interface CreateMaterialInput {
+export interface Material {
+  id: number;
   title: string;
-  description: string;
+  description: string | null;
   type: 'ebook' | 'video';
-  category: string;
-  cover_url: string;
-  ebook_url?: string;
-  is_free: boolean;
+  cover_url: string | null;
+  ebook_url: string | null;
   is_active: boolean;
-  package_ids?: string[];
-  parts?: Omit<MaterialPart, 'id'>[];
-  duration?: number;
-  pages?: number;
-}
-
-export interface UpdateMaterialInput {
-  title?: string;
-  description?: string;
-  type?: 'ebook' | 'video';
+  is_free: boolean; // 0 = premium, 1 = free
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  // Additional fields for frontend use
   category?: string;
-  cover_url?: string;
-  ebook_url?: string;
-  is_free?: boolean;
-  is_active?: boolean;
   package_ids?: string[];
   parts?: MaterialPart[];
   duration?: number;
   pages?: number;
 }
 
+export interface CreateMaterialInput {
+  title: string;
+  description: string;
+  type: 'ebook' | 'video';
+  cover_url: string;
+  ebook_url?: string;
+  is_free: boolean;
+  is_active: boolean;
+  duration?: number;
+  pages?: number;
+  package_ids?: string[];
+}
+
+export interface UpdateMaterialInput {
+  title?: string;
+  description?: string;
+  type?: 'ebook' | 'video';
+  cover_url?: string;
+  ebook_url?: string;
+  is_free?: boolean;
+  is_active?: boolean;
+  duration?: number;
+  pages?: number;
+  package_ids?: string[];
+}
+
 export interface CreateMaterialPartInput {
   title: string;
-  url: string;
-  duration: number;
+  video_url: string;
+  duration_seconds: number;
   sort_order: number;
   is_active?: boolean;
 }
 
 export interface UpdateMaterialPartInput {
   title?: string;
-  url?: string;
-  duration?: number;
+  video_url?: string;
+  duration_seconds?: number;
   sort_order?: number;
   is_active?: boolean;
 }
@@ -228,7 +229,7 @@ export const materialService = {
     }
 
     const data = await response.json();
-    return data.data || data;
+    return data.data.data || data.data || data;
   },
 
   async createMaterialPart(materialId: string, input: CreateMaterialPartInput): Promise<MaterialPart> {
@@ -249,7 +250,7 @@ export const materialService = {
 
   async updateMaterialPart(materialId: string, partId: string, input: UpdateMaterialPartInput): Promise<MaterialPart> {
     const response = await fetch(`${getApiUrl()}/admin/materials/${materialId}/parts/${partId}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: getAuthHeader(),
       body: JSON.stringify(input),
     });

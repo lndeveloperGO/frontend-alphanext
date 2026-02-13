@@ -18,6 +18,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isYouTube, isMP4, getYouTubeVideoId } from "@/lib/utils";
 
 export default function MaterialDetail() {
   const { id } = useParams<{ id: string }>();
@@ -174,24 +175,47 @@ export default function MaterialDetail() {
             {/* Video Player */}
             <div className="lg:col-span-2">
               <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{currentPart?.title || "Video Player"}</CardTitle>
+                    {currentPart && (
+                      <Badge variant="outline" className="text-xs">
+                        {isYouTube(currentPart.video_url) ? "YouTube" : isMP4(currentPart.video_url) ? "MP4" : "Unsupported"}
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
                 <CardContent className="p-0">
                   {currentPart ? (
                     <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
-                      {/* Video Player Placeholder */}
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700">
-                        <div className="text-center text-white">
-                          <Video className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                          <p className="text-lg font-medium mb-2">{currentPart.title}</p>
-                          <p className="text-sm opacity-75 mb-4">
-                            Duration: {formatDuration(currentPart.duration)}
-                          </p>
-                          <Button size="lg" className="bg-white text-black hover:bg-gray-200">
-                            <Play className="mr-2 h-5 w-5" />
-                            Play Video
-                          </Button>
+                      {isYouTube(currentPart.video_url) ? (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${getYouTubeVideoId(currentPart.video_url)}?modestbranding=1&rel=0&iv_load_policy=3&showinfo=0`}
+                          title={currentPart.title}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : isMP4(currentPart.video_url) ? (
+                        <video
+                          src={currentPart.video_url}
+                          controls
+                          className="w-full h-full"
+                          poster={material.cover_url}
+                        >
+                          Your browser does not support the video tag.
+                        </video>
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-700">
+                          <div className="text-center text-white">
+                            <Video className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                            <p className="text-lg font-medium mb-2">{currentPart.title}</p>
+                            <p className="text-sm opacity-75 mb-4">
+                              Unsupported video format
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      {/* Video controls would go here */}
+                      )}
                     </div>
                   ) : (
                     <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
@@ -230,7 +254,7 @@ export default function MaterialDetail() {
                             {part.title}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDuration(part.duration)}
+                            {formatDuration(part.duration_seconds)}
                           </p>
                         </div>
                       </div>
@@ -241,7 +265,7 @@ export default function MaterialDetail() {
               {material.parts && material.parts.length > 0 && (
                 <div className="text-sm text-muted-foreground">
                   Total duration: {formatDuration(
-                    material.parts.reduce((total, part) => total + part.duration, 0)
+                    material.parts.reduce((total, part) => total + part.duration_seconds, 0)
                   )}
                 </div>
               )}
