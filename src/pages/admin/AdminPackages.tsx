@@ -65,14 +65,14 @@ export default function AdminPackages() {
     name: string;
     type: PackageType;
     category_id: number;
-    duration_seconds: number;
+    duration_minutes: number;
     is_active: boolean;
     is_free: boolean;
   }>({
     name: "",
     type: "latihan",
     category_id: 0,
-    duration_seconds: 0,
+    duration_minutes: 0,
     is_active: true,
     is_free: false,
   });
@@ -112,7 +112,7 @@ export default function AdminPackages() {
         name: "",
         type: "latihan",
         category_id: categories.length > 0 ? categories[0].id : 0,
-        duration_seconds: 0,
+        duration_minutes: 0,
         is_active: true,
         is_free: false,
       });
@@ -122,7 +122,7 @@ export default function AdminPackages() {
         name: pkg.name,
         type: pkg.type,
         category_id: pkg.category_id,
-        duration_seconds: pkg.duration_seconds,
+        duration_minutes: Math.floor(pkg.duration_seconds / 60),
         is_active: pkg.is_active,
         is_free: pkg.is_free,
       });
@@ -138,7 +138,7 @@ export default function AdminPackages() {
       name: "",
       type: "latihan",
       category_id: categories.length > 0 ? categories[0].id : 0,
-      duration_seconds: 0,
+      duration_minutes: 0,
       is_active: true,
       is_free: false,
     });
@@ -163,7 +163,7 @@ export default function AdminPackages() {
       return;
     }
 
-    if (formData.duration_seconds === 0) {
+    if (formData.duration_minutes === 0) {
       toast({
         title: "Error",
         description: "Duration must be greater than 0",
@@ -175,8 +175,14 @@ export default function AdminPackages() {
     try {
       setSubmitting(true);
 
+      // Convert minutes to seconds for API
+      const packageData = {
+        ...formData,
+        duration_seconds: formData.duration_minutes * 60,
+      };
+
       if (dialogMode === "create") {
-        await packageService.createPackage(formData as CreatePackageInput);
+        await packageService.createPackage(packageData as CreatePackageInput);
         toast({
           title: "Success",
           description: "Package created successfully",
@@ -184,7 +190,7 @@ export default function AdminPackages() {
       } else if (dialogMode === "edit" && selectedPackage) {
         await packageService.updatePackage(
           selectedPackage.id,
-          formData as UpdatePackageInput
+          packageData as UpdatePackageInput
         );
         toast({
           title: "Success",
@@ -455,16 +461,16 @@ export default function AdminPackages() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration_seconds">Duration (seconds)</Label>
+              <Label htmlFor="duration_minutes">Duration (minutes)</Label>
               <Input
-                id="duration_seconds"
+                id="duration_minutes"
                 type="number"
-                placeholder="e.g., 3600 (1 hour)"
-                value={formData.duration_seconds}
+                placeholder="e.g., 60 (1 hour)"
+                value={formData.duration_minutes}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    duration_seconds: parseInt(e.target.value) || 0,
+                    duration_minutes: parseInt(e.target.value) || 0,
                   })
                 }
                 disabled={submitting}

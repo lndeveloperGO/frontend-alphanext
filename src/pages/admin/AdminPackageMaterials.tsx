@@ -135,19 +135,37 @@ export default function AdminPackageMaterials() {
   const handleDetachConfirm = async () => {
     if (!packageId || !selectedMaterial) return;
 
+    console.log(selectedMaterial);
+
+    // Ensure we have a valid material ID
+    if (!selectedMaterial.material_id || selectedMaterial.material_id === null || selectedMaterial.material_id === undefined) {
+      toast({
+        title: "Error",
+        description: "Invalid material ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const materialId = typeof selectedMaterial.material_id === 'string' 
+      ? parseInt(selectedMaterial.material_id, 10) 
+      : selectedMaterial.material_id;
+    
+    if (isNaN(materialId)) {
+      toast({
+        title: "Error",
+        description: "Invalid material ID",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
-      // Remove the material from the current list and update
-      const updatedMaterials = packageMaterials
-        .filter(m => m.id !== selectedMaterial.id)
-        .map((m, index) => ({
-          material_id: parseInt(m.id),
-          sort_order: index + 1
-        }));
-
-      await packageService.attachMaterialsToPackage(
+      // Use DELETE endpoint to detach the material
+      await packageService.detachMaterialFromPackage(
         parseInt(packageId),
-        updatedMaterials
+        materialId
       );
 
       toast({
@@ -171,13 +189,34 @@ export default function AdminPackageMaterials() {
   };
 
   const getAvailableMaterials = () => {
-    const attachedIds = new Set(packageMaterials.map(m => m.id));
-    return allMaterials.filter(material => !attachedIds.has(material.id.toString()));
+    // Get IDs of already attached materials (as strings for comparison)
+    // Handle potential undefined/null values in packageMaterials
+    const attachedIds = new Set(
+      packageMaterials
+        .filter(m => m && m.id !== undefined && m.id !== null)
+        .map(m => String(m.id))
+    );
+    // Get IDs of currently selected materials in this session
+    const selectedIds = new Set(
+      selectedMaterials
+        .filter(m => m && m.material_id !== undefined && m.material_id !== null)
+        .map(m => String(m.material_id))
+    );
+    
+    // Filter out materials that are already attached OR already selected in this session
+    // Handle potential undefined/null values in allMaterials
+    return allMaterials.filter(material => {
+      if (!material || material.id === undefined || material.id === null) {
+        return false;
+      }
+      const materialIdStr = String(material.id);
+      return !attachedIds.has(materialIdStr) && !selectedIds.has(materialIdStr);
+    });
   };
 
   const filteredAvailableMaterials = getAvailableMaterials().filter(material =>
-    material.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.type.toLowerCase().includes(searchTerm.toLowerCase())
+    (material.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (material.type?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const getMaterialTypeIcon = (type: string) => {

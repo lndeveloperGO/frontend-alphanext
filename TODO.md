@@ -43,25 +43,11 @@
 
 ```typescript
 // GET /package/{package_id}/materials
-Response: {
-  success: boolean;
-  data: PackageMaterial[];
-}
-
-// PUT /package/{package_id}/materials (Updated Payload Format)
-Request: {
-  materials: Array<{
-    material_id: number;
-    sort_order: number;
-  }>;
-}
-Response: {
-  success: boolean;
-  data: PackageMaterial[];
-}
+// PUT /package/{package_id}/materials  
+// DELETE /package/{package_id}/materials/{material_id}
 ```
 
-### Example Payload (as requested):
+### Attach Payload:
 ```json
 {
   "materials": [

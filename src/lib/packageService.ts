@@ -53,7 +53,7 @@ export interface PackageQuestionDetail {
 }
 
 export interface PackageMaterial {
-  id: string;
+  id: number;
   title: string;
   description: string | null;
   type: 'ebook' | 'video';
@@ -237,6 +237,26 @@ export const packageService = {
 
     const data = await response.json();
     return Array.isArray(data) ? data : (data.data || []);
+  },
+
+  // Detach a material from a package
+  async detachMaterialFromPackage(
+    packageId: number,
+    materialId: number
+  ): Promise<void> {
+    console.log(materialId)
+    const response = await fetch(
+      `${getApiUrl()}/admin/packages/${packageId}/materials/${materialId}`,
+      {
+        method: "DELETE",
+        headers: getAuthHeader(),
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to detach material from package");
+    }
   },
 
   // Get public products for landing page
