@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { User, Mail, Lock, Calendar, Eye, EyeOff, Check } from "lucide-react";
+import { User, Mail, Lock, Calendar, Phone, School, Eye, EyeOff, Check, EyeIcon } from "lucide-react";
 import { format } from "date-fns";
 
 export default function AdminProfile() {
@@ -25,6 +25,9 @@ export default function AdminProfile() {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
+    phone: user?.phone || "",
+    school_origin: user?.school_origin || "",
+    birth_date: user?.birth_date || "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -41,6 +44,9 @@ export default function AdminProfile() {
           ...prev,
           name: result.data.name || "",
           email: result.data.email || "",
+          phone: result.data.phone || "",
+          school_origin: result.data.school_origin || "",
+          birth_date: result.data.birth_date || "",
         }));
       } else {
         setErrorMessage(result.error || "Failed to load user data");
@@ -226,6 +232,39 @@ export default function AdminProfile() {
                     <p className="font-semibold">{createdAtDate}</p>
                   </div>
                 </div>
+
+                {/* Phone (Hidden) */}
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-orange-100 rounded-lg">
+                    <Phone className="h-5 w-5 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Nomor Telepon</p>
+                    <p className="font-semibold">{user?.phone || "-"}</p>
+                  </div>
+                </div>
+
+                {/* School Origin (Hidden) */}
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-teal-100 rounded-lg">
+                    <School className="h-5 w-5 text-teal-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Asal Sekolah</p>
+                    <p className="font-semibold">{user?.school_origin || "-"}</p>
+                  </div>
+                </div>
+
+                {/* Birth Date (Hidden) */}
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-pink-100 rounded-lg">
+                    <Calendar className="h-5 w-5 text-pink-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Tanggal Lahir</p>
+                    <p className="font-semibold">{user?.birth_date ? format(new Date(user.birth_date), "dd MMMM yyyy") : "-"}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -262,6 +301,51 @@ export default function AdminProfile() {
                     value={formData.email}
                     onChange={handleInputChange}
                     placeholder="Enter your email address"
+                  />
+                </div>
+
+                {/* Phone (Hidden - disabled) */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Nomor Telepon</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="Nomor telepon"
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                {/* School Origin (Hidden - disabled) */}
+                <div className="space-y-2">
+                  <Label htmlFor="school_origin">Asal Sekolah</Label>
+                  <Input
+                    id="school_origin"
+                    name="school_origin"
+                    type="text"
+                    value={formData.school_origin}
+                    onChange={handleInputChange}
+                    placeholder="Asal sekolah"
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                {/* Birth Date (Hidden - disabled) */}
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="birth_date">Tanggal Lahir</Label>
+                  <Input
+                    id="birth_date"
+                    name="birth_date"
+                    type="text"
+                    value={formData.birth_date}
+                    onChange={handleInputChange}
+                    placeholder="Tanggal lahir"
+                    disabled
+                    className="bg-muted"
                   />
                 </div>
               </div>
