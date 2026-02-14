@@ -38,7 +38,6 @@ coverage
 # Docker
 Dockerfile*
 docker-compose*
-nginx.conf
 railway.json
 
 # CI/CD
