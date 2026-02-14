@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+bun.lockb
+
+# Build outputs
+dist
+dist-ssr
+
+# IDE
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Testing
+coverage
+
+# Misc
+*.local
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# Docs
+*.md
+!README.md
+
+# Docker
+Dockerfile*
+docker-compose*
+nginx.conf
+railway.json
+
+# CI/CD
+.github
+.gitlab-ci.yml
+
