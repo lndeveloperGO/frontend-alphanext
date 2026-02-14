@@ -39,9 +39,9 @@ export default defineConfig(({ mode }) => {
     },
     // Define environment variables for production build
     define: {
-      "import.meta.env.VITE_APP_NAME": JSON.stringify(env.VITE_APP_NAME || "AlphaNext"),
-      "import.meta.env.VITE_API_BASE_URL": JSON.stringify(env.VITE_API_BASE_URL || ""),
-      "import.meta.env.VITE_APP_TAGLINE": JSON.stringify(env.VITE_APP_TAGLINE || "AlphaNext Learning Platform"),
+      "import.meta.env.VITE_APP_NAME": JSON.stringify(env.VITE_APP_NAME ),
+      "import.meta.env.VITE_API_BASE_URL": JSON.stringify(env.VITE_API_BASE_URL ),
+      "import.meta.env.VITE_APP_TAGLINE": JSON.stringify(env.VITE_APP_TAGLINE ),
     },
   };
 });
