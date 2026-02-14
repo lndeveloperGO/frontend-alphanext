@@ -39,7 +39,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Settings, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Settings, Loader2, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   packageService,
@@ -65,14 +65,14 @@ export default function AdminPackages() {
     name: string;
     type: PackageType;
     category_id: number;
-    duration_seconds: number;
+    duration_minutes: number;
     is_active: boolean;
     is_free: boolean;
   }>({
     name: "",
     type: "latihan",
     category_id: 0,
-    duration_seconds: 0,
+    duration_minutes: 0,
     is_active: true,
     is_free: false,
   });
@@ -112,7 +112,7 @@ export default function AdminPackages() {
         name: "",
         type: "latihan",
         category_id: categories.length > 0 ? categories[0].id : 0,
-        duration_seconds: 0,
+        duration_minutes: 0,
         is_active: true,
         is_free: false,
       });
@@ -122,7 +122,7 @@ export default function AdminPackages() {
         name: pkg.name,
         type: pkg.type,
         category_id: pkg.category_id,
-        duration_seconds: pkg.duration_seconds,
+        duration_minutes: Math.floor(pkg.duration_seconds / 60),
         is_active: pkg.is_active,
         is_free: pkg.is_free,
       });
@@ -138,7 +138,7 @@ export default function AdminPackages() {
       name: "",
       type: "latihan",
       category_id: categories.length > 0 ? categories[0].id : 0,
-      duration_seconds: 0,
+      duration_minutes: 0,
       is_active: true,
       is_free: false,
     });
@@ -163,7 +163,7 @@ export default function AdminPackages() {
       return;
     }
 
-    if (formData.duration_seconds === 0) {
+    if (formData.duration_minutes === 0) {
       toast({
         title: "Error",
         description: "Duration must be greater than 0",
@@ -175,8 +175,14 @@ export default function AdminPackages() {
     try {
       setSubmitting(true);
 
+      // Convert minutes to seconds for API
+      const packageData = {
+        ...formData,
+        duration_seconds: formData.duration_minutes * 60,
+      };
+
       if (dialogMode === "create") {
-        await packageService.createPackage(formData as CreatePackageInput);
+        await packageService.createPackage(packageData as CreatePackageInput);
         toast({
           title: "Success",
           description: "Package created successfully",
@@ -184,7 +190,7 @@ export default function AdminPackages() {
       } else if (dialogMode === "edit" && selectedPackage) {
         await packageService.updatePackage(
           selectedPackage.id,
-          formData as UpdatePackageInput
+          packageData as UpdatePackageInput
         );
         toast({
           title: "Success",
@@ -302,6 +308,7 @@ export default function AdminPackages() {
                       <TableHead>Category</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Questions</TableHead>
+                      <TableHead>Materials</TableHead>
                       <TableHead>Free</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="w-32 text-right">Actions</TableHead>
@@ -320,6 +327,7 @@ export default function AdminPackages() {
                         <TableCell>{pkg.category?.name || getCategoryName(pkg.category_id)}</TableCell>
                         <TableCell>{formatDuration(pkg.duration_seconds)}</TableCell>
                         <TableCell className="text-center">{pkg.questions_count}</TableCell>
+                        <TableCell className="text-center">{pkg.material_count || 0}</TableCell>
                         <TableCell>
                           <Badge variant={pkg.is_free ? "secondary" : "outline"}>
                             {pkg.is_free ? "Free" : "Paid"}
@@ -337,9 +345,22 @@ export default function AdminPackages() {
                               size="sm"
                               onClick={() =>
                                 navigate(
+                                  `/admin/packages/${pkg.id}/materials`
+                                )
+                              }
+                              title="Manage Materials"
+                            >
+                              <BookOpen className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
                                   `/admin/packages/${pkg.id}/questions`
                                 )
                               }
+                              title="Manage Questions"
                             >
                               <Settings className="h-4 w-4" />
                             </Button>
@@ -440,16 +461,16 @@ export default function AdminPackages() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration_seconds">Duration (seconds)</Label>
+              <Label htmlFor="duration_minutes">Duration (minutes)</Label>
               <Input
-                id="duration_seconds"
+                id="duration_minutes"
                 type="number"
-                placeholder="e.g., 3600 (1 hour)"
-                value={formData.duration_seconds}
+                placeholder="e.g., 60 (1 hour)"
+                value={formData.duration_minutes}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    duration_seconds: parseInt(e.target.value) || 0,
+                    duration_minutes: parseInt(e.target.value) || 0,
                   })
                 }
                 disabled={submitting}

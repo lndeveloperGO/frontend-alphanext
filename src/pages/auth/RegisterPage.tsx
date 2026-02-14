@@ -4,9 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthStore } from "@/stores/authStore";
-import { BookOpen, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getAppName, getAppTagline } from "@/lib/env";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AdvancedDatePicker } from "@/components/shadcn-studio/calendar/AdvancedDatePicker";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const appName = getAppName();
 const appTagline = getAppTagline();
@@ -16,6 +20,10 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [schoolOrigin, setSchoolOrigin] = useState("");
+  const [birthDate, setBirthDate] = useState<Date | undefined>(undefined);
+  const [birthDateOpen, setBirthDateOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuthStore();
@@ -45,7 +53,9 @@ export default function RegisterPage() {
 
     setIsLoading(true);
 
-    const result = await register(name, email, password);
+    const birthDateString = birthDate ? format(birthDate, "yyyy-MM-dd") : undefined;
+    
+    const result = await register(name, email, password, phone, schoolOrigin, birthDateString);
 
     if (result.success) {
       toast({
@@ -109,82 +119,184 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="nama lengkap"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                autoComplete="name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="email kamu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name and Email Row */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nama Lengkap</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="buat password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="name"
+                  type="text"
+                  placeholder="nama lengkap"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   required
-                  autoComplete="new-password"
-                  className="pr-10"
+                  autoComplete="name"
+                  className="h-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="email@mail.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="h-10"
+                />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="konfirmasi password kamu"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                autoComplete="new-password"
-              />
+            {/* Phone and School Row */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Nomor Telepon</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="08123456789"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  autoComplete="tel"
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="school_origin">Asal Sekolah</Label>
+                <Input
+                  id="school_origin"
+                  type="text"
+                  placeholder="SMA 1 Bandung"
+                  value={schoolOrigin}
+                  onChange={(e) => setSchoolOrigin(e.target.value)}
+                  required
+                  className="h-10"
+                />
+              </div>
             </div>
 
+            {/* Birth Date Row */}
+            <div className="space-y-2">
+              <Label>Tanggal Lahir</Label>
+              <Popover open={birthDateOpen} onOpenChange={setBirthDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-11 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-gray-700 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 shadow-sm",
+                      !birthDate && "text-muted-foreground"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-1.5 bg-blue-600 rounded-lg">
+                        <CalendarIcon className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-sm">
+                        {birthDate ? format(birthDate, "dd MMMM yyyy") : "Pilih tanggal lahir"}
+                      </span>
+                    </div>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border-0 overflow-hidden min-w-[320px]">
+                    
+                    {/* Advanced Date Picker */}
+                    <AdvancedDatePicker
+                      selected={birthDate}
+                      onSelect={(date) => {
+                        setBirthDate(date);
+                        setBirthDateOpen(false);
+                      }}
+                      fromDate={new Date(1950, 0, 1)}
+                      toDate={new Date()}
+                    />
+                    
+                    {/* Footer */}
+                    <div className="px-4 pb-4 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setBirthDate(undefined);
+                          setBirthDateOpen(false);
+                        }}
+                        className="flex-1 rounded-lg"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setBirthDateOpen(false)}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-lg"
+                      >
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Password Row */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    className="h-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Konfirmasi</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="konfirmasi"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  className="h-10"
+                />
+              </div>
+            </div>
+
+            {/* Terms */}
             <div className="flex items-start gap-2">
               <input type="checkbox" id="terms" className="mt-1 rounded border-input" required />
               <label htmlFor="terms" className="text-sm text-muted-foreground">
-                I agree to the{" "}
-                <a href="#" className="text-primary hover:underline">Terms of Service</a>
-                {" "}and{" "}
-                <a href="#" className="text-primary hover:underline">Privacy Policy</a>
+                Saya setuju dengan{" "}
+                <a href="#" className="text-primary hover:underline">Ketentuan Layanan</a>
+                {" "}dan{" "}
+                <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a>
               </label>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <Button type="submit" className="w-full h-11" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Buat akun
+              Buat Akun
             </Button>
           </form>
 

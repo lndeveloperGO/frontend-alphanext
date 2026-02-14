@@ -26,6 +26,7 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminProducts from "./pages/admin/AdminProducts";
 import PackageQuestions from "./pages/admin/PackageQuestions";
 import BulkQuestionImport from "./pages/admin/BulkQuestionImport";
+import AdminPackageMaterials from "./pages/admin/AdminPackageMaterials";
 
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
@@ -83,6 +84,7 @@ const App = () => (
           <Route path="/admin/questions/bulk-import" element={<ProtectedRoute allowedRoles={["admin"]}><BulkQuestionImport /></ProtectedRoute>} />
           <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
           <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
+          <Route path="/admin/packages/:packageId/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackageMaterials /></ProtectedRoute>} />
           <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
           <Route path="/admin/products" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProducts /></ProtectedRoute>} />
           <Route path="/admin/promo-codes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPromoCodes /></ProtectedRoute>} />

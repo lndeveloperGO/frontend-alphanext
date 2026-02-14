@@ -10,7 +10,10 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
-  createdAt: string;
+  createdAt?: string;
+  phone?: string;
+  school_origin?: string;
+  birth_date?: string;
 }
 
 interface AuthState {
@@ -18,7 +21,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, phone?: string, school_origin?: string, birth_date?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   setUser: (user: User) => void;
 }
@@ -83,7 +86,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
       
-      register: async (name: string, email: string, password: string) => {
+      register: async (name: string, email: string, password: string, phone?: string, school_origin?: string, birth_date?: string) => {
         try {
           const apiBaseUrl = getApiBaseUrl();
           const response = await fetch(`${apiBaseUrl}/auth/register`, {
@@ -91,7 +94,7 @@ export const useAuthStore = create<AuthState>()(
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ name, email, password }),
+            body: JSON.stringify({ name, email, password, phone, school_origin, birth_date }),
           });
 
           if (!response.ok) {
@@ -114,6 +117,9 @@ export const useAuthStore = create<AuthState>()(
             role: 'user' as const,
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
             createdAt: new Date().toISOString(),
+            phone,
+            school_origin,
+            birth_date,
           };
           mockUsers.push({ ...newUser, password });
           return { success: true };

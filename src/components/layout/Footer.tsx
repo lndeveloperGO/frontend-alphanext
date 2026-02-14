@@ -9,8 +9,8 @@ export function Footer() {
   return (
     <footer className="border-t bg-card">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          {/* Brand */}
+        {/* <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary">
@@ -41,7 +41,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
+         
           <div>
             <h4 className="mb-4 font-semibold">Quick Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -60,7 +60,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Resources */}
+          
           <div>
             <h4 className="mb-4 font-semibold">Resources</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -79,7 +79,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
+          
           <div>
             <h4 className="mb-4 font-semibold">Contact Us</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
@@ -97,9 +97,9 @@ export function Footer() {
               </li>
             </ul>
           </div>
-        </div>
+        </div> */}
 
-        <div className="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+        <div className=" border-t pt-8 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} EduLearn. All rights reserved.</p>
         </div>
       </div>
