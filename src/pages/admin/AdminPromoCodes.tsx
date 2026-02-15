@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput } from "@/lib/promoService";
+import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput, PromoProduct, PromoPackage } from "@/lib/promoService";
+import { productService, Product } from "@/lib/productService";
+import { packageService, Package } from "@/lib/packageService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -23,8 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Copy, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Copy, Loader2, Package as PackageIcon, ShoppingCart, X } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export default function AdminPromoCodes() {
@@ -34,15 +39,26 @@ export default function AdminPromoCodes() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [editingPromoCode, setEditingPromoCode] = useState<PromoCode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [assigningPromoCode, setAssigningPromoCode] = useState<PromoCode | null>(null);
   const [saving, setSaving] = useState(false);
+  const [assigningProducts, setAssigningProducts] = useState(false);
+  const [assigningPackages, setAssigningPackages] = useState(false);
   const { toast } = useToast();
+
+  // Products and packages for assignment dialog
+  const [products, setProducts] = useState<Product[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [selectedPackageIds, setSelectedPackageIds] = useState<number[]>([]);
 
   const [formData, setFormData] = useState<CreatePromoCodeInput>({
     code: "",
     type: "percent",
     value: 0,
+    min_purchase: 0,
     max_uses: 0,
     starts_at: "",
     ends_at: "",
@@ -73,6 +89,20 @@ export default function AdminPromoCodes() {
     fetchPromoCodes();
   }, [searchQuery, isActiveFilter]);
 
+  // Fetch products and packages for assignment dialog
+  const fetchProductsAndPackages = async () => {
+    try {
+      const [productsRes, packagesRes] = await Promise.all([
+        productService.getProducts(),
+        packageService.getPackages(),
+      ]);
+      setProducts(productsRes);
+      setPackages(packagesRes);
+    } catch (error) {
+      console.error("Failed to fetch products/packages:", error);
+    }
+  };
+
   const handleOpenDialog = (promoCode?: PromoCode) => {
     if (promoCode) {
       setEditingPromoCode(promoCode);
@@ -80,6 +110,7 @@ export default function AdminPromoCodes() {
         code: promoCode.code,
         type: promoCode.type,
         value: promoCode.value,
+        min_purchase: promoCode.min_purchase || 0,
         max_uses: promoCode.max_uses,
         starts_at: promoCode.starts_at,
         ends_at: promoCode.ends_at,
@@ -91,6 +122,7 @@ export default function AdminPromoCodes() {
         code: "",
         type: "percent",
         value: 0,
+        min_purchase: 0,
         max_uses: 0,
         starts_at: "",
         ends_at: "",
@@ -98,6 +130,14 @@ export default function AdminPromoCodes() {
       });
     }
     setIsDialogOpen(true);
+  };
+
+  const handleOpenAssignmentDialog = async (promoCode: PromoCode) => {
+    setAssigningPromoCode(promoCode);
+    setSelectedProductIds(promoCode.promo_products?.map(p => p.product_id) || []);
+    setSelectedPackageIds(promoCode.promo_packages?.map(p => p.package_id) || []);
+    await fetchProductsAndPackages();
+    setIsAssignmentDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -144,6 +184,46 @@ export default function AdminPromoCodes() {
     }
   };
 
+  const handleAssignProducts = async () => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setAssigningProducts(true);
+      const products = selectedProductIds.map(id => ({ product_id: id }));
+      await promoService.assignProducts(assigningPromoCode.id, products);
+      toast({ title: "Products assigned successfully" });
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningProducts(false);
+    }
+  };
+
+  const handleAssignPackages = async () => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setAssigningPackages(true);
+      const packages = selectedPackageIds.map(id => ({ package_id: id }));
+      await promoService.assignPackages(assigningPromoCode.id, packages);
+      toast({ title: "Packages assigned successfully" });
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningPackages(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deletingId) return;
 
@@ -167,6 +247,22 @@ export default function AdminPromoCodes() {
     toast({ title: "Code copied to clipboard" });
   };
 
+  const toggleProductSelection = (productId: number) => {
+    setSelectedProductIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const togglePackageSelection = (packageId: number) => {
+    setSelectedPackageIds(prev => 
+      prev.includes(packageId) 
+        ? prev.filter(id => id !== packageId)
+        : [...prev, packageId]
+    );
+  };
+
   const getStatusBadge = (status: PromoCode["status"]) => {
     const variants = {
       active: "default",
@@ -181,6 +277,14 @@ export default function AdminPromoCodes() {
         {status.replace("_", " ").toUpperCase()}
       </Badge>
     );
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   return (
@@ -230,12 +334,10 @@ export default function AdminPromoCodes() {
           <EmptyState
             title="No promo codes found"
             description="Get started by creating your first promo code."
-            action={
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Promo Code
-              </Button>
-            }
+            action={{
+              label: "Add Promo Code",
+              onClick: () => handleOpenDialog()
+            }}
           />
         ) : (
           <div className="rounded-lg border bg-card">
@@ -246,6 +348,7 @@ export default function AdminPromoCodes() {
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Usage</TableHead>
+                  <TableHead>Assignments</TableHead>
                   <TableHead>Period</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -274,11 +377,31 @@ export default function AdminPromoCodes() {
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold">
-                        {promoCode.type === "percent" ? `${promoCode.value}%` : `Rp ${promoCode.value.toLocaleString()}`}
+                        {promoCode.type === "percent" ? `${promoCode.value}%` : formatPrice(promoCode.value)}
                       </span>
                     </TableCell>
                     <TableCell>
                       {promoCode.used_count} / {promoCode.max_uses}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {promoCode.promo_products && promoCode.promo_products.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            <ShoppingCart className="h-3 w-3 mr-1" />
+                            {promoCode.promo_products.length} products
+                          </Badge>
+                        )}
+                        {promoCode.promo_packages && promoCode.promo_packages.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            <PackageIcon className="h-3 w-3 mr-1" />
+                            {promoCode.promo_packages.length} packages
+                          </Badge>
+                        )}
+                        {(!promoCode.promo_products || promoCode.promo_products.length === 0) && 
+                         (!promoCode.promo_packages || promoCode.promo_packages.length === 0) && (
+                          <span className="text-xs text-muted-foreground">No assignments</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
@@ -291,6 +414,14 @@ export default function AdminPromoCodes() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenAssignmentDialog(promoCode)}
+                          title="Assign Products/Packages"
+                        >
+                          <PackageIcon className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -366,6 +497,17 @@ export default function AdminPromoCodes() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="minPurchase">Minimum Purchase (IDR)</Label>
+              <Input
+                id="minPurchase"
+                type="number"
+                min="0"
+                value={formData.min_purchase}
+                onChange={(e) => setFormData({ ...formData, min_purchase: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="maxUses">Max Uses</Label>
               <Input
                 id="maxUses"
@@ -374,7 +516,7 @@ export default function AdminPromoCodes() {
                 onChange={(e) => setFormData({ ...formData, max_uses: parseInt(e.target.value) || 0 })}
               />
             </div>
-            <div className="grid grid-cols-1 gap-4 ">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="starts_at">Starts At</Label>
                 <Input
@@ -415,6 +557,123 @@ export default function AdminPromoCodes() {
         </DialogContent>
       </Dialog>
 
+      {/* Assignment Dialog */}
+      <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Assign Products/Packages</DialogTitle>
+            <DialogDescription>
+              Assign products or packages to promo code: <span className="font-mono font-semibold">{assigningPromoCode?.code}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="products" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="products" className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                Products ({selectedProductIds.length} selected)
+              </TabsTrigger>
+              <TabsTrigger value="packages" className="flex items-center gap-2">
+                <PackageIcon className="h-4 w-4" />
+                Packages ({selectedPackageIds.length} selected)
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="products" className="mt-4">
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Select products that this promo code can be applied to. If no products are selected, the promo will fall back to package assignment.
+                </div>
+                <ScrollArea className="h-[300px] rounded-md border p-4">
+                  <div className="space-y-2">
+                    {products.map((product) => (
+                      <div
+                        key={product.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                          selectedProductIds.includes(product.id) ? "bg-primary/10 border-primary" : ""
+                        }`}
+                        onClick={() => toggleProductSelection(product.id)}
+                      >
+                        <Checkbox
+                          checked={selectedProductIds.includes(product.id)}
+                          onCheckedChange={() => toggleProductSelection(product.id)}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {product.type === "bundle" ? "Bundle" : "Single"} - {formatPrice(product.price)}
+                          </div>
+                        </div>
+                        <Badge variant="outline">{product.type}</Badge>
+                      </div>
+                    ))}
+                    {products.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No products available
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                <Button 
+                  onClick={handleAssignProducts} 
+                  disabled={assigningProducts}
+                  className="w-full"
+                >
+                  {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Products Assignment
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="packages" className="mt-4">
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Select packages that this promo code can be applied to. This is used as fallback when no product assignment exists.
+                </div>
+                <ScrollArea className="h-[300px] rounded-md border p-4">
+                  <div className="space-y-2">
+                    {packages.map((pkg) => (
+                      <div
+                        key={pkg.id}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                          selectedPackageIds.includes(pkg.id) ? "bg-primary/10 border-primary" : ""
+                        }`}
+                        onClick={() => togglePackageSelection(pkg.id)}
+                      >
+                        <Checkbox
+                          checked={selectedPackageIds.includes(pkg.id)}
+                          onCheckedChange={() => togglePackageSelection(pkg.id)}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{pkg.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {pkg.type} - {pkg.questions_count} questions
+                          </div>
+                        </div>
+                        <Badge variant="outline">{pkg.type}</Badge>
+                      </div>
+                    ))}
+                    {packages.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No packages available
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+                <Button 
+                  onClick={handleAssignPackages} 
+                  disabled={assigningPackages}
+                  className="w-full"
+                >
+                  {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Packages Assignment
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Confirmation */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
@@ -437,3 +696,4 @@ export default function AdminPromoCodes() {
     </DashboardLayout>
   );
 }
+

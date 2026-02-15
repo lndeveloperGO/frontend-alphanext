@@ -3,11 +3,37 @@ import { useAuthStore } from "@/stores/authStore";
 
 const getApiUrl = () => getApiBaseUrl();
 
+// Promo Product Assignment
+export interface PromoProduct {
+  id: number;
+  promo_id: string;
+  product_id: number;
+  product?: {
+    id: number;
+    name: string;
+    type: "single" | "bundle";
+    price: number;
+  };
+}
+
+// Promo Package Assignment
+export interface PromoPackage {
+  id: number;
+  promo_id: string;
+  package_id: number;
+  package?: {
+    id: number;
+    name: string;
+    type: string;
+  };
+}
+
 export interface PromoCode {
   id: string;
   code: string;
   type: "percent" | "fixed";
   value: number;
+  min_purchase: number;
   max_uses: number;
   used_count: number;
   starts_at: string;
@@ -16,12 +42,16 @@ export interface PromoCode {
   status: "active" | "upcoming" | "expired" | "disabled" | "quota_exhausted";
   created_at?: string;
   updated_at?: string;
+  // Assignment relations
+  promo_products?: PromoProduct[];
+  promo_packages?: PromoPackage[];
 }
 
 export interface CreatePromoCodeInput {
   code: string;
   type: "percent" | "fixed";
   value: number;
+  min_purchase?: number;
   max_uses: number;
   starts_at: string;
   ends_at: string;
@@ -32,6 +62,7 @@ export interface UpdatePromoCodeInput {
   code?: string;
   type?: "percent" | "fixed";
   value?: number;
+  min_purchase?: number;
   max_uses?: number;
   starts_at?: string;
   ends_at?: string;
@@ -57,6 +88,7 @@ export interface PromoCodeResponse {
 export interface ValidatePromoCodeInput {
   code: string;
   amount: number;
+  product_id?: number;
 }
 
 export interface ValidatePromoCodeResponse {
@@ -177,6 +209,60 @@ export const promoService = {
     if (!response.ok) {
       const error: ErrorResponse = await response.json();
       throw new Error(error.message || "Invalid promo code");
+    }
+
+    return response.json();
+  },
+
+  // Admin: Assign products to promo code
+  async assignProducts(
+    promoId: string,
+    products: { product_id: number }[]
+  ): Promise<{ success: boolean; data: PromoProduct[]; message?: string }> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}/products`, {
+      method: "PUT",
+      headers: getAuthHeader(true),
+      body: JSON.stringify({ products }),
+    });
+
+    if (!response.ok) {
+      const error: ErrorResponse = await response.json();
+      throw new Error(error.message || "Failed to assign products");
+    }
+
+    return response.json();
+  },
+
+  // Admin: Assign packages to promo code
+  async assignPackages(
+    promoId: string,
+    packages: { package_id: number }[]
+  ): Promise<{ success: boolean; data: PromoPackage[]; message?: string }> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}/packages`, {
+      method: "PUT",
+      headers: getAuthHeader(true),
+      body: JSON.stringify({ packages }),
+    });
+
+    if (!response.ok) {
+      const error: ErrorResponse = await response.json();
+      throw new Error(error.message || "Failed to assign packages");
+    }
+
+    return response.json();
+  },
+
+  // Admin: Get promo code with assignments
+  async getPromoCodeAssignments(
+    promoId: string
+  ): Promise<{ success: boolean; data: PromoCode }> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}`, {
+      method: "GET",
+      headers: getAuthHeader(true),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch promo code ${promoId}`);
     }
 
     return response.json();
