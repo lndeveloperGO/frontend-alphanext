@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput } from "@/lib/promoService";
+import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput, PromoCodeAssignmentProduct, PromoCodeAssignmentPackage } from "@/lib/promoService";
+import { productService, Product } from "@/lib/productService";
+import { packageService, Package } from "@/lib/packageService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -23,8 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Copy, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Copy, Loader2, Package as PackageIcon, ShoppingCart, X, Check } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export default function AdminPromoCodes() {
@@ -34,15 +39,32 @@ export default function AdminPromoCodes() {
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
   const [editingPromoCode, setEditingPromoCode] = useState<PromoCode | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [assigningPromoCode, setAssigningPromoCode] = useState<PromoCode | null>(null);
   const [saving, setSaving] = useState(false);
+  const [assigningProducts, setAssigningProducts] = useState(false);
+  const [assigningPackages, setAssigningPackages] = useState(false);
+  const [unassigningProductId, setUnassigningProductId] = useState<number | null>(null);
+  const [unassigningPackageId, setUnassigningPackageId] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Products and packages for assignment dialog
+  const [products, setProducts] = useState<Product[]>([]);
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [selectedPackageIds, setSelectedPackageIds] = useState<number[]>([]);
+  
+  // Assigned products and packages from API (for display in the modal)
+  const [assignedProducts, setAssignedProducts] = useState<PromoCodeAssignmentProduct[]>([]);
+  const [assignedPackages, setAssignedPackages] = useState<PromoCodeAssignmentPackage[]>([]);
 
   const [formData, setFormData] = useState<CreatePromoCodeInput>({
     code: "",
     type: "percent",
     value: 0,
+    min_purchase: 0,
     max_uses: 0,
     starts_at: "",
     ends_at: "",
@@ -73,6 +95,33 @@ export default function AdminPromoCodes() {
     fetchPromoCodes();
   }, [searchQuery, isActiveFilter]);
 
+  // Fetch products and packages for assignment dialog
+  const fetchProductsAndPackages = async () => {
+    try {
+      const [productsRes, packagesRes] = await Promise.all([
+        productService.getProducts(),
+        packageService.getPackages(),
+      ]);
+      setProducts(productsRes);
+      setPackages(packagesRes);
+    } catch (error) {
+      console.error("Failed to fetch products/packages:", error);
+    }
+  };
+
+  // Helper function to convert ISO datetime to datetime-local format
+  const formatDateTimeLocal = (isoString: string): string => {
+    if (!isoString) return "";
+    // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const handleOpenDialog = (promoCode?: PromoCode) => {
     if (promoCode) {
       setEditingPromoCode(promoCode);
@@ -80,9 +129,10 @@ export default function AdminPromoCodes() {
         code: promoCode.code,
         type: promoCode.type,
         value: promoCode.value,
+        min_purchase: promoCode.min_purchase || 0,
         max_uses: promoCode.max_uses,
-        starts_at: promoCode.starts_at,
-        ends_at: promoCode.ends_at,
+        starts_at: formatDateTimeLocal(promoCode.starts_at),
+        ends_at: formatDateTimeLocal(promoCode.ends_at),
         is_active: promoCode.is_active,
       });
     } else {
@@ -91,6 +141,7 @@ export default function AdminPromoCodes() {
         code: "",
         type: "percent",
         value: 0,
+        min_purchase: 0,
         max_uses: 0,
         starts_at: "",
         ends_at: "",
@@ -98,6 +149,35 @@ export default function AdminPromoCodes() {
       });
     }
     setIsDialogOpen(true);
+  };
+
+  const handleOpenAssignmentDialog = async (promoCode: PromoCode) => {
+    setAssigningPromoCode(promoCode);
+    
+    // Fetch assigned products and packages using the new endpoint
+    try {
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(promoCode.id);
+      const assignments = assignmentsResponse.data;
+      
+      // Store assigned products and packages for display
+      setAssignedProducts(assignments.products);
+      setAssignedPackages(assignments.packages);
+      
+      // Get assigned product IDs and package IDs for selection state
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+    } catch (error) {
+      console.error("Failed to fetch promo code assignments:", error);
+      // Fallback to empty arrays if the call fails
+      setAssignedProducts([]);
+      setAssignedPackages([]);
+      setSelectedProductIds([]);
+      setSelectedPackageIds([]);
+    }
+    
+    // Also fetch all products and packages for the selection list
+    await fetchProductsAndPackages();
+    setIsAssignmentDialogOpen(true);
   };
 
   const handleSave = async () => {
@@ -144,6 +224,60 @@ export default function AdminPromoCodes() {
     }
   };
 
+  const handleAssignProducts = async () => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setAssigningProducts(true);
+      const productsToAssign = selectedProductIds.map(id => ({ product_id: id }));
+      await promoService.assignProducts(assigningPromoCode.id, productsToAssign);
+      toast({ title: "Products assigned successfully" });
+      
+      // Refresh assignments after saving
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedProducts(assignments.products);
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningProducts(false);
+    }
+  };
+
+  const handleAssignPackages = async () => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setAssigningPackages(true);
+      const packagesToAssign = selectedPackageIds.map(id => ({ package_id: id }));
+      await promoService.assignPackages(assigningPromoCode.id, packagesToAssign);
+      toast({ title: "Packages assigned successfully" });
+      
+      // Refresh assignments after saving
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedPackages(assignments.packages);
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+      
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningPackages(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deletingId) return;
 
@@ -167,6 +301,86 @@ export default function AdminPromoCodes() {
     toast({ title: "Code copied to clipboard" });
   };
 
+  const toggleProductSelection = (productId: number) => {
+    setSelectedProductIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const togglePackageSelection = (packageId: number) => {
+    setSelectedPackageIds(prev => 
+      prev.includes(packageId) 
+        ? prev.filter(id => id !== packageId)
+        : [...prev, packageId]
+    );
+  };
+
+  // Handle unassign/remove a product from the assigned list
+  const handleUnassignProduct = async (productId: number) => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setUnassigningProductId(productId);
+      await promoService.unassignProduct(assigningPromoCode.id, productId);
+      
+      toast({ 
+        title: "Product unassigned successfully",
+        description: "The product has been removed from this promo code."
+      });
+      
+      // Refresh assignments from API
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedProducts(assignments.products);
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      
+      // Refresh main promo codes list
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unassign product",
+        variant: "destructive",
+      });
+    } finally {
+      setUnassigningProductId(null);
+    }
+  };
+
+  // Handle unassign/remove a package from the assigned list
+  const handleUnassignPackage = async (packageId: number) => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setUnassigningPackageId(packageId);
+      await promoService.unassignPackage(assigningPromoCode.id, packageId);
+      
+      toast({ 
+        title: "Package unassigned successfully",
+        description: "The package has been removed from this promo code."
+      });
+      
+      // Refresh assignments from API
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedPackages(assignments.packages);
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+      
+      // Refresh main promo codes list
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unassign package",
+        variant: "destructive",
+      });
+    } finally {
+      setUnassigningPackageId(null);
+    }
+  };
+
   const getStatusBadge = (status: PromoCode["status"]) => {
     const variants = {
       active: "default",
@@ -181,6 +395,24 @@ export default function AdminPromoCodes() {
         {status.replace("_", " ").toUpperCase()}
       </Badge>
     );
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(price);
+  };
+
+  // Get unassigned products (available to assign)
+  const getUnassignedProducts = () => {
+    return products.filter(p => !selectedProductIds.includes(p.id));
+  };
+
+  // Get unassigned packages (available to assign)
+  const getUnassignedPackages = () => {
+    return packages.filter(p => !selectedPackageIds.includes(p.id));
   };
 
   return (
@@ -230,12 +462,10 @@ export default function AdminPromoCodes() {
           <EmptyState
             title="No promo codes found"
             description="Get started by creating your first promo code."
-            action={
-              <Button onClick={() => handleOpenDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Promo Code
-              </Button>
-            }
+            action={{
+              label: "Add Promo Code",
+              onClick: () => handleOpenDialog()
+            }}
           />
         ) : (
           <div className="rounded-lg border bg-card">
@@ -246,6 +476,7 @@ export default function AdminPromoCodes() {
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Usage</TableHead>
+                  <TableHead>Assignments</TableHead>
                   <TableHead>Period</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -274,11 +505,31 @@ export default function AdminPromoCodes() {
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold">
-                        {promoCode.type === "percent" ? `${promoCode.value}%` : `Rp ${promoCode.value.toLocaleString()}`}
+                        {promoCode.type === "percent" ? `${promoCode.value}%` : formatPrice(promoCode.value)}
                       </span>
                     </TableCell>
                     <TableCell>
                       {promoCode.used_count} / {promoCode.max_uses}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {promoCode.promo_products && promoCode.promo_products.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            <ShoppingCart className="h-3 w-3 mr-1" />
+                            {promoCode.promo_products.length} products
+                          </Badge>
+                        )}
+                        {promoCode.promo_packages && promoCode.promo_packages.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            <PackageIcon className="h-3 w-3 mr-1" />
+                            {promoCode.promo_packages.length} packages
+                          </Badge>
+                        )}
+                        {(!promoCode.promo_products || promoCode.promo_products.length === 0) && 
+                         (!promoCode.promo_packages || promoCode.promo_packages.length === 0) && (
+                          <span className="text-xs text-muted-foreground">No assignments</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
@@ -291,6 +542,14 @@ export default function AdminPromoCodes() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleOpenAssignmentDialog(promoCode)}
+                          title="Assign Products/Packages"
+                        >
+                          <PackageIcon className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -366,6 +625,17 @@ export default function AdminPromoCodes() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="minPurchase">Minimum Purchase (IDR)</Label>
+              <Input
+                id="minPurchase"
+                type="number"
+                min="0"
+                value={formData.min_purchase}
+                onChange={(e) => setFormData({ ...formData, min_purchase: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="maxUses">Max Uses</Label>
               <Input
                 id="maxUses"
@@ -374,7 +644,7 @@ export default function AdminPromoCodes() {
                 onChange={(e) => setFormData({ ...formData, max_uses: parseInt(e.target.value) || 0 })}
               />
             </div>
-            <div className="grid grid-cols-1 gap-4 ">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="starts_at">Starts At</Label>
                 <Input
@@ -412,6 +682,238 @@ export default function AdminPromoCodes() {
               {editingPromoCode ? "Save Changes" : "Create Promo Code"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assignment Dialog with improved UX */}
+      <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Assign Products/Packages</DialogTitle>
+            <DialogDescription>
+              Assign products or packages to promo code: <span className="font-mono font-semibold">{assigningPromoCode?.code}</span>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="products" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="products" className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                Products ({selectedProductIds.length} selected)
+              </TabsTrigger>
+              <TabsTrigger value="packages" className="flex items-center gap-2">
+                <PackageIcon className="h-4 w-4" />
+                Packages ({selectedPackageIds.length} selected)
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Products Tab */}
+            <TabsContent value="products" className="mt-4">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-6">
+                  {/* Assigned Products Table */}
+                  {assignedProducts.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Currently Assigned Products ({assignedProducts.length})
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>                     
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {assignedProducts.map((product) => (
+                            <TableRow key={product.id} className="bg-green-50/50">
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                  Assigned
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleUnassignProduct(product.id)}
+                                  disabled={unassigningProductId === product.id}
+                                  title="Remove assignment"
+                                >
+                                  {unassigningProductId === product.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Available Products */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">
+                      {assignedProducts.length > 0 ? "Available Products" : "Select Products"}
+                      {getUnassignedProducts().length > 0 && ` (${getUnassignedProducts().length} available)`}
+                    </h4>
+                    {getUnassignedProducts().length === 0 && assignedProducts.length > 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        All products have been assigned
+                      </div>
+                    ) : getUnassignedProducts().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        No products available to assign
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
+                        {getUnassignedProducts().map((product) => (
+                          <div
+                            key={product.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedProductIds.includes(product.id) ? "bg-primary/10 border-primary" : ""
+                            }`}
+                            onClick={() => toggleProductSelection(product.id)}
+                          >
+                            <Checkbox
+                              checked={selectedProductIds.includes(product.id)}
+                              onCheckedChange={() => toggleProductSelection(product.id)}
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {product.type === "bundle" ? "Bundle" : "Single"} - {formatPrice(product.price)}
+                              </div>
+                            </div>
+                            <Badge variant="outline">{product.type}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+              <Button 
+                onClick={handleAssignProducts} 
+                disabled={assigningProducts}
+                className="w-full mt-4"
+              >
+                {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Products Assignment
+              </Button>
+            </TabsContent>
+            
+            {/* Packages Tab */}
+            <TabsContent value="packages" className="mt-4">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-6">
+                  {/* Assigned Packages Table */}
+                  {assignedPackages.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Currently Assigned Packages ({assignedPackages.length})
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                           
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {assignedPackages.map((pkg) => (
+                            <TableRow key={pkg.id} className="bg-green-50/50">
+                              <TableCell className="font-medium">{pkg.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                  Assigned
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleUnassignPackage(pkg.id)}
+                                  disabled={unassigningPackageId === pkg.id}
+                                  title="Remove assignment"
+                                >
+                                  {unassigningPackageId === pkg.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Available Packages */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">
+                      {assignedPackages.length > 0 ? "Available Packages" : "Select Packages"}
+                      {getUnassignedPackages().length > 0 && ` (${getUnassignedPackages().length} available)`}
+                    </h4>
+                    {getUnassignedPackages().length === 0 && assignedPackages.length > 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        All packages have been assigned
+                      </div>
+                    ) : getUnassignedPackages().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        No packages available to assign
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
+                        {getUnassignedPackages().map((pkg) => (
+                          <div
+                            key={pkg.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedPackageIds.includes(pkg.id) ? "bg-primary/10 border-primary" : ""
+                            }`}
+                            onClick={() => togglePackageSelection(pkg.id)}
+                          >
+                            <Checkbox
+                              checked={selectedPackageIds.includes(pkg.id)}
+                              onCheckedChange={() => togglePackageSelection(pkg.id)}
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium">{pkg.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {pkg.type} - {pkg.questions_count} questions
+                              </div>
+                            </div>
+                            <Badge variant="outline">{pkg.type}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+              <Button 
+                onClick={handleAssignPackages} 
+                disabled={assigningPackages}
+                className="w-full mt-4"
+              >
+                {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Packages Assignment
+              </Button>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
