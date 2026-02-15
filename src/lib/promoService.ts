@@ -295,4 +295,40 @@ export const promoService = {
 
     return response.json();
   },
+
+  // Admin: Unassign/delete a product from promo code
+  async unassignProduct(
+    promoId: string,
+    productId: number
+  ): Promise<{ success: boolean; message?: string }> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}/products/${productId}`, {
+      method: "DELETE",
+      headers: getAuthHeader(true),
+    });
+
+    if (!response.ok) {
+      const error: ErrorResponse = await response.json();
+      throw new Error(error.message || "Failed to unassign product");
+    }
+
+    return response.json();
+  },
+
+  // Admin: Unassign/delete a package from promo code
+  async unassignPackage(
+    promoId: string,
+    packageId: number
+  ): Promise<{ success: boolean; message?: string }> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}/packages/${packageId}`, {
+      method: "DELETE",
+      headers: getAuthHeader(true),
+    });
+
+    if (!response.ok) {
+      const error: ErrorResponse = await response.json();
+      throw new Error(error.message || "Failed to unassign package");
+    }
+
+    return response.json();
+  },
 };

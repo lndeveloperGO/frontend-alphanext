@@ -46,6 +46,8 @@ export default function AdminPromoCodes() {
   const [saving, setSaving] = useState(false);
   const [assigningProducts, setAssigningProducts] = useState(false);
   const [assigningPackages, setAssigningPackages] = useState(false);
+  const [unassigningProductId, setUnassigningProductId] = useState<number | null>(null);
+  const [unassigningPackageId, setUnassigningPackageId] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Products and packages for assignment dialog
@@ -107,6 +109,19 @@ export default function AdminPromoCodes() {
     }
   };
 
+  // Helper function to convert ISO datetime to datetime-local format
+  const formatDateTimeLocal = (isoString: string): string => {
+    if (!isoString) return "";
+    // Convert ISO string to datetime-local format (YYYY-MM-DDTHH:mm)
+    const date = new Date(isoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
   const handleOpenDialog = (promoCode?: PromoCode) => {
     if (promoCode) {
       setEditingPromoCode(promoCode);
@@ -116,8 +131,8 @@ export default function AdminPromoCodes() {
         value: promoCode.value,
         min_purchase: promoCode.min_purchase || 0,
         max_uses: promoCode.max_uses,
-        starts_at: promoCode.starts_at,
-        ends_at: promoCode.ends_at,
+        starts_at: formatDateTimeLocal(promoCode.starts_at),
+        ends_at: formatDateTimeLocal(promoCode.ends_at),
         is_active: promoCode.is_active,
       });
     } else {
@@ -300,6 +315,70 @@ export default function AdminPromoCodes() {
         ? prev.filter(id => id !== packageId)
         : [...prev, packageId]
     );
+  };
+
+  // Handle unassign/remove a product from the assigned list
+  const handleUnassignProduct = async (productId: number) => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setUnassigningProductId(productId);
+      await promoService.unassignProduct(assigningPromoCode.id, productId);
+      
+      toast({ 
+        title: "Product unassigned successfully",
+        description: "The product has been removed from this promo code."
+      });
+      
+      // Refresh assignments from API
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedProducts(assignments.products);
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      
+      // Refresh main promo codes list
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unassign product",
+        variant: "destructive",
+      });
+    } finally {
+      setUnassigningProductId(null);
+    }
+  };
+
+  // Handle unassign/remove a package from the assigned list
+  const handleUnassignPackage = async (packageId: number) => {
+    if (!assigningPromoCode) return;
+
+    try {
+      setUnassigningPackageId(packageId);
+      await promoService.unassignPackage(assigningPromoCode.id, packageId);
+      
+      toast({ 
+        title: "Package unassigned successfully",
+        description: "The package has been removed from this promo code."
+      });
+      
+      // Refresh assignments from API
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedPackages(assignments.packages);
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+      
+      // Refresh main promo codes list
+      fetchPromoCodes();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to unassign package",
+        variant: "destructive",
+      });
+    } finally {
+      setUnassigningPackageId(null);
+    }
   };
 
   const getStatusBadge = (status: PromoCode["status"]) => {
@@ -644,6 +723,7 @@ export default function AdminPromoCodes() {
                           <TableRow>
                             <TableHead>Name</TableHead>                     
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -654,6 +734,22 @@ export default function AdminPromoCodes() {
                                 <Badge variant="secondary" className="bg-green-100 text-green-700">
                                   Assigned
                                 </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleUnassignProduct(product.id)}
+                                  disabled={unassigningProductId === product.id}
+                                  title="Remove assignment"
+                                >
+                                  {unassigningProductId === product.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -731,6 +827,7 @@ export default function AdminPromoCodes() {
                             <TableHead>Name</TableHead>
                            
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -741,6 +838,22 @@ export default function AdminPromoCodes() {
                                 <Badge variant="secondary" className="bg-green-100 text-green-700">
                                   Assigned
                                 </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleUnassignPackage(pkg.id)}
+                                  disabled={unassigningPackageId === pkg.id}
+                                  title="Remove assignment"
+                                >
+                                  {unassigningPackageId === pkg.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <X className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
