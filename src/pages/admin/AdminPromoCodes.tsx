@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput, PromoProduct, PromoPackage } from "@/lib/promoService";
+import { promoService, PromoCode, CreatePromoCodeInput, UpdatePromoCodeInput, PromoCodeAssignmentProduct, PromoCodeAssignmentPackage } from "@/lib/promoService";
 import { productService, Product } from "@/lib/productService";
 import { packageService, Package } from "@/lib/packageService";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Search, Copy, Loader2, Package as PackageIcon, ShoppingCart, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Copy, Loader2, Package as PackageIcon, ShoppingCart, X, Check } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 
 export default function AdminPromoCodes() {
@@ -53,6 +53,10 @@ export default function AdminPromoCodes() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [selectedPackageIds, setSelectedPackageIds] = useState<number[]>([]);
+  
+  // Assigned products and packages from API (for display in the modal)
+  const [assignedProducts, setAssignedProducts] = useState<PromoCodeAssignmentProduct[]>([]);
+  const [assignedPackages, setAssignedPackages] = useState<PromoCodeAssignmentPackage[]>([]);
 
   const [formData, setFormData] = useState<CreatePromoCodeInput>({
     code: "",
@@ -134,8 +138,29 @@ export default function AdminPromoCodes() {
 
   const handleOpenAssignmentDialog = async (promoCode: PromoCode) => {
     setAssigningPromoCode(promoCode);
-    setSelectedProductIds(promoCode.promo_products?.map(p => p.product_id) || []);
-    setSelectedPackageIds(promoCode.promo_packages?.map(p => p.package_id) || []);
+    
+    // Fetch assigned products and packages using the new endpoint
+    try {
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(promoCode.id);
+      const assignments = assignmentsResponse.data;
+      
+      // Store assigned products and packages for display
+      setAssignedProducts(assignments.products);
+      setAssignedPackages(assignments.packages);
+      
+      // Get assigned product IDs and package IDs for selection state
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+    } catch (error) {
+      console.error("Failed to fetch promo code assignments:", error);
+      // Fallback to empty arrays if the call fails
+      setAssignedProducts([]);
+      setAssignedPackages([]);
+      setSelectedProductIds([]);
+      setSelectedPackageIds([]);
+    }
+    
+    // Also fetch all products and packages for the selection list
     await fetchProductsAndPackages();
     setIsAssignmentDialogOpen(true);
   };
@@ -189,9 +214,16 @@ export default function AdminPromoCodes() {
 
     try {
       setAssigningProducts(true);
-      const products = selectedProductIds.map(id => ({ product_id: id }));
-      await promoService.assignProducts(assigningPromoCode.id, products);
+      const productsToAssign = selectedProductIds.map(id => ({ product_id: id }));
+      await promoService.assignProducts(assigningPromoCode.id, productsToAssign);
       toast({ title: "Products assigned successfully" });
+      
+      // Refresh assignments after saving
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedProducts(assignments.products);
+      setSelectedProductIds(assignments.products.map(p => p.id));
+      
       fetchPromoCodes();
     } catch (error: any) {
       toast({
@@ -209,9 +241,16 @@ export default function AdminPromoCodes() {
 
     try {
       setAssigningPackages(true);
-      const packages = selectedPackageIds.map(id => ({ package_id: id }));
-      await promoService.assignPackages(assigningPromoCode.id, packages);
+      const packagesToAssign = selectedPackageIds.map(id => ({ package_id: id }));
+      await promoService.assignPackages(assigningPromoCode.id, packagesToAssign);
       toast({ title: "Packages assigned successfully" });
+      
+      // Refresh assignments after saving
+      const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
+      const assignments = assignmentsResponse.data;
+      setAssignedPackages(assignments.packages);
+      setSelectedPackageIds(assignments.packages.map(p => p.id));
+      
       fetchPromoCodes();
     } catch (error: any) {
       toast({
@@ -285,6 +324,16 @@ export default function AdminPromoCodes() {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Get unassigned products (available to assign)
+  const getUnassignedProducts = () => {
+    return products.filter(p => !selectedProductIds.includes(p.id));
+  };
+
+  // Get unassigned packages (available to assign)
+  const getUnassignedPackages = () => {
+    return packages.filter(p => !selectedPackageIds.includes(p.id));
   };
 
   return (
@@ -557,9 +606,9 @@ export default function AdminPromoCodes() {
         </DialogContent>
       </Dialog>
 
-      {/* Assignment Dialog */}
+      {/* Assignment Dialog with improved UX */}
       <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Assign Products/Packages</DialogTitle>
             <DialogDescription>
@@ -579,96 +628,177 @@ export default function AdminPromoCodes() {
               </TabsTrigger>
             </TabsList>
             
+            {/* Products Tab */}
             <TabsContent value="products" className="mt-4">
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  Select products that this promo code can be applied to. If no products are selected, the promo will fall back to package assignment.
-                </div>
-                <ScrollArea className="h-[300px] rounded-md border p-4">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-6">
+                  {/* Assigned Products Table */}
+                  {assignedProducts.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Currently Assigned Products ({assignedProducts.length})
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>                     
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {assignedProducts.map((product) => (
+                            <TableRow key={product.id} className="bg-green-50/50">
+                              <TableCell className="font-medium">{product.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                  Assigned
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Available Products */}
                   <div className="space-y-2">
-                    {products.map((product) => (
-                      <div
-                        key={product.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
-                          selectedProductIds.includes(product.id) ? "bg-primary/10 border-primary" : ""
-                        }`}
-                        onClick={() => toggleProductSelection(product.id)}
-                      >
-                        <Checkbox
-                          checked={selectedProductIds.includes(product.id)}
-                          onCheckedChange={() => toggleProductSelection(product.id)}
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {product.type === "bundle" ? "Bundle" : "Single"} - {formatPrice(product.price)}
-                          </div>
-                        </div>
-                        <Badge variant="outline">{product.type}</Badge>
+                    <h4 className="text-sm font-semibold">
+                      {assignedProducts.length > 0 ? "Available Products" : "Select Products"}
+                      {getUnassignedProducts().length > 0 && ` (${getUnassignedProducts().length} available)`}
+                    </h4>
+                    {getUnassignedProducts().length === 0 && assignedProducts.length > 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        All products have been assigned
                       </div>
-                    ))}
-                    {products.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No products available
+                    ) : getUnassignedProducts().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        No products available to assign
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
+                        {getUnassignedProducts().map((product) => (
+                          <div
+                            key={product.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedProductIds.includes(product.id) ? "bg-primary/10 border-primary" : ""
+                            }`}
+                            onClick={() => toggleProductSelection(product.id)}
+                          >
+                            <Checkbox
+                              checked={selectedProductIds.includes(product.id)}
+                              onCheckedChange={() => toggleProductSelection(product.id)}
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {product.type === "bundle" ? "Bundle" : "Single"} - {formatPrice(product.price)}
+                              </div>
+                            </div>
+                            <Badge variant="outline">{product.type}</Badge>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                </ScrollArea>
-                <Button 
-                  onClick={handleAssignProducts} 
-                  disabled={assigningProducts}
-                  className="w-full"
-                >
-                  {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Products Assignment
-                </Button>
-              </div>
+                </div>
+              </ScrollArea>
+              <Button 
+                onClick={handleAssignProducts} 
+                disabled={assigningProducts}
+                className="w-full mt-4"
+              >
+                {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Products Assignment
+              </Button>
             </TabsContent>
             
+            {/* Packages Tab */}
             <TabsContent value="packages" className="mt-4">
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  Select packages that this promo code can be applied to. This is used as fallback when no product assignment exists.
-                </div>
-                <ScrollArea className="h-[300px] rounded-md border p-4">
+              <ScrollArea className="h-[500px] pr-4">
+                <div className="space-y-6">
+                  {/* Assigned Packages Table */}
+                  {assignedPackages.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Currently Assigned Packages ({assignedPackages.length})
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                           
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {assignedPackages.map((pkg) => (
+                            <TableRow key={pkg.id} className="bg-green-50/50">
+                              <TableCell className="font-medium">{pkg.name}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                                  Assigned
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                  
+                  {/* Available Packages */}
                   <div className="space-y-2">
-                    {packages.map((pkg) => (
-                      <div
-                        key={pkg.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
-                          selectedPackageIds.includes(pkg.id) ? "bg-primary/10 border-primary" : ""
-                        }`}
-                        onClick={() => togglePackageSelection(pkg.id)}
-                      >
-                        <Checkbox
-                          checked={selectedPackageIds.includes(pkg.id)}
-                          onCheckedChange={() => togglePackageSelection(pkg.id)}
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium">{pkg.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {pkg.type} - {pkg.questions_count} questions
-                          </div>
-                        </div>
-                        <Badge variant="outline">{pkg.type}</Badge>
+                    <h4 className="text-sm font-semibold">
+                      {assignedPackages.length > 0 ? "Available Packages" : "Select Packages"}
+                      {getUnassignedPackages().length > 0 && ` (${getUnassignedPackages().length} available)`}
+                    </h4>
+                    {getUnassignedPackages().length === 0 && assignedPackages.length > 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        All packages have been assigned
                       </div>
-                    ))}
-                    {packages.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No packages available
+                    ) : getUnassignedPackages().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        No packages available to assign
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
+                        {getUnassignedPackages().map((pkg) => (
+                          <div
+                            key={pkg.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
+                              selectedPackageIds.includes(pkg.id) ? "bg-primary/10 border-primary" : ""
+                            }`}
+                            onClick={() => togglePackageSelection(pkg.id)}
+                          >
+                            <Checkbox
+                              checked={selectedPackageIds.includes(pkg.id)}
+                              onCheckedChange={() => togglePackageSelection(pkg.id)}
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium">{pkg.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {pkg.type} - {pkg.questions_count} questions
+                              </div>
+                            </div>
+                            <Badge variant="outline">{pkg.type}</Badge>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-                </ScrollArea>
-                <Button 
-                  onClick={handleAssignPackages} 
-                  disabled={assigningPackages}
-                  className="w-full"
-                >
-                  {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Packages Assignment
-                </Button>
-              </div>
+                </div>
+              </ScrollArea>
+              <Button 
+                onClick={handleAssignPackages} 
+                disabled={assigningPackages}
+                className="w-full mt-4"
+              >
+                {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Packages Assignment
+              </Button>
             </TabsContent>
           </Tabs>
         </DialogContent>
@@ -696,4 +826,3 @@ export default function AdminPromoCodes() {
     </DashboardLayout>
   );
 }
-

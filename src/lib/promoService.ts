@@ -28,6 +28,34 @@ export interface PromoPackage {
   };
 }
 
+// Promo Code Assignment Response Interfaces
+export interface PromoCodeAssignmentProduct {
+  id: number;
+  name: string;
+  type: "single" | "bundle";
+  price: number;
+  is_active?: boolean;
+}
+
+export interface PromoCodeAssignmentPackage {
+  id: number;
+  name: string;
+  type: string;
+  category_id?: number;
+}
+
+export interface PromoCodeAssignmentData {
+  promo_code_id: number;
+  code: string;
+  products: PromoCodeAssignmentProduct[];
+  packages: PromoCodeAssignmentPackage[];
+}
+
+export interface PromoCodeAssignmentResponse {
+  success: boolean;
+  data: PromoCodeAssignmentData;
+}
+
 export interface PromoCode {
   id: string;
   code: string;
@@ -255,14 +283,14 @@ export const promoService = {
   // Admin: Get promo code with assignments
   async getPromoCodeAssignments(
     promoId: string
-  ): Promise<{ success: boolean; data: PromoCode }> {
-    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}`, {
+  ): Promise<PromoCodeAssignmentResponse> {
+    const response = await fetch(`${getApiUrl()}/admin/promo-codes/${promoId}/assignments`, {
       method: "GET",
       headers: getAuthHeader(true),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch promo code ${promoId}`);
+      throw new Error(`Failed to fetch promo code assignments for ${promoId}`);
     }
 
     return response.json();
