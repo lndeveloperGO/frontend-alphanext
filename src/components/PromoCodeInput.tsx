@@ -7,12 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Tag, X } from "lucide-react";
 
 interface PromoCodeInputProps {
+  productId: number;
   amount: number;
   onPromoApplied?: (discount: number, finalAmount: number, code: string) => void;
   onPromoRemoved?: () => void;
 }
 
-export function PromoCodeInput({ amount, onPromoApplied, onPromoRemoved }: PromoCodeInputProps) {
+export function PromoCodeInput({ productId, amount, onPromoApplied, onPromoRemoved }: PromoCodeInputProps) {
   const [code, setCode] = useState("");
   const [appliedCode, setAppliedCode] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
@@ -32,8 +33,8 @@ export function PromoCodeInput({ amount, onPromoApplied, onPromoRemoved }: Promo
       setError(null);
 
       const input: ValidatePromoCodeInput = {
-        code: code.trim().toUpperCase(),
-        amount,
+        promo_code: code.trim().toUpperCase(),
+        product_id: productId,
       };
 
       const response = await promoService.validatePromoCode(input);

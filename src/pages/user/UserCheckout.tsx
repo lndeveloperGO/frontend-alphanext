@@ -57,9 +57,8 @@ export default function UserCheckout() {
 
     try {
       const response = await promoService.validatePromoCode({
-        code: promoCode,
-        amount: selectedPackage?.price || 0,
-        product_id: selectedPackage ? parseInt(selectedPackage.id, 10) : undefined,
+        promo_code: promoCode,
+        product_id: selectedPackage ? parseInt(selectedPackage.id, 10) : 0,
       });
 
       if (response.success) {
