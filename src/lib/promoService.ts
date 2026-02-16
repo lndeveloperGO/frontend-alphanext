@@ -114,14 +114,26 @@ export interface PromoCodeResponse {
 }
 
 export interface ValidatePromoCodeInput {
-  code: string;
-  amount: number;
-  product_id?: number;
+  product_id: number;
+  promo_code: string;
 }
 
 export interface ValidatePromoCodeResponse {
   success: boolean;
   data: {
+    promo: {
+      id: number;
+      code: string;
+      type: "percent" | "fixed";
+      value: number;
+    };
+    product: {
+      id: number;
+      name: string;
+      type: "single" | "bundle";
+      price: number;
+    };
+    gross: number;
     discount: number;
     final_amount: number;
   };
