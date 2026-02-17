@@ -87,71 +87,71 @@ export default function UserOrders() {
 
   const handlePay = async (order: Order) => {
     try {
-        let token = order.midtrans_token;
-        
-        // If no token, check payment_url
-        if (!token && order.payment_url) {
-             const urlParts = order.payment_url.split("/");
-             token = urlParts[urlParts.length - 1];
-        }
+      let token = order.midtrans_token;
 
-        // If still no token, try to get a new one
-        if (!token) {
-             toast({
-                title: "Memproses Pembayaran",
-                description: "Sedang mengambil data pembayaran terbaru...",
-             });
-             
-             const payResponse = await orderService.payOrder(order.id);
-             if (payResponse.success && payResponse.data.payment_url) {
-                  const urlParts = payResponse.data.payment_url.split("/");
-                  token = urlParts[urlParts.length - 1];
-             }
-        }
+      // If no token, check payment_url
+      if (!token && order.payment_url) {
+        const urlParts = order.payment_url.split("/");
+        token = urlParts[urlParts.length - 1];
+      }
 
-        if (token) {
-             snapPay(token, {
-                onSuccess: (result: any) => {
-                    console.log("Payment success", result);
-                    toast({
-                        title: "Pembayaran Berhasil",
-                        description: "Status pesanan akan segera diperbarui",
-                    });
-                    fetchOrders(); // Refresh status
-                },
-                onPending: (result: any) => {
-                    console.log("Payment pending", result);
-                    toast({
-                        title: "Menunggu Pembayaran",
-                        description: "Silakan selesaikan pembayaran Anda",
-                    });
-                },
-                onError: (result: any) => {
-                    console.error("Payment error", result);
-                    toast({
-                        title: "Gagal",
-                        description: "Pembayaran gagal",
-                        variant: "destructive",
-                    });
-                },
-                onClose: () => {
-                    console.log("Snap closed");
-                }
-             });
-        } else {
-             toast({
-                title: "Error",
-                description: "Tidak dapat memuat data pembayaran",
-                variant: "destructive",
-             });
-        }
-    } catch (err) {
-        console.error("Pay error", err);
+      // If still no token, try to get a new one
+      if (!token) {
         toast({
-            title: "Error",
-            description: "Gagal memproses pembayaran",
-            variant: "destructive",
+          title: "Memproses Pembayaran",
+          description: "Sedang mengambil data pembayaran terbaru...",
         });
+
+        const payResponse = await orderService.payOrder(order.id);
+        if (payResponse.success && payResponse.data.payment_url) {
+          const urlParts = payResponse.data.payment_url.split("/");
+          token = urlParts[urlParts.length - 1];
+        }
+      }
+
+      if (token) {
+        snapPay(token, {
+          onSuccess: (result: any) => {
+            console.log("Payment success", result);
+            toast({
+              title: "Pembayaran Berhasil",
+              description: "Status pesanan akan segera diperbarui",
+            });
+            fetchOrders(); // Refresh status
+          },
+          onPending: (result: any) => {
+            console.log("Payment pending", result);
+            toast({
+              title: "Menunggu Pembayaran",
+              description: "Silakan selesaikan pembayaran Anda",
+            });
+          },
+          onError: (result: any) => {
+            console.error("Payment error", result);
+            toast({
+              title: "Gagal",
+              description: "Pembayaran gagal",
+              variant: "destructive",
+            });
+          },
+          onClose: () => {
+            console.log("Snap closed");
+          }
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Tidak dapat memuat data pembayaran",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Pay error", err);
+      toast({
+        title: "Error",
+        description: "Gagal memproses pembayaran",
+        variant: "destructive",
+      });
     }
   };
 
@@ -163,6 +163,8 @@ export default function UserOrders() {
         return <Clock className="h-4 w-4 text-yellow-600" />;
       case "cancelled":
         return <XCircle className="h-4 w-4 text-red-600" />;
+      case "expired":
+        return <XCircle className="h-4 w-4 text-gray-400" />;
     }
   };
 
@@ -174,6 +176,8 @@ export default function UserOrders() {
         return <Badge variant="secondary">Menunggu Bayar</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Dibatalkan</Badge>;
+      case "expired":
+        return <Badge variant="outline" className="text-muted-foreground">Kadaluarsa</Badge>;
     }
   };
 
@@ -185,6 +189,8 @@ export default function UserOrders() {
         return "Order ini masih menunggu pembayaran dari admin. Hubungi admin untuk mengonfirmasi pembayaran.";
       case "cancelled":
         return "Order ini telah dibatalkan.";
+      case "expired":
+        return "Waktu pembayaran untuk order ini telah habis. Silakan buat pesanan baru.";
     }
   };
 
@@ -316,13 +322,13 @@ export default function UserOrders() {
                               Detail
                             </Button>
                             {order.status === 'pending' && (
-                               <Button
-                                  size="sm"
-                                  onClick={() => handlePay(order)}
-                                  className="bg-primary hover:bg-primary/90"
-                               >
-                                  Bayar
-                               </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handlePay(order)}
+                                className="bg-primary hover:bg-primary/90"
+                              >
+                                Bayar
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -440,9 +446,9 @@ export default function UserOrders() {
               Tutup
             </Button>
             {selectedOrder?.status === 'pending' && (
-                 <Button onClick={() => selectedOrder && handlePay(selectedOrder)}>
-                    Bayar Sekarang
-                 </Button>
+              <Button onClick={() => selectedOrder && handlePay(selectedOrder)}>
+                Bayar Sekarang
+              </Button>
             )}
           </div>
         </DialogContent>
