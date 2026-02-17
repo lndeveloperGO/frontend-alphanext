@@ -4,7 +4,7 @@ import { useAuthStore } from "@/stores/authStore";
 const getApiUrl = () => getApiBaseUrl();
 
 // Order Status Types
-export type OrderStatus = "pending" | "paid" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "cancelled" | "expired";
 
 // Product Info in Order
 export interface OrderProduct {
@@ -32,6 +32,33 @@ export interface OrderUser {
   phone?: string;
 }
 
+// Payment Callback Data (Midtrans/DuitKu)
+export interface PaymentCallbackData {
+  currency?: string;
+  order_id?: string;
+  va_numbers?: Array<{
+    bank: string;
+    va_number: string;
+  }>;
+  expiry_time?: string;
+  merchant_id?: string;
+  status_code?: string;
+  fraud_status?: string;
+  gross_amount?: string;
+  payment_type?: string;
+  signature_key?: string;
+  status_message?: string;
+  transaction_id?: string;
+  transaction_time?: string;
+  transaction_status?: string;
+  settlement_time?: string;
+  customer_details?: {
+    email: string;
+    full_name: string;
+  };
+  [key: string]: any; // Allow other fields
+}
+
 // Order Model
 export interface Order {
   id: number;
@@ -40,16 +67,19 @@ export interface Order {
   merchant_order_id: string;
   amount: number; // Final amount after discount
   status: OrderStatus;
-  duitku_reference: string | null;
   payment_url: string | null;
+  midtrans_token?: string | null;
+  duitku_reference?: string | null;
   payment_method: string | null;
   promo_code: string | null;
+  promo_code_id: number | null;
   discount: number;
   paid_at: string | null;
-  raw_callback: string | null;
+  expires_at: string | null;
+  raw_callback: PaymentCallbackData | string | null;
   created_at: string;
   updated_at: string;
-  // Admin only:
+  // Admin only - populated via eager loading or separate fetch
   product?: OrderProduct;
   items?: OrderItem[];
   user?: OrderUser;
@@ -100,6 +130,19 @@ export interface MarkPaidResponse {
   success: boolean;
   data: Order;
   message?: string;
+}
+
+// Pay Order Response
+export interface PayOrderResponse {
+  success: boolean;
+  data: {
+    id: number;
+    status: string;
+    amount: number;
+    payment_method: string;
+    payment_url: string;
+    midtrans_token?: string;
+  };
 }
 
 // Auth Headers
@@ -252,6 +295,26 @@ export const orderService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || "Failed to cancel order");
+    }
+
+    const data = await response.json();
+    return data;
+  },
+
+  /**
+   * Initiate payment for an order
+   * POST /api/orders/{order_id}/pay
+   * Auth required
+   */
+  async payOrder(orderId: number): Promise<PayOrderResponse> {
+    const response = await fetch(`${getApiUrl()}/orders/${orderId}/pay`, {
+      method: "POST",
+      headers: getAuthHeader(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to initiate payment");
     }
 
     const data = await response.json();

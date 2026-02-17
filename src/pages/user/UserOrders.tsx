@@ -23,6 +23,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, CheckCircle2, Clock, XCircle, ArrowLeft, Package, DollarSign, AlertCircle } from "lucide-react";
 import { orderService, Order, OrderStatus } from "@/lib/orderService";
+import { useSnap } from "@/hooks/useSnap";
 
 export default function UserOrders() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function UserOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { snapPay } = useSnap();
 
   // Show success message if coming from checkout
   useEffect(() => {
@@ -82,6 +84,76 @@ export default function UserOrders() {
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const handlePay = async (order: Order) => {
+    try {
+        let token = order.midtrans_token;
+        
+        // If no token, check payment_url
+        if (!token && order.payment_url) {
+             const urlParts = order.payment_url.split("/");
+             token = urlParts[urlParts.length - 1];
+        }
+
+        // If still no token, try to get a new one
+        if (!token) {
+             toast({
+                title: "Memproses Pembayaran",
+                description: "Sedang mengambil data pembayaran terbaru...",
+             });
+             
+             const payResponse = await orderService.payOrder(order.id);
+             if (payResponse.success && payResponse.data.payment_url) {
+                  const urlParts = payResponse.data.payment_url.split("/");
+                  token = urlParts[urlParts.length - 1];
+             }
+        }
+
+        if (token) {
+             snapPay(token, {
+                onSuccess: (result: any) => {
+                    console.log("Payment success", result);
+                    toast({
+                        title: "Pembayaran Berhasil",
+                        description: "Status pesanan akan segera diperbarui",
+                    });
+                    fetchOrders(); // Refresh status
+                },
+                onPending: (result: any) => {
+                    console.log("Payment pending", result);
+                    toast({
+                        title: "Menunggu Pembayaran",
+                        description: "Silakan selesaikan pembayaran Anda",
+                    });
+                },
+                onError: (result: any) => {
+                    console.error("Payment error", result);
+                    toast({
+                        title: "Gagal",
+                        description: "Pembayaran gagal",
+                        variant: "destructive",
+                    });
+                },
+                onClose: () => {
+                    console.log("Snap closed");
+                }
+             });
+        } else {
+             toast({
+                title: "Error",
+                description: "Tidak dapat memuat data pembayaran",
+                variant: "destructive",
+             });
+        }
+    } catch (err) {
+        console.error("Pay error", err);
+        toast({
+            title: "Error",
+            description: "Gagal memproses pembayaran",
+            variant: "destructive",
+        });
+    }
+  };
 
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
@@ -201,7 +273,7 @@ export default function UserOrders() {
                 </Button>
               </div>
             ) : (
-              <div className="rounded-lg border overflow-hidden">
+              <div className="rounded-lg border overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -232,16 +304,27 @@ export default function UserOrders() {
                         <TableCell>{order.promo_code || "-"}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{formatDate(order.created_at)}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedOrder(order);
-                              setIsDetailDialogOpen(true);
-                            }}
-                          >
-                            Detail
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsDetailDialogOpen(true);
+                              }}
+                            >
+                              Detail
+                            </Button>
+                            {order.status === 'pending' && (
+                               <Button
+                                  size="sm"
+                                  onClick={() => handlePay(order)}
+                                  className="bg-primary hover:bg-primary/90"
+                               >
+                                  Bayar
+                               </Button>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -352,10 +435,15 @@ export default function UserOrders() {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
               Tutup
             </Button>
+            {selectedOrder?.status === 'pending' && (
+                 <Button onClick={() => selectedOrder && handlePay(selectedOrder)}>
+                    Bayar Sekarang
+                 </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
