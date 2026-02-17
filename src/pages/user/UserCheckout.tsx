@@ -13,6 +13,7 @@ import { useCheckoutStore } from "@/stores/checkoutStore";
 import { promoService } from "@/lib/promoService";
 import { orderService } from "@/lib/orderService";
 import { useAuthStore } from "@/stores/authStore";
+import { useSnap } from "@/hooks/useSnap";
 
 export default function UserCheckout() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function UserCheckout() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const [orderSuccess, setOrderSuccess] = useState(false);
+  
+  const { snapPay } = useSnap();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -92,13 +95,69 @@ export default function UserCheckout() {
 
       if (response.success && response.data) {
         setOrderSuccess(true);
-        // Clear cart and wait a moment before navigating
-        clearSelection();
-        setTimeout(() => {
-          navigate("/dashboard/user/orders", {
-            state: { orderId: response.data.id, successMessage: "Order berhasil dibuat. Status: Menunggu pembayaran" },
-          });
-        }, 1000);
+        const orderId = response.data.id;
+
+        try {
+            // Initiate payment to get token/url
+            const payResponse = await orderService.payOrder(orderId);
+            
+            // Try to get token from various possible locations
+            // 1. midtrans_token property if we add it later
+            // 2. extract from payment_url
+            let token = "";
+            
+            if (payResponse.data.payment_url) {
+                 const urlParts = payResponse.data.payment_url.split("/");
+                 // The last part of the REDIRECT url is usually the token
+                 // Example: https://app.sandbox.midtrans.com/snap/v4/redirection/YOUR_TOKEN
+                 token = urlParts[urlParts.length - 1];
+            }
+
+            if (token) {
+                 snapPay(token, {
+                    onSuccess: (result: any) => {
+                        console.log("Payment success", result);
+                        clearSelection();
+                        navigate("/dashboard/user/orders", {
+                            state: { orderId: orderId, successMessage: "Pembayaran berhasil!" },
+                        });
+                    },
+                    onPending: (result: any) => {
+                        console.log("Payment pending", result);
+                        clearSelection();
+                        navigate("/dashboard/user/orders", {
+                            state: { orderId: orderId, successMessage: "Menunggu pembayaran..." },
+                        });
+                    },
+                    onError: (result: any) => {
+                        console.error("Payment error", result);
+                        setOrderError("Pembayaran gagal. Silakan coba lagi.");
+                    },
+                    onClose: () => {
+                        console.log("Snap closed");
+                         clearSelection();
+                         navigate("/dashboard/user/orders", {
+                            state: { orderId: orderId, warningMessage: "Pembayaran belum diselesaikan." },
+                        });
+                    }
+                 });
+            } else if (payResponse.data.payment_url) {
+                 // Fallback if token extraction fails but we have a URL
+                 console.warn("Token extraction failed, using redirect fallback");
+                 window.location.href = payResponse.data.payment_url;
+            } else {
+                 throw new Error("No payment token or URL received");
+            }
+
+        } catch (err) {
+            console.error("Payment error:", err);
+            setOrderError("Gagal memproses pembayaran. Silakan coba bayar dari menu Pesanan.");
+             setTimeout(() => {
+                navigate("/dashboard/user/orders", {
+                    state: { orderId: orderId, warningMessage: "Gagal memproses pembayaran otomatis." },
+                });
+             }, 2000);
+        }
       } else {
         setOrderError("Gagal membuat order. Silakan coba lagi.");
       }
