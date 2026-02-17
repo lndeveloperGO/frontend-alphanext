@@ -1,24 +1,28 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AlphaNext</title>
-    <meta name="description" content="AlphaNext Learning Platform" />
-    <meta name="author" content="AlphaNext" />
 
-    <meta property="og:title" content="AlphaNext" />
-    <meta property="og:description" content="AlphaNext Learning Platform" />
-    <meta property="og:type" content="website" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlphaNext</title>
+  <meta name="description" content="AlphaNext Learning Platform" />
+  <meta name="author" content="AlphaNext" />
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@AlphaNext" />
-  </head>
+  <meta property="og:title" content="AlphaNext" />
+  <meta property="og:description" content="AlphaNext Learning Platform" />
+  <meta property="og:type" content="website" />
 
-  <body>
-    <div id="root"></div>
-    <!-- Load env config for runtime variable injection -->
-    <script src="/env-config.js"></script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@AlphaNext" />
+  <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+    data-client-key="%VITE_MIDTRANS_CLIENT_KEY%"></script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <!-- Load env config for runtime variable injection -->
+  <script src="/env-config.js"></script>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

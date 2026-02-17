@@ -687,7 +687,7 @@ export default function AdminPromoCodes() {
 
       {/* Assignment Dialog with improved UX */}
       <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden">
+        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>Assign Products/Packages</DialogTitle>
             <DialogDescription>
@@ -695,7 +695,7 @@ export default function AdminPromoCodes() {
             </DialogDescription>
           </DialogHeader>
           
-          <Tabs defaultValue="products" className="w-full">
+          <Tabs defaultValue="products" className="w-full flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
@@ -708,15 +708,15 @@ export default function AdminPromoCodes() {
             </TabsList>
             
             {/* Products Tab */}
-            <TabsContent value="products" className="mt-4">
-              <ScrollArea className="h-[500px] pr-4">
+            <TabsContent value="products" className="mt-4 flex-1 flex flex-col overflow-hidden min-h-0">
+              <ScrollArea className="flex-1 pr-4">
                 <div className="space-y-6">
-                  {/* Assigned Products Table */}
-                  {assignedProducts.length > 0 && (
+                  {/* Selected Products Table (Both Assigned and New Selections) */}
+                  {selectedProductIds.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Currently Assigned Products ({assignedProducts.length})
+                        <ShoppingCart className="h-4 w-4 text-primary" />
+                        Selected Products ({selectedProductIds.length})
                       </h4>
                       <Table>
                         <TableHeader>
@@ -727,63 +727,82 @@ export default function AdminPromoCodes() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {assignedProducts.map((product) => (
-                            <TableRow key={product.id} className="bg-green-50/50">
-                              <TableCell className="font-medium">{product.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                  Assigned
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => handleUnassignProduct(product.id)}
-                                  disabled={unassigningProductId === product.id}
-                                  title="Remove assignment"
-                                >
-                                  {unassigningProductId === product.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                          {selectedProductIds.map((productId) => {
+                            const product = products.find(p => p.id === productId);
+                            const isAlreadyAssigned = assignedProducts.some(ap => ap.id === productId);
+                            
+                            if (!product) return null;
+
+                            return (
+                              <TableRow key={productId} className={isAlreadyAssigned ? "bg-green-50/50" : "bg-yellow-50/50"}>
+                                <TableCell className="font-medium">{product.name}</TableCell>
+                                <TableCell>
+                                  {isAlreadyAssigned ? (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+                                      Assigned
+                                    </Badge>
                                   ) : (
-                                    <X className="h-4 w-4" />
+                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                                      Pending Save
+                                    </Badge>
                                   )}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isAlreadyAssigned ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => handleUnassignProduct(productId)}
+                                      disabled={unassigningProductId === productId}
+                                      title="Remove assignment (Will save immediately)"
+                                    >
+                                      {unassigningProductId === productId ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                      onClick={() => toggleProductSelection(productId)}
+                                      title="Remove selection"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
                   )}
                   
-                  {/* Available Products */}
+                  {/* Available Products Selection */}
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold">
-                      {assignedProducts.length > 0 ? "Available Products" : "Select Products"}
+                      Add Products
                       {getUnassignedProducts().length > 0 && ` (${getUnassignedProducts().length} available)`}
                     </h4>
-                    {getUnassignedProducts().length === 0 && assignedProducts.length > 0 ? (
+                    {getUnassignedProducts().length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-                        All products have been assigned
-                      </div>
-                    ) : getUnassignedProducts().length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-                        No products available to assign
+                        {products.length === 0 ? "No products found" : "All available products selected"}
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
                         {getUnassignedProducts().map((product) => (
                           <div
                             key={product.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
-                              selectedProductIds.includes(product.id) ? "bg-primary/10 border-primary" : ""
-                            }`}
+                            className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => toggleProductSelection(product.id)}
                           >
                             <Checkbox
-                              checked={selectedProductIds.includes(product.id)}
+                              checked={false} // Always false in this list because selected ones move up
                               onCheckedChange={() => toggleProductSelection(product.id)}
                             />
                             <div className="flex-1">
@@ -793,6 +812,9 @@ export default function AdminPromoCodes() {
                               </div>
                             </div>
                             <Badge variant="outline">{product.type}</Badge>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-auto">
+                              <Plus className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -800,94 +822,115 @@ export default function AdminPromoCodes() {
                   </div>
                 </div>
               </ScrollArea>
-              <Button 
-                onClick={handleAssignProducts} 
-                disabled={assigningProducts}
-                className="w-full mt-4"
-              >
-                {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Products Assignment
-              </Button>
+              <div className="pt-4 border-t mt-4 flex justify-end gap-2">
+                {/* Only show save button if there are pending changes */}
+                <Button 
+                  onClick={handleAssignProducts} 
+                  disabled={assigningProducts || selectedProductIds.filter(id => !assignedProducts.some(ap => ap.id === id)).length === 0}
+                  className="w-full sm:w-auto"
+                >
+                  {assigningProducts && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes ({selectedProductIds.filter(id => !assignedProducts.some(ap => ap.id === id)).length} pending)
+                </Button>
+              </div>
             </TabsContent>
             
             {/* Packages Tab */}
-            <TabsContent value="packages" className="mt-4">
-              <ScrollArea className="h-[500px] pr-4">
+            <TabsContent value="packages" className="mt-4 flex-1 flex flex-col overflow-hidden min-h-0">
+              <ScrollArea className="flex-1 pr-4">
                 <div className="space-y-6">
-                  {/* Assigned Packages Table */}
-                  {assignedPackages.length > 0 && (
+                  {/* Selected Packages Table (Both Assigned and New Selections) */}
+                  {selectedPackageIds.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-semibold flex items-center gap-2">
-                        <Check className="h-4 w-4 text-green-500" />
-                        Currently Assigned Packages ({assignedPackages.length})
+                        <PackageIcon className="h-4 w-4 text-primary" />
+                        Selected Packages ({selectedPackageIds.length})
                       </h4>
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Name</TableHead>
-                           
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {assignedPackages.map((pkg) => (
-                            <TableRow key={pkg.id} className="bg-green-50/50">
-                              <TableCell className="font-medium">{pkg.name}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                  Assigned
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => handleUnassignPackage(pkg.id)}
-                                  disabled={unassigningPackageId === pkg.id}
-                                  title="Remove assignment"
-                                >
-                                  {unassigningPackageId === pkg.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                          {selectedPackageIds.map((packageId) => {
+                             const pkg = packages.find(p => p.id === packageId);
+                             const isAlreadyAssigned = assignedPackages.some(ap => ap.id === packageId);
+                             
+                             if (!pkg) return null;
+
+                             return (
+                              <TableRow key={packageId} className={isAlreadyAssigned ? "bg-green-50/50" : "bg-yellow-50/50"}>
+                                <TableCell className="font-medium">{pkg.name}</TableCell>
+                                <TableCell>
+                                  {isAlreadyAssigned ? (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100">
+                                      Assigned
+                                    </Badge>
                                   ) : (
-                                    <X className="h-4 w-4" />
+                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
+                                      Pending Save
+                                    </Badge>
                                   )}
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {isAlreadyAssigned ? (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                      onClick={() => handleUnassignPackage(packageId)}
+                                      disabled={unassigningPackageId === packageId}
+                                      title="Remove assignment (Will save immediately)"
+                                    >
+                                      {unassigningPackageId === packageId ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                      onClick={() => togglePackageSelection(packageId)}
+                                      title="Remove selection"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </div>
                   )}
                   
-                  {/* Available Packages */}
+                  {/* Available Packages Selection */}
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold">
-                      {assignedPackages.length > 0 ? "Available Packages" : "Select Packages"}
+                      Add Packages
                       {getUnassignedPackages().length > 0 && ` (${getUnassignedPackages().length} available)`}
                     </h4>
-                    {getUnassignedPackages().length === 0 && assignedPackages.length > 0 ? (
+                    {getUnassignedPackages().length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-                        All packages have been assigned
-                      </div>
-                    ) : getUnassignedPackages().length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-                        No packages available to assign
+                        {packages.length === 0 ? "No packages found" : "All available packages selected"}
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
                         {getUnassignedPackages().map((pkg) => (
                           <div
                             key={pkg.id}
-                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors ${
-                              selectedPackageIds.includes(pkg.id) ? "bg-primary/10 border-primary" : ""
-                            }`}
+                            className="flex items-center gap-3 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => togglePackageSelection(pkg.id)}
                           >
                             <Checkbox
-                              checked={selectedPackageIds.includes(pkg.id)}
+                              checked={false} // Always false in this list because selected ones move up
                               onCheckedChange={() => togglePackageSelection(pkg.id)}
                             />
                             <div className="flex-1">
@@ -897,6 +940,9 @@ export default function AdminPromoCodes() {
                               </div>
                             </div>
                             <Badge variant="outline">{pkg.type}</Badge>
+                            <Button size="sm" variant="ghost" className="h-6 w-6 p-0 ml-auto">
+                              <Plus className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -904,14 +950,17 @@ export default function AdminPromoCodes() {
                   </div>
                 </div>
               </ScrollArea>
-              <Button 
-                onClick={handleAssignPackages} 
-                disabled={assigningPackages}
-                className="w-full mt-4"
-              >
-                {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Packages Assignment
-              </Button>
+               <div className="pt-4 border-t mt-4 flex justify-end gap-2">
+                {/* Only show save button if there are pending changes */}
+                <Button 
+                  onClick={handleAssignPackages} 
+                  disabled={assigningPackages || selectedPackageIds.filter(id => !assignedPackages.some(ap => ap.id === id)).length === 0}
+                  className="w-full sm:w-auto"
+                >
+                  {assigningPackages && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes ({selectedPackageIds.filter(id => !assignedPackages.some(ap => ap.id === id)).length} pending)
+                </Button>
+              </div>
             </TabsContent>
           </Tabs>
         </DialogContent>

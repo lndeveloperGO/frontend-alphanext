@@ -36,6 +36,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, CheckCircle2, Clock, XCircle, Search, DollarSign, Package, AlertCircle } from "lucide-react";
@@ -57,6 +67,7 @@ export default function AdminOrders() {
     pending: 0,
     paid: 0,
     cancelled: 0,
+    expired: 0,
   });
 
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -64,6 +75,8 @@ export default function AdminOrders() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const formatPrice = (price: number) => {
@@ -106,6 +119,7 @@ export default function AdminOrders() {
         pending: response.data.data.filter((o) => o.status === "pending").length,
         paid: response.data.data.filter((o) => o.status === "paid").length,
         cancelled: response.data.data.filter((o) => o.status === "cancelled").length,
+        expired: response.data.data.filter((o) => o.status === "expired").length,
       };
       setSummary(stats);
     } catch (error) {
@@ -170,6 +184,41 @@ export default function AdminOrders() {
     }
   };
 
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+
+    setIsCancelling(true);
+    try {
+        await orderService.cancelOrder(orderToCancel.id);
+        
+        toast({
+            title: "Success",
+            description: "Order berhasil dibatalkan",
+        });
+
+        // Update list
+        setOrders(orders.map(o => o.id === orderToCancel.id ? { ...o, status: 'cancelled' } : o));
+        
+        // Update summary if needed (simplified)
+        fetchOrders();
+
+        setOrderToCancel(null);
+        // Close detail dialog if it was open for this order
+        if (selectedOrder?.id === orderToCancel.id) {
+            setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+        }
+
+    } catch (error) {
+        toast({
+            title: "Error",
+            description: error instanceof Error ? error.message : "Gagal membatalkan order",
+            variant: "destructive",
+        });
+    } finally {
+        setIsCancelling(false);
+    }
+  };
+
   const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
       case "paid":
@@ -178,6 +227,8 @@ export default function AdminOrders() {
         return <Clock className="h-4 w-4 text-yellow-600" />;
       case "cancelled":
         return <XCircle className="h-4 w-4 text-red-600" />;
+      case "expired":
+        return <AlertCircle className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -189,6 +240,8 @@ export default function AdminOrders() {
         return <Badge variant="secondary">Menunggu Bayar</Badge>;
       case "cancelled":
         return <Badge variant="destructive">Dibatalkan</Badge>;
+      case "expired":
+        return <Badge variant="outline" className="text-gray-500 border-gray-500">Kadaluarsa</Badge>;
     }
   };
 
@@ -244,7 +297,7 @@ export default function AdminOrders() {
             </CardContent>
           </Card>
 
-          <Card>
+            <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700">
                 <XCircle className="h-4 w-4" />
@@ -254,6 +307,19 @@ export default function AdminOrders() {
             <CardContent>
               <div className="text-3xl font-bold">{summary.cancelled}</div>
               <p className="text-xs text-muted-foreground mt-1">Dibatalkan</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-gray-600">
+                <AlertCircle className="h-4 w-4" />
+                Kadaluarsa
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{summary.expired}</div>
+              <p className="text-xs text-muted-foreground mt-1">Waktu habis</p>
             </CardContent>
           </Card>
         </div>
@@ -296,6 +362,7 @@ export default function AdminOrders() {
                     <SelectItem value="pending">Menunggu Bayar</SelectItem>
                     <SelectItem value="paid">Terbayar</SelectItem>
                     <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                    <SelectItem value="expired">Kadaluarsa</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -375,6 +442,16 @@ export default function AdminOrders() {
                           >
                             Detail
                           </Button>
+                          {order.status === 'pending' && (
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                className="ml-2"
+                                onClick={() => setOrderToCancel(order)}
+                            >
+                                Batal
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -608,10 +685,43 @@ export default function AdminOrders() {
                 </div>
               </div>
 
+              {/* Payment Callback Info (VA Numbers etc) */}
+              {selectedOrder.raw_callback && typeof selectedOrder.raw_callback === 'object' && (
+                <div className="space-y-3">
+                    <h3 className="font-semibold">Detail Teknis Pembayaran</h3>
+                    <div className="bg-muted p-4 rounded-lg space-y-3 text-sm overflow-x-auto">
+                        {/* VA Numbers */}
+                        {'va_numbers' in selectedOrder.raw_callback && 
+                         Array.isArray((selectedOrder.raw_callback as any).va_numbers) && 
+                         (selectedOrder.raw_callback as any).va_numbers.map((va: any, i: number) => (
+                            <div key={i} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                                <span className="text-muted-foreground font-medium uppercase">{va.bank} Virtual Account:</span>
+                                <span className="font-mono text-lg font-bold">{va.va_number}</span>
+                            </div>
+                        ))}
+                        
+                        {/* Other useful info if needed */}
+                        {'payment_type' in selectedOrder.raw_callback && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Tipe Pembayaran:</span>
+                                <span className="font-mono">{(selectedOrder.raw_callback as any).payment_type}</span>
+                            </div>
+                        )}
+                         {'transaction_time' in selectedOrder.raw_callback && (
+                            <div className="flex justify-between">
+                                <span className="text-muted-foreground">Waktu Transaksi:</span>
+                                <span>{(selectedOrder.raw_callback as any).transaction_time}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+              )}
+
               {/* Timestamps */}
               <div className="text-sm text-muted-foreground space-y-1 border-t pt-4">
                 <div>Dibuat: {formatDate(selectedOrder.created_at)}</div>
                 {selectedOrder.updated_at && <div>Diperbarui: {formatDate(selectedOrder.updated_at)}</div>}
+                {selectedOrder.expires_at && <div>Kadaluarsa: {formatDate(selectedOrder.expires_at)}</div>}
               </div>
 
               {/* Mark as Paid Alert */}
@@ -639,9 +749,43 @@ export default function AdminOrders() {
                 {isMarkingPaid ? "Memproses..." : "Tandai Terbayar & Beri Akses"}
               </Button>
             )}
+            {selectedOrder?.status === "pending" && (
+                <Button
+                    variant="destructive"
+                    onClick={() => setOrderToCancel(selectedOrder)}
+                >
+                    Batalkan Order
+                </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan Order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin membatalkan order #{orderToCancel?.id}? 
+              Tindakan ini tidak dapat dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Batal</AlertDialogCancel>
+            <AlertDialogAction 
+                onClick={(e) => {
+                    e.preventDefault();
+                    handleCancelOrder();
+                }}
+                disabled={isCancelling}
+                className="bg-red-600 hover:bg-red-700"
+            >
+                {isCancelling ? "Memproses..." : "Ya, Batalkan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }
