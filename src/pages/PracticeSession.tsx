@@ -5,21 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Clock, 
-  ChevronLeft, 
-  ChevronRight, 
-  Check, 
-  X, 
-  Home, 
-  Loader2, 
+import {
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Home,
+  Loader2,
   Menu,
   Save,
   AlertCircle,
   BookmarkCheck,
   Keyboard
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, shuffleArray } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +40,7 @@ interface NavigationItem {
   question_id: number;
   done: boolean;
   marked: boolean;
+  originalNo: number; // Storing original sequence number
 }
 
 // Question cache type
@@ -68,29 +69,18 @@ export default function PracticeSession() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
-  
+
   // Submit response data
-  const [submitResponse, setSubmitResponse] = useState<{
-    attempt_id: number;
-    status: string;
-    submitted_at: string;
-    total_score: number;
-    summary: {
-      total_questions: number;
-      answered: number;
-      unanswered: number;
-      progress_percent: number;
-    };
-  } | null>(null);
-  
+  const [submitResponse, setSubmitResponse] = useState<any | null>(null);
+
   // Temporary answer storage (key: question_id, value: option_id)
   const [tempAnswers, setTempAnswers] = useState<Record<number, number>>({});
   // Temporary marked status (key: question_id, value: is_marked)
   const [tempMarked, setTempMarked] = useState<Record<number, boolean>>({});
-  
+
   // NEW: Question cache for faster navigation
   const [questionCache, setQuestionCache] = useState<QuestionCache>({});
-  
+
   // NEW: Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -126,11 +116,18 @@ export default function PracticeSession() {
       }
 
       setAttemptSummary(summary);
-      setQuestions(summary.nav);
+
+      // Randomize questions
+      const shuffledNav = shuffleArray(summary.nav.map((item, idx) => ({
+        ...item,
+        originalNo: idx + 1
+      })));
+
+      setQuestions(shuffledNav);
       setTimeLeft(summary.remaining_seconds);
 
-      // Fetch first question
-      await fetchQuestion(1);
+      // Fetch first shuffled question
+      await fetchQuestionByShuffledIndex(0, shuffledNav);
     } catch (error) {
       console.error("Error fetching attempt:", error);
       toast({
@@ -144,31 +141,33 @@ export default function PracticeSession() {
     }
   };
 
-  // NEW: Fetch specific question with caching
-  const fetchQuestion = async (questionNo: number, skipCache = false) => {
+  // NEW: Fetch specific question with caching and option randomization
+  const fetchQuestionByShuffledIndex = async (index: number, currentQuestions?: NavigationItem[], skipCache = false) => {
+    const targetQuestions = currentQuestions || questions;
+    if (!targetQuestions[index]) return;
+
+    const originalNo = targetQuestions[index].originalNo;
+
     try {
       setNavigating(true);
-      
-      // Check cache first (unless skipCache is true)
-      if (!skipCache && questionCache[questionNo]) {
-        const cachedQuestion = questionCache[questionNo];
+
+      // Check cache first
+      if (!skipCache && questionCache[originalNo]) {
+        const cachedQuestion = questionCache[originalNo];
         setCurrentQuestion(cachedQuestion);
         setTimeLeft(cachedQuestion.remaining_seconds);
-        setCurrentIndex(questionNo - 1);
+        setCurrentIndex(index);
         setNavigating(false);
-        
-        // Prefetch next question in background
-        prefetchQuestion(questionNo + 1);
         return;
       }
 
-      const response = await attemptService.getQuestion(attemptId, questionNo);
+      const response = await attemptService.getQuestion(attemptId, originalNo);
 
       if (!response.success) {
         throw new Error("Failed to fetch question");
       }
 
-      const question = response.data;
+      let question = response.data;
 
       // Check if attempt is no longer in progress
       if (question.status !== "in_progress") {
@@ -178,18 +177,24 @@ export default function PracticeSession() {
         return;
       }
 
+      // RANDOMIZE OPTIONS
+      question.options = shuffleArray(question.options);
+      // Re-assign labels A, B, C, D, E
+      const labels = ["A", "B", "C", "D", "E"];
+      question.options = question.options.map((opt, i) => ({
+        ...opt,
+        label: labels[i] || opt.label
+      }));
+
       // Update cache
       setQuestionCache(prev => ({
         ...prev,
-        [questionNo]: question
+        [originalNo]: question
       }));
 
       setCurrentQuestion(question);
       setTimeLeft(question.remaining_seconds);
-      setCurrentIndex(questionNo - 1);
-      
-      // Prefetch next question in background
-      prefetchQuestion(questionNo + 1);
+      setCurrentIndex(index);
     } catch (error) {
       console.error("Error fetching question:", error);
       toast({
@@ -199,6 +204,35 @@ export default function PracticeSession() {
       });
     } finally {
       setNavigating(false);
+    }
+  };
+
+  const fetchQuestion = async (questionNo: number, skipCache = false) => {
+    // This is now a wrapper for the new shuffled navigation
+    const shuffledIndex = questions.findIndex(q => q.originalNo === questionNo);
+    if (shuffledIndex !== -1) {
+      await fetchQuestionByShuffledIndex(shuffledIndex, undefined, skipCache);
+    } else {
+      // Fallback/Initial load case if questions not yet set
+      try {
+        setNavigating(true);
+        const response = await attemptService.getQuestion(attemptId, questionNo);
+        if (response.success) {
+          let question = response.data;
+          question.options = shuffleArray(question.options);
+          const labels = ["A", "B", "C", "D", "E"];
+          question.options = question.options.map((opt, i) => ({
+            ...opt,
+            label: labels[i] || opt.label
+          }));
+          setCurrentQuestion(question);
+          setTimeLeft(question.remaining_seconds);
+          // Set cache
+          setQuestionCache(prev => ({ ...prev, [questionNo]: question }));
+        }
+      } finally {
+        setNavigating(false);
+      }
     }
   };
 
@@ -265,7 +299,7 @@ export default function PracticeSession() {
       selected_option_id: optionId,
     };
     setCurrentQuestion(updatedQuestion);
-    
+
     // Update cache
     setQuestionCache(prev => ({
       ...prev,
@@ -293,12 +327,12 @@ export default function PracticeSession() {
       }
 
       setAutoSaveStatus('saving');
-      
+
       try {
         await attemptService.submitAnswer(attemptId, questionId, optionId);
         lastSavedAnswerRef.current[questionId] = optionId;
         setAutoSaveStatus('saved');
-        
+
         // Update navigation status
         setQuestions((prev) =>
           prev.map((q) =>
@@ -313,7 +347,7 @@ export default function PracticeSession() {
       } catch (error) {
         console.error("Auto-save failed:", error);
         setAutoSaveStatus('error');
-        
+
         // Keep error status visible for 3 seconds
         setTimeout(() => {
           setAutoSaveStatus('idle');
@@ -338,7 +372,7 @@ export default function PracticeSession() {
     try {
       const questionId = currentQuestion.question_id;
       let hasAnswered = false;
-      
+
       // Submit answer if it was changed
       if (tempAnswers[questionId] !== undefined) {
         await attemptService.submitAnswer(
@@ -397,7 +431,7 @@ export default function PracticeSession() {
       is_marked: isNowMarked,
     };
     setCurrentQuestion(updatedQuestion);
-    
+
     // Update cache
     setQuestionCache(prev => ({
       ...prev,
@@ -441,17 +475,17 @@ export default function PracticeSession() {
 
   const handleNext = async () => {
     if (!questions || currentIndex >= questions.length - 1) return;
-    await fetchQuestion(currentIndex + 2);
+    await fetchQuestionByShuffledIndex(currentIndex + 1);
   };
 
   const handlePrev = async () => {
     if (currentIndex <= 0) return;
-    await fetchQuestion(currentIndex);
+    await fetchQuestionByShuffledIndex(currentIndex - 1);
   };
 
   const handleNavigateToQuestion = async (index: number) => {
     if (index === currentIndex) return;
-    await fetchQuestion(index + 1);
+    await fetchQuestionByShuffledIndex(index);
     setIsSidebarOpen(false);
   };
 
@@ -460,17 +494,17 @@ export default function PracticeSession() {
 
     try {
       setSubmitting(true);
-      
+
       // Force save any pending changes
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
-      
+
       // Submit any unsaved answers
       const unsavedQuestions = Object.keys(tempAnswers).filter(
         qId => lastSavedAnswerRef.current[parseInt(qId)] !== tempAnswers[parseInt(qId)]
       );
-      
+
       for (const qId of unsavedQuestions) {
         try {
           await attemptService.submitAnswer(
@@ -482,7 +516,7 @@ export default function PracticeSession() {
           console.error(`Failed to save answer for question ${qId}:`, error);
         }
       }
-      
+
       const response = await attemptService.submitAttempt(attemptId);
 
       if (response.success) {
@@ -567,106 +601,100 @@ export default function PracticeSession() {
 
   if (showResults && submitResponse) {
     const summary = submitResponse.summary;
-    const passScore = 70;
-    const isPassed = submitResponse.total_score >= passScore;
+    const isPassed = submitResponse.is_passed;
 
     return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="mx-auto max-w-3xl">
-          <Card className="text-center">
-            <CardContent className="py-12">
-              {/* Result Icon */}
-              <div
-                className={cn(
-                  "mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full",
-                  isPassed ? "bg-success/20" : "bg-destructive/20"
-                )}
-              >
-                {isPassed ? (
-                  <Check className="h-12 w-12 text-success" />
-                ) : (
-                  <X className="h-12 w-12 text-destructive" />
-                )}
-              </div>
+      <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center animate-fade-in">
+        <div className="mx-auto max-w-4xl w-full">
+          <Card className="overflow-hidden border-none shadow-2xl glass-card">
+            <div className={cn(
+              "h-2 w-full",
+              isPassed ? "bg-success" : "bg-destructive"
+            )} />
 
-              {/* Header */}
-              <h1 className="mb-2 text-3xl font-bold">Practice Complete!</h1>
-              <p className="mb-8 text-muted-foreground">Here's how you did</p>
-
-              {/* Main Score Card */}
-              <div className="mb-8 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-8 border border-primary/20">
-                <p className="text-5xl font-bold text-primary mb-2">
-                  {submitResponse.total_score}%
-                </p>
-                <p className="text-lg text-muted-foreground">Your Score</p>
-                <div className="mt-4 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full",
-                      isPassed ? "bg-success" : "bg-destructive"
+            <CardContent className="p-0">
+              <div className="grid md:grid-cols-2">
+                {/* Left Side: Score & Celebration */}
+                <div className="p-8 md:p-12 text-center flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 to-transparent border-r border-border/50">
+                  <div className={cn(
+                    "mb-6 flex h-32 w-32 items-center justify-center rounded-full animate-scale-in shadow-lg",
+                    isPassed ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                  )}>
+                    {isPassed ? (
+                      <Check className="h-16 w-16" />
+                    ) : (
+                      <X className="h-16 w-16" />
                     )}
-                    style={{ width: `${submitResponse.total_score}%` }}
-                  />
-                </div>
-              </div>
+                  </div>
 
-              {/* Summary Grid */}
-              <div className="mb-8 grid grid-cols-4 gap-4">
-                <div className="rounded-lg bg-muted p-4">
-                  <p className="text-3xl font-bold text-foreground">
-                    {summary.total_questions}
+                  <h1 className="mb-2 text-4xl font-extrabold tracking-tight md:text-5xl stagger-1 animate-slide-up">
+                    {submitResponse.total_score}
+                  </h1>
+                  <p className="text-muted-foreground font-medium mb-6 stagger-2 animate-slide-up uppercase tracking-widest text-xs">
+                    Skor Akhir Anda
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Total Questions
-                  </p>
-                </div>
-                <div className="rounded-lg bg-success/10 p-4 border border-success/20">
-                  <p className="text-3xl font-bold text-success">
-                    {summary.answered}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Answered
-                  </p>
-                </div>
-                <div className="rounded-lg bg-destructive/10 p-4 border border-destructive/20">
-                  <p className="text-3xl font-bold text-destructive">
-                    {summary.unanswered}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Unanswered
-                  </p>
-                </div>
-                <div className="rounded-lg bg-primary/10 p-4 border border-primary/20">
-                  <p className="text-3xl font-bold text-primary">
-                    {summary.progress_percent}%
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Progress
-                  </p>
-                </div>
-              </div>
 
-              {/* Result Message */}
-              <div className="mb-8 rounded-lg bg-card p-6 border">
-                <p className="text-lg font-semibold text-foreground mb-1">
-                  {isPassed ? "Great Job! 🎉" : "Keep Practicing!"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isPassed
-                    ? `You scored ${submitResponse.total_score}% and passed the practice session.`
-                    : `You scored ${submitResponse.total_score}%. Keep practicing to improve your score.`}
-                </p>
-              </div>
+                  <Badge
+                    variant={isPassed ? "success" : "destructive"}
+                    className="px-6 py-2 text-lg font-bold rounded-full stagger-3 animate-slide-up shadow-sm"
+                  >
+                    {isPassed ? "LULUS" : "TIDAK LULUS"}
+                  </Badge>
 
-              {/* Action Buttons */}
-              <div className="flex justify-center gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/dashboard")}
-                >
-                  <Home className="mr-2 h-4 w-4" />
-                  Back to Practice
-                </Button>
+                  <div className="mt-8 text-sm text-muted-foreground stagger-4 animate-slide-up">
+                    <p>Passing Score: <span className="font-bold text-foreground">{submitResponse.passing_score}</span></p>
+                  </div>
+                </div>
+
+                {/* Right Side: Detailed Stats */}
+                <div className="p-8 md:p-12">
+                  <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <BookmarkCheck className="h-5 w-5 text-primary" />
+                    Ringkasan Performa
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="p-4 rounded-2xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors stagger-1 animate-slide-up">
+                      <p className="text-xs text-muted-foreground font-medium uppercase mb-1">Total Soal</p>
+                      <p className="text-2xl font-bold">{summary.total_questions}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-success/5 border border-success/10 hover:bg-success/10 transition-colors stagger-2 animate-slide-up">
+                      <p className="text-xs text-success/70 font-medium uppercase mb-1">Benar</p>
+                      <p className="text-2xl font-bold text-success">{summary.correct}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 hover:bg-destructive/10 transition-colors stagger-3 animate-slide-up">
+                      <p className="text-xs text-destructive/70 font-medium uppercase mb-1">Salah</p>
+                      <p className="text-2xl font-bold text-destructive">{summary.wrong}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-warning/5 border border-warning/10 hover:bg-warning/10 transition-colors stagger-4 animate-slide-up">
+                      <p className="text-xs text-warning/70 font-medium uppercase mb-1">Kosong</p>
+                      <p className="text-2xl font-bold text-warning">{summary.unanswered}</p>
+                    </div>
+                  </div>
+
+                  {/* Accuracy Bar */}
+                  <div className="mb-10 stagger-5 animate-slide-up">
+                    <div className="flex justify-between items-end mb-2">
+                      <p className="text-sm font-semibold">Akurasi</p>
+                      <p className="text-2xl font-bold text-primary">{Math.round(summary.accuracy)}%</p>
+                    </div>
+                    <Progress value={summary.accuracy} className="h-3 bg-primary/10" />
+                  </div>
+
+                  <div className="flex flex-col gap-3 stagger-6 animate-slide-up">
+                    <Button
+                      size="lg"
+                      className="w-full font-bold rounded-xl shadow-primary"
+                      onClick={() => navigate("/dashboard")}
+                    >
+                      <Home className="mr-2 h-5 w-5" />
+                      Kembali ke Dashboard
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground mt-2">
+                      Hasil latihan ini telah disimpan di riwayat belajar Anda.
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -901,6 +929,15 @@ export default function PracticeSession() {
           ) : (
             <Card className="mb-6 border-2 shadow-sm">
               <CardContent className="py-6">
+                {currentQuestion.image_url && (
+                  <div className="mb-4 overflow-hidden rounded-lg border bg-muted">
+                    <img
+                      src={currentQuestion.image_url}
+                      alt="Soal"
+                      className="h-auto max-h-[400px] w-full object-contain mx-auto"
+                    />
+                  </div>
+                )}
                 <p className="text-lg font-medium leading-relaxed">{currentQuestion.question}</p>
               </CardContent>
             </Card>
@@ -925,25 +962,36 @@ export default function PracticeSession() {
                   className={cn(
                     "w-full rounded-lg border-2 p-4 text-left transition-all relative group",
                     currentQuestion.status === "in_progress" &&
-                      "hover:border-primary hover:shadow-md cursor-pointer",
+                    "hover:border-primary hover:shadow-md cursor-pointer",
                     currentQuestion.selected_option_id === option.id
                       ? "border-primary bg-primary/10 shadow-md"
                       : "border-border hover:bg-muted/50",
                     currentQuestion.status !== "in_progress" && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <span className={cn(
-                      "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors",
+                      "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors mt-0.5",
                       currentQuestion.selected_option_id === option.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground group-hover:bg-primary/20"
                     )}>
                       {option.label}
                     </span>
-                    <span className="flex-1 pt-0.5">{option.text}</span>
+                    <div className="flex-1 space-y-3">
+                      {option.image_url && (
+                        <div className="overflow-hidden rounded-md border bg-white max-w-[300px]">
+                          <img
+                            src={option.image_url}
+                            alt={`Opsi ${option.label}`}
+                            className="h-auto w-full object-contain"
+                          />
+                        </div>
+                      )}
+                      <p className="text-base leading-relaxed">{option.text}</p>
+                    </div>
                     {currentQuestion.selected_option_id === option.id && (
-                      <Check className="flex-shrink-0 h-5 w-5 text-primary" />
+                      <Check className="flex-shrink-0 h-5 w-5 text-primary mt-1" />
                     )}
                   </div>
                   {/* Keyboard hint */}
@@ -1022,10 +1070,10 @@ export default function PracticeSession() {
                   idx === currentIndex
                     ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1"
                     : q.done
-                    ? "bg-green-500 text-white border-2 border-green-600 font-bold shadow-md"
-                    : q.marked
-                    ? "bg-yellow-400 text-yellow-900 border-2 border-yellow-500 font-bold"
-                    : "bg-gray-300 text-gray-700 border-2 border-gray-400"
+                      ? "bg-green-500 text-white border-2 border-green-600 font-bold shadow-md"
+                      : q.marked
+                        ? "bg-yellow-400 text-yellow-900 border-2 border-yellow-500 font-bold"
+                        : "bg-gray-300 text-gray-700 border-2 border-gray-400"
                 )}
                 title={`Q${idx + 1}${q.done ? " ✓ Answered" : ""}${q.marked ? " ⚑ Marked" : ""}`}
               >

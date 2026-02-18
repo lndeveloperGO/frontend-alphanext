@@ -135,13 +135,6 @@ export default function UserPackages() {
                       {isActive ? "Active" : "Expired"}
                     </div>
                     <CardHeader>
-                      <div className="flex h-24 w-24 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
-                        <img 
-                          src={`https://picsum.photos/1024/1024?random=${pkg.package_id}`} 
-                          alt={pkg.name} 
-                          className="h-full w-full object-cover" 
-                        />
-                      </div>
                       <CardTitle className="mt-4">{pkg.name}</CardTitle>
                       <CardDescription>
                         <Badge variant="outline" className="mt-2">
@@ -236,9 +229,9 @@ export default function UserPackages() {
                     {bundle.is_active ? 'Available' : 'Inactive'}
                   </div>
                   <CardHeader>
-                    <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
+                    {/* <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
                       <img src={`https://picsum.photos/1024/1024?random=${bundle.id}`} alt="package" className="h-full w-full object-cover" />
-                    </div>
+                    </div> */}
                     <CardTitle className="mt-2">{bundle.name}</CardTitle>
                     <CardDescription>{bundle.description}</CardDescription>
                   </CardHeader>
@@ -281,9 +274,9 @@ export default function UserPackages() {
                     {reg.is_active ? 'Available' : 'Inactive'}
                   </div>
                   <CardHeader>
-                    <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
+                    {/* <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
                       <img src={`https://picsum.photos/1024/1024?random=${reg.id}`} alt="package" className="h-full w-full object-cover" />
-                    </div>
+                    </div> */}
                     <CardTitle className="mt-4">{reg.package?.name}</CardTitle>
                     <div className="mb-4">
                       <span className="text-3xl font-bold">{formatPrice(reg.price)}</span>

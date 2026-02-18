@@ -38,7 +38,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Eye, Loader2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, Loader2, Upload, Image as ImageIcon } from "lucide-react";
 import {
   questionService,
   Question,
@@ -47,6 +47,7 @@ import {
   UpdateQuestionInput,
   CreateOptionInput,
   UpdateOptionInput,
+  Category,
 } from "@/lib/questionService";
 import { categoryService } from "@/lib/categoryService";
 import { getApiBaseUrl } from "@/lib/env";
@@ -72,13 +73,25 @@ export default function AdminQuestions() {
     category_id: number;
     question: string;
     explanation?: string;
-  }>({ category_id: 0, question: "", explanation: "" });
+    question_type: "text" | "image";
+    image: File | null;
+  }>({
+    category_id: 0,
+    question: "",
+    explanation: "",
+    question_type: "text",
+    image: null
+  });
 
   const [optionFormData, setOptionFormData] = useState<{
     label: string;
     text: string;
     score_value: number;
-  }>({ label: "", text: "", score_value: 0 });
+    image: File | null;
+  }>({ label: "", text: "", score_value: 0, image: null });
+
+  const [questionImagePreview, setQuestionImagePreview] = useState<string | null>(null);
+  const [optionImagePreview, setOptionImagePreview] = useState<string | null>(null);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const { toast } = useToast();
@@ -134,14 +147,24 @@ export default function AdminQuestions() {
   const handleOpenDialog = (mode: DialogMode, question?: Question) => {
     setDialogMode(mode);
     if (mode === "create") {
-      setFormData({ category_id: 0, question: "", explanation: "" });
+      setFormData({
+        category_id: 0,
+        question: "",
+        explanation: "",
+        question_type: "text",
+        image: null
+      });
+      setQuestionImagePreview(null);
     } else if (mode === "edit" && question) {
       setSelectedQuestion(question);
       setFormData({
         category_id: question.category_id,
         question: question.question,
         explanation: question.explanation || "",
+        question_type: question.question_type || "text",
+        image: null,
       });
+      setQuestionImagePreview(question.image_url || null);
     }
     setDialogOpen(true);
   };
@@ -150,7 +173,14 @@ export default function AdminQuestions() {
     setDialogOpen(false);
     setDialogMode(null);
     setSelectedQuestion(null);
-    setFormData({ category_id: 0, question: "", explanation: "" });
+    setFormData({
+      category_id: 0,
+      question: "",
+      explanation: "",
+      question_type: "text",
+      image: null
+    });
+    setQuestionImagePreview(null);
   };
 
   const handleSubmit = async () => {
@@ -175,10 +205,10 @@ export default function AdminQuestions() {
     try {
       setSubmitting(true);
 
+      const input = { ...formData };
+
       if (dialogMode === "create") {
-        await questionService.createQuestion(
-          formData as CreateQuestionInput
-        );
+        await questionService.createQuestion(input as CreateQuestionInput);
         toast({
           title: "Success",
           description: "Question created successfully",
@@ -186,7 +216,7 @@ export default function AdminQuestions() {
       } else if (dialogMode === "edit" && selectedQuestion) {
         await questionService.updateQuestion(
           selectedQuestion.id,
-          formData as UpdateQuestionInput
+          input as UpdateQuestionInput
         );
         toast({
           title: "Success",
@@ -243,17 +273,20 @@ export default function AdminQuestions() {
     setOptionMode(mode);
     if (mode === "create") {
       // Auto-generate label berdasarkan jumlah options yang ada
-      const nextLabel = selectedQuestion?.options 
+      const nextLabel = selectedQuestion?.options
         ? String.fromCharCode(65 + (selectedQuestion.options.length || 0))
         : "A";
-      setOptionFormData({ label: nextLabel, text: "", score_value: 0 });
+      setOptionFormData({ label: nextLabel, text: "", score_value: 0, image: null });
+      setOptionImagePreview(null);
     } else if (mode === "edit" && option) {
       setSelectedOption(option);
       setOptionFormData({
         label: option.label,
         text: option.text,
         score_value: option.score_value,
+        image: null,
       });
+      setOptionImagePreview(option.image_url || null);
     }
     setOptionDialogOpen(true);
   };
@@ -262,7 +295,8 @@ export default function AdminQuestions() {
     setOptionDialogOpen(false);
     setOptionMode(null);
     setSelectedOption(null);
-    setOptionFormData({ label: "", text: "", score_value: 0 });
+    setOptionFormData({ label: "", text: "", score_value: 0, image: null });
+    setOptionImagePreview(null);
   };
 
   const handleSubmitOption = async () => {
@@ -289,10 +323,12 @@ export default function AdminQuestions() {
     try {
       setSubmitting(true);
 
+      const input = { ...optionFormData };
+
       if (optionMode === "create") {
         await questionService.createOption(
           selectedQuestion.id,
-          optionFormData as CreateOptionInput
+          input as CreateOptionInput
         );
         toast({
           title: "Success",
@@ -301,7 +337,7 @@ export default function AdminQuestions() {
       } else if (optionMode === "edit" && selectedOption?.id) {
         await questionService.updateOption(
           selectedOption.id,
-          optionFormData as UpdateOptionInput
+          input as UpdateOptionInput
         );
         toast({
           title: "Success",
@@ -376,6 +412,19 @@ export default function AdminQuestions() {
     }
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, target: "question" | "option") => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (target === "question") {
+        setFormData((prev) => ({ ...prev, image: file }));
+        setQuestionImagePreview(URL.createObjectURL(file));
+      } else {
+        setOptionFormData((prev) => ({ ...prev, image: file }));
+        setOptionImagePreview(URL.createObjectURL(file));
+      }
+    }
+  };
+
   return (
     <DashboardLayout type="admin">
       <div className="space-y-6">
@@ -388,7 +437,7 @@ export default function AdminQuestions() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
+            <Button
               variant="outline"
               onClick={() => navigate("/admin/questions/bulk-import")}
             >
@@ -437,7 +486,23 @@ export default function AdminQuestions() {
                           {question.id}
                         </TableCell>
                         <TableCell>
-                          {truncateText(question.question)}
+                          <div className="flex items-center gap-3">
+                            {question.image_url && (
+                              <div className="h-10 w-10 overflow-hidden rounded-md border flex-shrink-0">
+                                <img
+                                  src={question.image_url}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex flex-col">
+                              <span className="line-clamp-1">{truncateText(question.question)}</span>
+                              <Badge variant="secondary" className="w-fit text-[10px] h-4 mt-1">
+                                {question.question_type || "text"}
+                              </Badge>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline">
@@ -494,27 +559,48 @@ export default function AdminQuestions() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
-              <select
-                id="category_id"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={formData.category_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    category_id: parseInt(e.target.value) || 0,
-                  })
-                }
-                disabled={submitting}
-              >
-                <option value={0}>-- Select Category --</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="category_id">Category</Label>
+                <select
+                  id="category_id"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={formData.category_id}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      category_id: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  disabled={submitting}
+                >
+                  <option value={0}>-- Select Category --</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="question_type">Question Type</Label>
+                <select
+                  id="question_type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={formData.question_type}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      question_type: e.target.value as "text" | "image",
+                    })
+                  }
+                  disabled={submitting}
+                >
+                  <option value="text">Text Only</option>
+                  <option value="image">With Image</option>
+                </select>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -527,8 +613,34 @@ export default function AdminQuestions() {
                   setFormData({ ...formData, question: e.target.value })
                 }
                 disabled={submitting}
-                rows={4}
+                rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Question Image</Label>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, "question")}
+                    disabled={submitting}
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Upload an image for this question. Supported formats: JPG, PNG, WebP.
+                  </p>
+                </div>
+                {questionImagePreview && (
+                  <div className="h-20 w-32 rounded-md border overflow-hidden bg-muted flex-shrink-0 relative">
+                    <img
+                      src={questionImagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -541,7 +653,7 @@ export default function AdminQuestions() {
                   setFormData({ ...formData, explanation: e.target.value })
                 }
                 disabled={submitting}
-                rows={3}
+                rows={2}
               />
             </div>
           </div>
@@ -590,15 +702,24 @@ export default function AdminQuestions() {
               <TabsContent value="details" className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold">Question</Label>
-                  <p className="text-sm p-3 bg-muted rounded-md">
+                  <p className="text-sm p-3 bg-muted rounded-md whitespace-pre-wrap">
                     {selectedQuestion.question}
                   </p>
+                  {selectedQuestion.image_url && (
+                    <div className="mt-2 rounded-md border overflow-hidden bg-muted max-w-md mx-auto">
+                      <img
+                        src={selectedQuestion.image_url}
+                        alt="Question"
+                        className="w-full h-auto max-h-64 object-contain"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {selectedQuestion.explanation && (
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold">Explanation</Label>
-                    <p className="text-sm p-3 bg-muted rounded-md">
+                    <p className="text-sm p-3 bg-muted rounded-md whitespace-pre-wrap">
                       {selectedQuestion.explanation}
                     </p>
                   </div>
@@ -635,6 +756,15 @@ export default function AdminQuestions() {
                                   {option.text}
                                 </span>
                               </div>
+                              {option.image_url && (
+                                <div className="mt-1 mb-1 ml-6 rounded border overflow-hidden bg-white w-fit max-w-[200px]">
+                                  <img
+                                    src={option.image_url}
+                                    alt=""
+                                    className="w-full h-auto max-h-32 object-contain"
+                                  />
+                                </div>
+                              )}
                               <div className="text-xs text-muted-foreground ml-6">
                                 Score: {option.score_value}
                                 {isHighest && (
@@ -731,6 +861,29 @@ export default function AdminQuestions() {
                 disabled={submitting}
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Option Image</Label>
+              <div className="flex items-start gap-4">
+                <div className="flex-1">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(e, "option")}
+                    disabled={submitting}
+                  />
+                </div>
+                {optionImagePreview && (
+                  <div className="h-16 w-24 rounded-md border overflow-hidden bg-muted flex-shrink-0">
+                    <img
+                      src={optionImagePreview}
+                      alt="Preview"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -5,19 +5,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  Clock, 
-  ChevronLeft, 
-  ChevronRight, 
-  Check, 
-  X, 
-  Loader2, 
+import {
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  X,
+  Loader2,
   AlertTriangle,
   Shield,
   Eye,
   EyeOff
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, shuffleArray } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +38,7 @@ interface NavigationItem {
   question_id: number;
   done: boolean;
   marked: boolean;
+  originalNo: number;
 }
 
 export default function LockdownPracticeSession() {
@@ -64,7 +65,7 @@ export default function LockdownPracticeSession() {
   const [submitting, setSubmitting] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
-  
+
   const [submitResponse, setSubmitResponse] = useState<any | null>(null);
   const [tempAnswers, setTempAnswers] = useState<Record<number, number>>({});
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -167,7 +168,7 @@ export default function LockdownPracticeSession() {
     const handleFullscreenChange = () => {
       const isNowFullscreen = !!document.fullscreenElement;
       setIsFullscreen(isNowFullscreen);
-      
+
       if (!isNowFullscreen && !isFinished) {
         recordViolation("Keluar dari fullscreen");
         toast({
@@ -249,7 +250,7 @@ export default function LockdownPracticeSession() {
   const recordViolation = (type: string) => {
     console.warn(`Security violation: ${type}`);
     setViolations(prev => prev + 1);
-    
+
     // Log violation to backend (optional)
     // attemptService.logViolation(attemptId, type).catch(console.error);
   };
@@ -282,10 +283,17 @@ export default function LockdownPracticeSession() {
       }
 
       setAttemptSummary(summary);
-      setQuestions(summary.nav);
+
+      // Randomize questions
+      const shuffledNav = shuffleArray(summary.nav.map((item, idx) => ({
+        ...item,
+        originalNo: idx + 1
+      })));
+
+      setQuestions(shuffledNav);
       setTimeLeft(summary.remaining_seconds);
 
-      await fetchQuestion(1);
+      await fetchQuestionByShuffledIndex(0, shuffledNav);
     } catch (error) {
       console.error("Error fetching attempt:", error);
       toast({
@@ -299,16 +307,21 @@ export default function LockdownPracticeSession() {
     }
   };
 
-  const fetchQuestion = async (questionNo: number) => {
+  const fetchQuestionByShuffledIndex = async (index: number, currentQuestions?: NavigationItem[]) => {
+    const targetQuestions = currentQuestions || questions;
+    if (!targetQuestions[index]) return;
+
+    const originalNo = targetQuestions[index].originalNo;
+
     try {
       setNavigating(true);
-      const response = await attemptService.getQuestion(attemptId, questionNo);
+      const response = await attemptService.getQuestion(attemptId, originalNo);
 
       if (!response.success) {
         throw new Error("Failed to fetch question");
       }
 
-      const question = response.data;
+      let question = response.data;
 
       if (question.status !== "in_progress") {
         setIsFinished(true);
@@ -317,9 +330,18 @@ export default function LockdownPracticeSession() {
         return;
       }
 
+      // RANDOMIZE OPTIONS
+      question.options = shuffleArray(question.options);
+      // Re-assign labels A, B, C, D, E to match UI
+      const labels = ["A", "B", "C", "D", "E"];
+      question.options = question.options.map((opt, i) => ({
+        ...opt,
+        label: labels[i] || opt.label
+      }));
+
       setCurrentQuestion(question);
       setTimeLeft(question.remaining_seconds);
-      setCurrentIndex(questionNo - 1);
+      setCurrentIndex(index);
     } catch (error) {
       console.error("Error fetching question:", error);
       toast({
@@ -329,6 +351,14 @@ export default function LockdownPracticeSession() {
       });
     } finally {
       setNavigating(false);
+    }
+  };
+
+  const fetchQuestion = async (questionNo: number) => {
+    // Wrapper for legacy calls if any, though we mostly use shuffled index now
+    const shuffledIndex = questions.findIndex(q => q.originalNo === questionNo);
+    if (shuffledIndex !== -1) {
+      await fetchQuestionByShuffledIndex(shuffledIndex);
     }
   };
 
@@ -389,12 +419,12 @@ export default function LockdownPracticeSession() {
       }
 
       setAutoSaveStatus('saving');
-      
+
       try {
         await attemptService.submitAnswer(attemptId, questionId, optionId);
         lastSavedAnswerRef.current[questionId] = optionId;
         setAutoSaveStatus('saved');
-        
+
         setQuestions((prev) =>
           prev.map((q) =>
             q.question_id === questionId ? { ...q, done: true } : q
@@ -407,7 +437,7 @@ export default function LockdownPracticeSession() {
       } catch (error) {
         console.error("Auto-save failed:", error);
         setAutoSaveStatus('error');
-        
+
         setTimeout(() => {
           setAutoSaveStatus('idle');
         }, 3000);
@@ -425,12 +455,12 @@ export default function LockdownPracticeSession() {
 
   const handleNext = async () => {
     if (!questions || currentIndex >= questions.length - 1) return;
-    await fetchQuestion(currentIndex + 2);
+    await fetchQuestionByShuffledIndex(currentIndex + 1);
   };
 
   const handlePrev = async () => {
     if (currentIndex <= 0) return;
-    await fetchQuestion(currentIndex);
+    await fetchQuestionByShuffledIndex(currentIndex - 1);
   };
 
   const handleFinish = useCallback(async () => {
@@ -438,15 +468,15 @@ export default function LockdownPracticeSession() {
 
     try {
       setSubmitting(true);
-      
+
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
       }
-      
+
       const unsavedQuestions = Object.keys(tempAnswers).filter(
         qId => lastSavedAnswerRef.current[parseInt(qId)] !== tempAnswers[parseInt(qId)]
       );
-      
+
       for (const qId of unsavedQuestions) {
         try {
           await attemptService.submitAnswer(
@@ -458,7 +488,7 @@ export default function LockdownPracticeSession() {
           console.error(`Failed to save answer for question ${qId}:`, error);
         }
       }
-      
+
       const response = await attemptService.submitAttempt(attemptId);
 
       if (response.success) {
@@ -497,7 +527,7 @@ export default function LockdownPracticeSession() {
 
   if (showResults && submitResponse) {
     const summary = submitResponse.summary;
-    const isPassed = submitResponse.total_score >= 70;
+    const isPassed = submitResponse.is_passed;
 
     // Exit fullscreen and close window after showing results
     setTimeout(() => {
@@ -505,7 +535,6 @@ export default function LockdownPracticeSession() {
         document.exitFullscreen().then(() => {
           setTimeout(() => {
             window.close();
-            // Fallback if window.close() doesn't work
             window.location.href = '/dashboard';
           }, 3000);
         });
@@ -515,58 +544,108 @@ export default function LockdownPracticeSession() {
           window.location.href = '/dashboard';
         }, 3000);
       }
-    }, 5000);
+    }, 10000); // Give more time to see the beautiful result
 
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <Card className="max-w-2xl w-full">
-          <CardContent className="py-12 text-center">
-            <div
-              className={cn(
-                "mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full",
-                isPassed ? "bg-success/20" : "bg-destructive/20"
-              )}
-            >
-              {isPassed ? (
-                <Check className="h-12 w-12 text-success" />
-              ) : (
-                <X className="h-12 w-12 text-destructive" />
-              )}
+      <div className="min-h-screen bg-background p-4 md:p-8 flex items-center justify-center animate-fade-in">
+        <div className="mx-auto max-w-4xl w-full">
+          <Card className="overflow-hidden border-none shadow-2xl glass-card relative">
+            {/* Security Status */}
+            <div className="absolute top-4 right-4 z-10">
+              <Badge variant={violations > 0 ? "destructive" : "outline"} className="flex gap-1.5 items-center">
+                <Shield className="h-3.5 w-3.5" />
+                Security Log: {violations} violations
+              </Badge>
             </div>
 
-            <h1 className="mb-2 text-3xl font-bold">Tryout Selesai!</h1>
-            <p className="mb-8 text-muted-foreground">Hasil Anda</p>
+            <div className={cn(
+              "h-2 w-full",
+              isPassed ? "bg-success" : "bg-destructive"
+            )} />
 
-            <div className="mb-8 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-8 border border-primary/20">
-              <p className="text-5xl font-bold text-primary mb-2">
-                {submitResponse.total_score}%
-              </p>
-              <p className="text-lg text-muted-foreground">Skor Anda</p>
-            </div>
+            <CardContent className="p-0">
+              <div className="grid md:grid-cols-2">
+                {/* Left Side: Score & Celebration */}
+                <div className="p-8 md:p-12 text-center flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 to-transparent border-r border-border/50">
+                  <div className={cn(
+                    "mb-6 flex h-32 w-32 items-center justify-center rounded-full animate-scale-in shadow-lg",
+                    isPassed ? "bg-success/20 text-success" : "bg-destructive/20 text-destructive"
+                  )}>
+                    {isPassed ? (
+                      <Check className="h-16 w-16" />
+                    ) : (
+                      <X className="h-16 w-16" />
+                    )}
+                  </div>
 
-            <div className="mb-8 grid grid-cols-3 gap-4">
-              <div className="rounded-lg bg-muted p-4">
-                <p className="text-3xl font-bold">{summary.total_questions}</p>
-                <p className="text-xs text-muted-foreground mt-1">Total Soal</p>
-              </div>
-              <div className="rounded-lg bg-success/10 p-4 border border-success/20">
-                <p className="text-3xl font-bold text-success">{summary.answered}</p>
-                <p className="text-xs text-muted-foreground mt-1">Terjawab</p>
-              </div>
-              <div className="rounded-lg bg-destructive/10 p-4 border border-destructive/20">
-                <p className="text-3xl font-bold text-destructive">{summary.unanswered}</p>
-                <p className="text-xs text-muted-foreground mt-1">Tidak Terjawab</p>
-              </div>
-            </div>
+                  <h1 className="mb-2 text-4xl font-extrabold tracking-tight md:text-5xl stagger-1 animate-slide-up text-gradient">
+                    {submitResponse.total_score}
+                  </h1>
+                  <p className="text-muted-foreground font-medium mb-6 stagger-2 animate-slide-up uppercase tracking-widest text-xs">
+                    Tryout Akbar Score
+                  </p>
 
-            <p className="text-sm text-muted-foreground mb-4">
-              Jendela ini akan tertutup otomatis dalam 5 detik...
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Pelanggaran keamanan: {violations}
-            </p>
-          </CardContent>
-        </Card>
+                  <Badge
+                    variant={isPassed ? "success" : "destructive"}
+                    className="px-6 py-2 text-lg font-bold rounded-full stagger-3 animate-slide-up shadow-sm"
+                  >
+                    {isPassed ? "LULUS" : "TIDAK LULUS"}
+                  </Badge>
+
+                  <div className="mt-8 text-sm text-muted-foreground stagger-4 animate-slide-up">
+                    <p>Passing Score: <span className="font-bold text-foreground">70</span></p>
+                  </div>
+                </div>
+
+                {/* Right Side: Detailed Stats */}
+                <div className="p-8 md:p-12">
+                  <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    Official Report
+                  </h3>
+
+                  <div className="grid grid-cols-2 gap-4 mb-8">
+                    <div className="p-4 rounded-2xl bg-muted/50 border border-border/50 hover:bg-muted transition-colors stagger-1 animate-slide-up">
+                      <p className="text-xs text-muted-foreground font-medium uppercase mb-1">Total Soal</p>
+                      <p className="text-2xl font-bold">{summary.total_questions}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-success/5 border border-success/10 hover:bg-success/10 transition-colors stagger-2 animate-slide-up">
+                      <p className="text-xs text-success/70 font-medium uppercase mb-1">Benar</p>
+                      <p className="text-2xl font-bold text-success">{summary.correct}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 hover:bg-destructive/10 transition-colors stagger-3 animate-slide-up">
+                      <p className="text-xs text-destructive/70 font-medium uppercase mb-1">Salah</p>
+                      <p className="text-2xl font-bold text-destructive">{summary.wrong}</p>
+                    </div>
+                    <div className="p-4 rounded-2xl bg-warning/5 border border-warning/10 hover:bg-warning/10 transition-colors stagger-4 animate-slide-up">
+                      <p className="text-xs text-warning/70 font-medium uppercase mb-1">Kosong</p>
+                      <p className="text-2xl font-bold text-warning">{summary.unanswered}</p>
+                    </div>
+                  </div>
+
+                  {/* Accuracy Bar */}
+                  <div className="mb-10 stagger-5 animate-slide-up">
+                    <div className="flex justify-between items-end mb-2">
+                      <p className="text-sm font-semibold">Akurasi</p>
+                      <p className="text-2xl font-bold text-primary">{Math.round(summary.accuracy)}%</p>
+                    </div>
+                    <Progress value={summary.accuracy} className="h-3 bg-primary/10" />
+                  </div>
+
+                  <div className="flex flex-col gap-3 stagger-6 animate-slide-up">
+                    <p className="text-center text-xs text-muted-foreground mb-2">
+                      Jendela ini akan tertutup otomatis. Anda dapat melihat hasil detail di dashboard.
+                    </p>
+                    <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Redirecting in 10s...
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -713,6 +792,15 @@ export default function LockdownPracticeSession() {
           ) : (
             <Card className="mb-6 border-2 shadow-sm select-none">
               <CardContent className="py-6">
+                {currentQuestion.image_url && (
+                  <div className="mb-4 overflow-hidden rounded-lg border bg-muted">
+                    <img
+                      src={currentQuestion.image_url}
+                      alt="Soal"
+                      className="h-auto max-h-[400px] w-full object-contain mx-auto"
+                    />
+                  </div>
+                )}
                 <p className="text-lg font-medium leading-relaxed">{currentQuestion.question}</p>
               </CardContent>
             </Card>
@@ -736,25 +824,36 @@ export default function LockdownPracticeSession() {
                   className={cn(
                     "w-full rounded-lg border-2 p-4 text-left transition-all select-none",
                     currentQuestion.status === "in_progress" &&
-                      "hover:border-primary hover:shadow-md cursor-pointer",
+                    "hover:border-primary hover:shadow-md cursor-pointer",
                     currentQuestion.selected_option_id === option.id
                       ? "border-primary bg-primary/10 shadow-md"
                       : "border-border hover:bg-muted/50",
                     currentQuestion.status !== "in_progress" && "opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <span className={cn(
-                      "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors",
+                      "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors mt-0.5",
                       currentQuestion.selected_option_id === option.id
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground"
                     )}>
                       {option.label}
                     </span>
-                    <span className="flex-1 pt-0.5">{option.text}</span>
+                    <div className="flex-1 space-y-3">
+                      {option.image_url && (
+                        <div className="overflow-hidden rounded-md border bg-white max-w-[300px]">
+                          <img
+                            src={option.image_url}
+                            alt={`Opsi ${option.label}`}
+                            className="h-auto w-full object-contain"
+                          />
+                        </div>
+                      )}
+                      <p className="text-base leading-relaxed">{option.text}</p>
+                    </div>
                     {currentQuestion.selected_option_id === option.id && (
-                      <Check className="flex-shrink-0 h-5 w-5 text-primary" />
+                      <Check className="flex-shrink-0 h-5 w-5 text-primary mt-1" />
                     )}
                   </div>
                 </button>
@@ -814,8 +913,8 @@ export default function LockdownPracticeSession() {
                   idx === currentIndex
                     ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-1"
                     : q.done
-                    ? "bg-green-500 text-white border-2 border-green-600 font-bold shadow-md"
-                    : "bg-gray-300 text-gray-700 border-2 border-gray-400"
+                      ? "bg-green-500 text-white border-2 border-green-600 font-bold shadow-md"
+                      : "bg-gray-300 text-gray-700 border-2 border-gray-400"
                 )}
               >
                 {idx + 1}
