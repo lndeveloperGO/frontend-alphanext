@@ -406,7 +406,7 @@ export default function AdminUsers() {
                             setDeletingUser(user);
                             setIsDeleteDialogOpen(true);
                           }}
-                          disabled={loading || isCurrentUser(user.id)}
+                          disabled={loading || isCurrentUser(user.id) || user.role === 'admin'}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
