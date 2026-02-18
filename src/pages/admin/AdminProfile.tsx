@@ -104,8 +104,9 @@ export default function AdminProfile() {
     setIsSaving(true);
 
     const result = await authService.changePassword({
-      currentPassword: formData.currentPassword,
-      newPassword: formData.newPassword,
+      current_password: formData.currentPassword,
+      password: formData.newPassword,
+      password_confirmation: formData.confirmPassword,
     });
 
     if (result.success) {
