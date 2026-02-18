@@ -8,6 +8,8 @@ import { packageService } from "@/lib/packageService";
 import { useAuthStore } from "@/stores/authStore";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils"
+import { SEO } from "@/components/common/SEO";
+import { ShareButton } from "@/components/common/ShareButton";
 
 import {
   BookOpen,
@@ -147,6 +149,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Latihan Ujian Terbaik"
+        description="Persiapkan ujian masuk perguruan tinggi dengan latihan cerdas, analitik mendalam, dan materi komprehensif di AlphaNext."
+      />
       <Navbar />
 
       {/* Hero Section */}
@@ -256,9 +262,16 @@ export default function LandingPage() {
                     key={product.id}
                     className="relative rounded-2xl border-2 border-border bg-card p-6 transition-all hover-lift"
                   >
-                    <div className="mb-6">
-                      <h3 className="text-xl font-semibold">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground capitalize">{typeLabel}</p>
+                    <div className="mb-6 flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-xl font-semibold">{product.name}</h3>
+                        <p className="text-sm text-muted-foreground capitalize">{typeLabel}</p>
+                      </div>
+                      <ShareButton
+                        title={`Paket ${product.name} - AlphaNext`}
+                        text={`Cek paket belajar ${product.name} di AlphaNext! Persiapkan ujianmu dengan lebih baik.`}
+                        url={`${window.location.origin}/packages?id=${product.id}`}
+                      />
                     </div>
                     <div className="mb-6">
                       <span className="text-4xl font-bold">
@@ -338,7 +351,7 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-            
+
 
 
           </div>

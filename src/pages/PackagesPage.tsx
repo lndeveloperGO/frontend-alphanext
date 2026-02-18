@@ -5,6 +5,8 @@ import { packageService } from "@/lib/packageService";
 import { useAuthStore } from "@/stores/authStore";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ShareButton } from "@/components/common/ShareButton";
+import { SEO } from "@/components/common/SEO";
 import { CheckCircle2, Filter } from "lucide-react";
 
 interface Product {
@@ -98,6 +100,10 @@ export default function PackagesPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Paket Pembelajaran"
+        description="Pilih berbagai paket tryout dan materi pembelajaran terbaik untuk persiapan ujian masuk PTN dan sekolah kedinasan."
+      />
       <Navbar />
 
       <section className="py-12">
@@ -166,17 +172,24 @@ export default function PackagesPage() {
                   >
                     <div className="mb-6 flex-1">
                       <div className="mb-4 flex items-start justify-between">
-                        <div>
+                        <div className="flex flex-1 flex-col">
                           <h3 className="text-xl font-semibold">{product.name}</h3>
                           <p className="text-sm text-muted-foreground capitalize">
                             {typeLabel}
                           </p>
                         </div>
-                        {product.is_active && (
-                          <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
-                            Aktif
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {product.is_active && (
+                            <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
+                              Aktif
+                            </span>
+                          )}
+                          <ShareButton
+                            title={`Paket ${product.name} - AlphaNext`}
+                            text={`Cek paket belajar ${product.name} di AlphaNext!`}
+                            url={`${window.location.origin}/packages?id=${product.id}`}
+                          />
+                        </div>
                       </div>
 
                       <div className="mb-6">
