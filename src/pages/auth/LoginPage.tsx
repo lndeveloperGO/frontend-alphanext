@@ -31,7 +31,7 @@ export default function LoginPage() {
         title: "Welcome back!",
         description: "You have successfully logged in.",
       });
-      
+
       // Check role and redirect
       const user = useAuthStore.getState().user;
       if (user?.role === "admin") {
@@ -58,7 +58,7 @@ export default function LoginPage() {
           <div className="mb-8">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                 <img
+                <img
                   src="/logoAlphanext.jpg"
                   alt={appName}
                   className=" rounded-xl"
@@ -70,7 +70,7 @@ export default function LoginPage() {
               Selamat Datang di {appName}
             </h2>
             <p className="mt-2 text-muted-foreground">
-             Masuk untuk melanjutkan ke belajar
+              Masuk untuk melanjutkan ke belajar
             </p>
           </div>
 
@@ -116,9 +116,9 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-input" />
                 <span className="text-sm text-muted-foreground">Remember me</span>
               </label>
-              <a href="#" className="text-sm font-medium text-primary hover:underline">
+              <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
@@ -155,7 +155,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side - Image */}
-      <div 
+      <div
         className="relative hidden w-0 flex-1 lg:block"
         style={{
           backgroundImage: "url('https://cdn-prd.tongkolspace.com/hipwee/wp-content/uploads/2020/12/hipwee-Depositphotos_317220796_l-2015.jpg')",
@@ -168,7 +168,7 @@ export default function LoginPage() {
             <div className="max-w-md text-center">
               <h2 className="mb-4 text-3xl font-bold">Belajar dimulai dari hari ini</h2>
               <p className="text-lg text-primary-foreground/80">
-               akses ribuan kursus online dan tingkatkan keterampilanmu dengan {appName}.
+                akses ribuan kursus online dan tingkatkan keterampilanmu dengan {appName}.
               </p>
             </div>
           </div>

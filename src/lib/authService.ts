@@ -65,7 +65,7 @@ export const authService = {
   async updateProfile(data: { name: string; email: string }) {
     try {
       const apiBaseUrl = getApiBaseUrl();
-      const response = await fetch(`${apiBaseUrl}/profile`, {
+      const response = await fetch(`${apiBaseUrl}/me/profile`, {
         method: "PUT",
         headers: getAuthHeader(),
         body: JSON.stringify(data),
@@ -89,16 +89,17 @@ export const authService = {
   },
 
   /**
-   * Change password
+   * Change password (authenticated)
    */
   async changePassword(data: {
-    currentPassword: string;
-    newPassword: string;
+    current_password: string;
+    password: string;
+    password_confirmation: string;
   }) {
     try {
       const apiBaseUrl = getApiBaseUrl();
-      const response = await fetch(`${apiBaseUrl}/change-password`, {
-        method: "POST",
+      const response = await fetch(`${apiBaseUrl}/me/password`, {
+        method: "PUT",
         headers: getAuthHeader(),
         body: JSON.stringify(data),
       });
@@ -115,6 +116,68 @@ export const authService = {
       return {
         success: false,
         error: error instanceof Error ? error.message : "Failed to change password",
+      };
+    }
+  },
+  /**
+   * Send forgot password link
+   */
+  async forgotPassword(email: string) {
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/auth/forgot-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Gagal mengirim link reset password");
+      }
+
+      return { success: true, message: data.message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Terjadi kesalahan",
+      };
+    }
+  },
+
+  /**
+   * Reset password with token
+   */
+  async resetPassword(data: {
+    token: string;
+    email: string;
+    password: string;
+    password_confirmation: string;
+  }) {
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/auth/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(responseData.message || "Gagal memperbarui password");
+      }
+
+      return { success: true, message: responseData.message };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Terjadi kesalahan",
       };
     }
   },

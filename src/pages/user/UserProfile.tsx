@@ -75,6 +75,9 @@ export default function UserProfile() {
     const result = await authService.updateProfile({
       name: formData.name,
       email: formData.email,
+      phone: formData.phone,
+      school_origin: formData.school_origin,
+      birth_date: formData.birth_date,
     });
 
     if (result.success) {
@@ -104,8 +107,9 @@ export default function UserProfile() {
     setIsSaving(true);
 
     const result = await authService.changePassword({
-      currentPassword: formData.currentPassword,
-      newPassword: formData.newPassword,
+      current_password: formData.currentPassword,
+      password: formData.newPassword,
+      password_confirmation: formData.confirmPassword,
     });
 
     if (result.success) {
