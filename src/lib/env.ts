@@ -16,6 +16,9 @@ declare global {
       VITE_THEME_ACCENT?: string;
       VITE_THEME_DARK_BG?: string;
       VITE_THEME_LIGHT_BG?: string;
+      VITE_OG_TITLE?: string;
+      VITE_OG_DESCRIPTION?: string;
+      VITE_OG_IMAGE?: string;
     };
   }
 }
@@ -30,6 +33,9 @@ interface EnvVariables {
   THEME_ACCENT: string;
   THEME_DARK_BG: string;
   THEME_LIGHT_BG: string;
+  OG_TITLE: string;
+  OG_DESCRIPTION: string;
+  OG_IMAGE: string;
 }
 
 // Helper untuk get runtime env (from window.__env__ set by generate-env.sh)
@@ -52,6 +58,9 @@ const getEnv = (): EnvVariables => {
     THEME_ACCENT: getRuntimeEnv('VITE_THEME_ACCENT', '#10B981'),
     THEME_DARK_BG: getRuntimeEnv('VITE_THEME_DARK_BG', '#0F172A'),
     THEME_LIGHT_BG: getRuntimeEnv('VITE_THEME_LIGHT_BG', '#F8FAFC'),
+    OG_TITLE: getRuntimeEnv('VITE_OG_TITLE', 'AlphaNext'),
+    OG_DESCRIPTION: getRuntimeEnv('VITE_OG_DESCRIPTION', 'AlphaNext Learning Platform'),
+    OG_IMAGE: getRuntimeEnv('VITE_OG_IMAGE', '/og-image.png'),
   };
 };
 
@@ -70,3 +79,6 @@ export const getThemeAccent = (): string => env.THEME_ACCENT;
 export const getThemeDarkBg = (): string => env.THEME_DARK_BG;
 export const getThemeLightBg = (): string => env.THEME_LIGHT_BG;
 export const getApiBaseUrl = (): string => env.API_BASE_URL;
+export const getOgTitle = (): string => env.OG_TITLE;
+export const getOgDescription = (): string => env.OG_DESCRIPTION;
+export const getOgImage = (): string => env.OG_IMAGE;
