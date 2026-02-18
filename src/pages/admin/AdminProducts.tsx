@@ -61,6 +61,7 @@ interface FormData {
   package_id?: number; // For single
   packages?: ProductPackage[]; // For bundle
   selectedMaterialIds: string[]; // Attached materials
+  grants_answer_key: boolean;
 }
 
 const emptyFormData: FormData = {
@@ -72,6 +73,7 @@ const emptyFormData: FormData = {
   package_id: undefined,
   packages: [],
   selectedMaterialIds: [],
+  grants_answer_key: false,
 };
 
 export default function AdminProducts() {
@@ -141,6 +143,7 @@ export default function AdminProducts() {
           })) || []
           : [],
         selectedMaterialIds: [], // TODO: Load from product if available
+        grants_answer_key: product.grants_answer_key,
       });
     }
     setDialogOpen(true);
@@ -250,6 +253,7 @@ export default function AdminProducts() {
             access_days: accessDaysValue,
             is_active: formData.is_active,
             material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
+            grants_answer_key: formData.grants_answer_key,
           }
           : {
             type: "bundle",
@@ -259,6 +263,7 @@ export default function AdminProducts() {
             is_active: formData.is_active,
             packages: formData.packages!,
             material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
+            grants_answer_key: formData.grants_answer_key,
           };
 
       if (dialogMode === "create") {
@@ -367,6 +372,7 @@ export default function AdminProducts() {
                       <TableHead className="text-right">Harga</TableHead>
                       <TableHead className="text-center">Masa Aktif</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Kunci Jawaban</TableHead>
                       <TableHead>Detail</TableHead>
                       <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
@@ -390,6 +396,11 @@ export default function AdminProducts() {
                         <TableCell>
                           <Badge variant={product.is_active ? "outline" : "destructive"}>
                             {product.is_active ? "Aktif" : "Nonaktif"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={product.grants_answer_key ? "secondary" : "outline"} className={product.grants_answer_key ? "bg-blue-100 text-blue-800 border-blue-200" : ""}>
+                            {product.grants_answer_key ? "Ya" : "Tidak"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
@@ -733,6 +744,26 @@ export default function AdminProducts() {
                 </div>
               </div>
             </div> */}
+
+            {/* Grants Answer Key Switch */}
+            <div className="flex items-center justify-between p-3 border rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="grants_answer_key" className="cursor-pointer">
+                  Termasuk Kunci Jawaban
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  User mendapatkan akses ke pembahasan setelah mengerjakan.
+                </p>
+              </div>
+              <Switch
+                id="grants_answer_key"
+                checked={formData.grants_answer_key}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, grants_answer_key: checked })
+                }
+                disabled={submitting}
+              />
+            </div>
 
             {/* Is Active Switch */}
             <div className="flex items-center justify-between p-3 border rounded-lg">

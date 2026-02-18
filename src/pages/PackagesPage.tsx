@@ -25,6 +25,7 @@ interface Product {
     name: string;
     type: string;
   };
+  grants_answer_key: boolean;
 }
 
 export default function PackagesPage() {
@@ -52,6 +53,7 @@ export default function PackagesPage() {
             type: b.type,
             is_active: b.is_active,
             packages: b.packages,
+            grants_answer_key: b.grants_answer_key,
           })),
           ...response.data.regular.map((r) => ({
             id: r.id,
@@ -60,6 +62,7 @@ export default function PackagesPage() {
             type: r.type,
             is_active: r.is_active,
             package: r.package,
+            grants_answer_key: r.grants_answer_key,
           })),
         ];
 
@@ -215,6 +218,12 @@ export default function PackagesPage() {
                           <CheckCircle2 className="h-5 w-5 text-primary" />
                           <span className="text-sm">Analitik pembelajaran</span>
                         </div>
+                        {product.grants_answer_key && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                            <span className="text-sm font-semibold text-green-700">Termasuk Kunci Jawaban</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 

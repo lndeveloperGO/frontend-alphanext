@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Brain, Calendar, ArrowRight, Loader2, Package, AlertCircle, History, Clock, CheckCircle2, XCircle, PlayCircle } from "lucide-react";
+import { Brain, Calendar, ArrowRight, Loader2, Package, AlertCircle, History, Clock, CheckCircle2, XCircle, PlayCircle, FileText } from "lucide-react";
 import { userService } from "@/lib/userService";
 import { attemptService, AttemptHistory } from "@/lib/attemptService";
 import { useToast } from "@/hooks/use-toast";
@@ -30,7 +30,7 @@ export default function UserPractice() {
   const [error, setError] = useState<string | null>(null);
   const [startingAttempt, setStartingAttempt] = useState<number | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
-  
+
   // History tab states
   const [attempts, setAttempts] = useState<AttemptHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -299,11 +299,10 @@ export default function UserPractice() {
                     return (
                       <Card
                         key={pkg.package_id}
-                        className={`transition-all ${
-                          canStart
+                        className={`transition-all ${canStart
                             ? "cursor-pointer hover:border-primary/50 hover:shadow-md"
                             : "cursor-not-allowed opacity-75"
-                        }`}
+                          }`}
                         onClick={() => canStart && startPractice(pkg.package_id)}
                       >
                         <CardHeader className="pb-2">
@@ -505,6 +504,17 @@ export default function UserPractice() {
                                 >
                                   <PlayCircle className="mr-2 h-4 w-4" />
                                   Lanjutkan
+                                </Button>
+                              )}
+                              {attempt.status === "submitted" && attempt.has_answer_key && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-primary text-primary hover:bg-primary/5"
+                                  onClick={() => navigate(`/dashboard/tryout/review/${attempt.id}`)}
+                                >
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  Pembahasan
                                 </Button>
                               )}
                             </TableCell>

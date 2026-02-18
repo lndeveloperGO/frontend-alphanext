@@ -63,6 +63,7 @@ export interface PackageItem {
   description?: string;
   price: number;
   is_active: boolean;
+  grants_answer_key: boolean;
   type: 'bundle' | 'single';
   // For bundles
   packages?: Array<{
@@ -279,6 +280,7 @@ export const userService = {
         ends_at: string | null;
         status: "active" | "expired";
         is_free: boolean;
+        has_answer_key: boolean;
       }>;
       recent_activity: Array<{
         attempt_id: number;
@@ -318,6 +320,7 @@ export const userService = {
       category_id: number;
       is_free: boolean;
       status: string;
+      has_answer_key: boolean;
       starts_at: string | null;
       ends_at: string | null;
     }>;

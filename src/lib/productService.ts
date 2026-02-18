@@ -44,6 +44,7 @@ export interface Product {
   package?: ProductPackageSingle; // For single products
   packages?: ProductPackageWithPivot[]; // For bundle products
   material_ids?: string[]; // Attached materials for premium access
+  grants_answer_key: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -56,6 +57,7 @@ export interface CreateSingleProductInput {
   access_days?: number; // default 30 jika tidak dikirim
   is_active?: boolean;
   material_ids?: string[]; // Attached materials for premium access
+  grants_answer_key?: boolean;
 }
 
 export interface CreateBundleProductInput {
@@ -66,6 +68,7 @@ export interface CreateBundleProductInput {
   is_active?: boolean;
   packages: ProductPackage[];
   material_ids?: string[]; // Attached materials for premium access
+  grants_answer_key?: boolean;
 }
 
 export type CreateProductInput = CreateSingleProductInput | CreateBundleProductInput;
@@ -77,6 +80,7 @@ export interface UpdateSingleProductInput {
   price?: number;
   access_days?: number;
   is_active?: boolean;
+  grants_answer_key?: boolean;
 }
 
 export interface UpdateBundleProductInput {
@@ -86,6 +90,7 @@ export interface UpdateBundleProductInput {
   access_days?: number;
   is_active?: boolean;
   packages?: ProductPackage[];
+  grants_answer_key?: boolean;
 }
 
 export type UpdateProductInput = UpdateSingleProductInput | UpdateBundleProductInput;
