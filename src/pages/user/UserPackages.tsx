@@ -22,6 +22,7 @@ interface ActivePackage {
   ends_at: string | null;
   status: "active" | "expired";
   is_free: boolean;
+  has_answer_key: boolean;
 }
 
 function formatEndsAt(isoDate: string | null): string {
@@ -164,6 +165,12 @@ export default function UserPackages() {
                             {isActive ? "Aktif" : "Kadaluarsa"}
                           </Badge>
                         </div>
+                        {pkg.has_answer_key && (
+                          <div className="flex justify-between items-center bg-green-50 p-2 rounded-md border border-green-100">
+                            <span className="text-xs font-semibold text-green-700 italic">✓ Pembahasan Tersedia</span>
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          </div>
+                        )}
                       </div>
                       <Button
                         className="mt-4 w-full"
@@ -251,6 +258,12 @@ export default function UserPackages() {
                             </li>
                           ))}
                       </ul>
+                      {bundle.grants_answer_key && (
+                        <div className="mt-3 flex items-center gap-2 bg-green-50 p-2 rounded-md border border-green-100">
+                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <span className="text-xs font-bold text-green-700">Termasuk Kunci Jawaban</span>
+                        </div>
+                      )}
                     </div>
                     <Button className="mt-4 w-full" variant="outline" onClick={() => handleSelectPackage(bundle)}>
                       Pilih Paket
@@ -280,6 +293,12 @@ export default function UserPackages() {
                     <div className="mb-4">
                       <span className="text-3xl font-bold">{formatPrice(reg.price)}</span>
                     </div>
+                    {reg.grants_answer_key && (
+                      <div className="mt-1 flex items-center gap-2 bg-green-50 p-2 rounded-md border border-green-100 mb-2">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-xs font-bold text-green-700">Termasuk Kunci Jawaban</span>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent>
                     <Button className="mt-4 w-full" variant="outline" onClick={() => handleSelectPackage(reg)}>

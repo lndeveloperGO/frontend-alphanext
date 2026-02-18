@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,9 @@ import {
   Save,
   AlertCircle,
   BookmarkCheck,
-  Keyboard
+  Keyboard,
+  FileQuestion,
+  Trophy
 } from "lucide-react";
 import { cn, shuffleArray } from "@/lib/utils";
 import {
@@ -69,6 +71,7 @@ export default function PracticeSession() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [showFinishDialog, setShowFinishDialog] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
 
   // Submit response data
   const [submitResponse, setSubmitResponse] = useState<any | null>(null);
@@ -281,6 +284,7 @@ export default function PracticeSession() {
   };
 
   const handleAnswer = (optionId: number) => {
+    if (isReviewMode) return;
     if (!currentQuestion) return;
     if (currentQuestion.status !== "in_progress") return;
 
@@ -308,6 +312,13 @@ export default function PracticeSession() {
 
     // Trigger auto-save
     scheduleAutoSave(questionId, optionId);
+  };
+
+  const handleStartReview = () => {
+    setIsReviewMode(true);
+    setShowResults(false);
+    // Reset to first question
+    fetchQuestionByShuffledIndex(0);
   };
 
   // NEW: Auto-save with debounce
@@ -419,6 +430,7 @@ export default function PracticeSession() {
   };
 
   const handleMark = async () => {
+    if (isReviewMode) return;
     if (!currentQuestion) return;
 
     const questionId = currentQuestion.question_id;
@@ -685,6 +697,17 @@ export default function PracticeSession() {
                   </div>
 
                   <div className="flex flex-col gap-3 stagger-6 animate-slide-up">
+                    {submitResponse.has_answer_key && (
+                      <Button
+                        size="lg"
+                        variant="secondary"
+                        className="w-full font-bold rounded-xl border-primary text-primary hover:bg-primary/5"
+                        onClick={() => navigate(`/dashboard/tryout/review/${attemptId}`)}
+                      >
+                        <FileQuestion className="mr-2 h-5 w-5" />
+                        Lihat Pembahasan
+                      </Button>
+                    )}
                     <Button
                       size="lg"
                       className="w-full font-bold rounded-xl shadow-primary"
@@ -831,6 +854,17 @@ export default function PracticeSession() {
             >
               <Keyboard className="h-4 w-4" />
             </Button>
+            {isReviewMode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResults(true)}
+                className="border-primary text-primary hover:bg-primary/5"
+              >
+                <Trophy className="mr-1 h-4 w-4" />
+                Hasil
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -858,16 +892,23 @@ export default function PracticeSession() {
               </div>
             )}
 
+            {/* Review Mode Indicator */}
+            {isReviewMode && (
+              <Badge variant="secondary" className="bg-blue-600 text-white border-blue-700 animate-pulse">
+                MODE PEMBAHASAN
+              </Badge>
+            )}
+
             {/* Timer */}
             <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5">
               <Clock className="h-4 w-4 text-primary" />
               <span
                 className={cn(
                   "font-mono font-semibold",
-                  timeLeft < 60 && "text-destructive animate-pulse"
+                  timeLeft < 60 && !isReviewMode && "text-destructive animate-pulse"
                 )}
               >
-                {formatTime(timeLeft)}
+                {isReviewMode ? "--:--" : formatTime(timeLeft)}
               </span>
             </div>
           </div>
@@ -964,20 +1005,29 @@ export default function PracticeSession() {
                   disabled={currentQuestion.status !== "in_progress"}
                   className={cn(
                     "w-full rounded-lg border-2 p-4 text-left transition-all relative group",
-                    currentQuestion.status === "in_progress" &&
+                    currentQuestion.status === "in_progress" && !isReviewMode &&
                     "hover:border-primary hover:shadow-md cursor-pointer",
-                    currentQuestion.selected_option_id === option.id
-                      ? "border-primary bg-primary/10 shadow-md"
-                      : "border-border hover:bg-muted/50",
-                    currentQuestion.status !== "in_progress" && "opacity-50 cursor-not-allowed"
+                    // Colors for review mode
+                    isReviewMode && option.is_correct
+                      ? "border-green-500 bg-green-50 shadow-sm"
+                      : isReviewMode && currentQuestion.selected_option_id === option.id && !option.is_correct
+                        ? "border-red-500 bg-red-50"
+                        : currentQuestion.selected_option_id === option.id
+                          ? "border-primary bg-primary/10 shadow-md"
+                          : "border-border hover:bg-muted/50",
+                    (currentQuestion.status !== "in_progress" || isReviewMode) && "cursor-default"
                   )}
                 >
                   <div className="flex items-start gap-4">
                     <span className={cn(
                       "flex-shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold transition-colors mt-0.5",
-                      currentQuestion.selected_option_id === option.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-muted-foreground group-hover:bg-primary/20"
+                      isReviewMode && option.is_correct
+                        ? "bg-green-600 text-white"
+                        : isReviewMode && currentQuestion.selected_option_id === option.id && !option.is_correct
+                          ? "bg-red-600 text-white"
+                          : currentQuestion.selected_option_id === option.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground group-hover:bg-primary/20"
                     )}>
                       {option.label}
                     </span>
@@ -993,8 +1043,16 @@ export default function PracticeSession() {
                       )}
                       <p className="text-base leading-relaxed">{option.text}</p>
                     </div>
-                    {currentQuestion.selected_option_id === option.id && (
-                      <Check className="flex-shrink-0 h-5 w-5 text-primary mt-1" />
+                    {isReviewMode ? (
+                      option.is_correct ? (
+                        <Badge className="bg-green-600 text-white ml-auto">Benar</Badge>
+                      ) : currentQuestion.selected_option_id === option.id ? (
+                        <Badge variant="destructive" className="ml-auto">Salah</Badge>
+                      ) : null
+                    ) : (
+                      currentQuestion.selected_option_id === option.id && (
+                        <Check className="flex-shrink-0 h-5 w-5 text-primary mt-1" />
+                      )
                     )}
                   </div>
                   {/* Keyboard hint */}
@@ -1003,6 +1061,22 @@ export default function PracticeSession() {
                   </span>
                 </button>
               ))}
+
+              {isReviewMode && currentQuestion.explanation && (
+                <Card className="mt-8 border-2 border-primary/20 bg-primary/5 animate-slide-up shadow-inner">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-primary uppercase tracking-wider">
+                      <AlertCircle className="h-4 w-4" />
+                      Pembahasan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="prose prose-sm max-w-none text-foreground leading-relaxed">
+                      {currentQuestion.explanation}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
 

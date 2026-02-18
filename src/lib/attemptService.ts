@@ -35,6 +35,7 @@ export interface AttemptSummary {
     done: boolean;
     marked: boolean;
   }>;
+  has_answer_key: boolean;
 }
 
 export interface AttemptSummaryResponse {
@@ -53,11 +54,13 @@ export interface QuestionData {
     label: string;
     text: string;
     image_url: string | null;
+    is_correct?: boolean;
   }>;
   selected_option_id: number | null;
   is_marked: boolean;
   remaining_seconds: number;
   status: "in_progress" | "submitted" | "expired";
+  explanation?: string;
 }
 
 export interface QuestionResponse {
@@ -99,7 +102,42 @@ export interface SubmitResponse {
       accuracy: number;
       progress_percent: number;
     };
+    has_answer_key: boolean;
   };
+}
+
+export interface ReviewOption {
+  id: number;
+  text: string;
+  is_correct: boolean;
+}
+
+export interface ReviewResult {
+  no: number;
+  question_id: number;
+  question_text: string;
+  image_url: string | null;
+  options: ReviewOption[];
+  user_answer: {
+    selected_option_id: number | null;
+    is_correct: boolean;
+    score_awarded: number;
+  };
+  explanation: string;
+}
+
+export interface ReviewData {
+  attempt_id: number;
+  package_name: string;
+  total_score: number;
+  status: string;
+  submitted_at: string;
+  results: ReviewResult[];
+}
+
+export interface ReviewResponse {
+  success: boolean;
+  data: ReviewData;
 }
 
 export interface AttemptHistory {
@@ -116,6 +154,7 @@ export interface AttemptHistory {
     type: "latihan" | "tryout" | "akbar";
     category_id: number;
   };
+  has_answer_key: boolean;
 }
 
 export interface AttemptHistoryResponse {
@@ -298,6 +337,29 @@ export const attemptService = {
 
     if (!response.ok) {
       throw new Error(`Failed to fetch attempts: ${response.statusText}`);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get full tryout results (review)
+   * GET /api/attempts/{attempt_id}/review
+   */
+  async getReview(attemptId: number): Promise<ReviewResponse> {
+    const response = await fetch(
+      `${getApiBaseUrl()}/attempts/${attemptId}/review`,
+      {
+        headers: getHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Anda tidak memiliki akses kunci jawaban untuk paket ini.");
+      }
+      throw new Error(`Failed to fetch review: ${response.statusText}`);
     }
 
     return response.json();

@@ -269,6 +269,7 @@ export const packageService = {
         name: string;
         price: number;
         is_active: boolean;
+        grants_answer_key: boolean;
         packages: Array<{
           id: number;
           name: string;
@@ -283,6 +284,7 @@ export const packageService = {
         name: string;
         price: number;
         is_active: boolean;
+        grants_answer_key: boolean;
         package: {
           id: number;
           name: string;

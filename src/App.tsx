@@ -49,6 +49,7 @@ import AdminProfile from "./pages/admin/AdminProfile";
 import UserCheckout from "./pages/user/UserCheckout";
 import AdminOrders from "./pages/admin/AdminOrders";
 import UserOrders from "./pages/user/UserOrders";
+import ReviewPage from "./pages/user/ReviewPage";
 
 
 
@@ -118,6 +119,7 @@ const App = () => (
             <Route path="/dashboard/rankings" element={<ProtectedRoute allowedRoles={["user"]}><UserRankings /></ProtectedRoute>} />
             <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><UserProfile /></ProtectedRoute>} />
             <Route path="/dashboard/test" element={<ProtectedRoute allowedRoles={["user"]}><UserTest /></ProtectedRoute>} />
+            <Route path="/dashboard/tryout/review/:attemptId" element={<ProtectedRoute allowedRoles={["user"]}><ReviewPage /></ProtectedRoute>} />
 
             {/* Practice Session */}
             <Route path="/practice" element={<ProtectedRoute><PracticeSession /></ProtectedRoute>} />
