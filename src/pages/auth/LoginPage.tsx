@@ -127,7 +127,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t" />
@@ -143,7 +143,7 @@ export default function LoginPage() {
               <p className="font-medium">Admin: admin@edulearn.com / admin123</p>
               <p className="font-medium">User: user@edulearn.com / user123</p>
             </div>
-          </div>
+          </div> */}
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Belum memiliki akun?{" "}
