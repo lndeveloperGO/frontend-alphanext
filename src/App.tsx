@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { HelmetProvider } from "react-helmet-async";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -69,64 +70,66 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/packages" element={<PackagesPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/packages" element={<PackagesPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
-          <Route path="/admin/questions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminQuestions /></ProtectedRoute>} />
-          <Route path="/admin/questions/bulk-import" element={<ProtectedRoute allowedRoles={["admin"]}><BulkQuestionImport /></ProtectedRoute>} />
-          <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
-          <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
-          <Route path="/admin/packages/:packageId/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackageMaterials /></ProtectedRoute>} />
-          <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
-          <Route path="/admin/products" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProducts /></ProtectedRoute>} />
-          <Route path="/admin/promo-codes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPromoCodes /></ProtectedRoute>} />
-          <Route path="/admin/vouchers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminVouchers /></ProtectedRoute>} />
-          <Route path="/admin/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMaterials /></ProtectedRoute>} />
-          <Route path="/admin/tryouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTryouts /></ProtectedRoute>} />
-          <Route path="/admin/rankings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRankings /></ProtectedRoute>} />
-          <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProfile /></ProtectedRoute>} />
-          <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrders /></ProtectedRoute>} />
+            {/* Admin Routes */}
+            <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AdminUsers /></ProtectedRoute>} />
+            <Route path="/admin/questions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminQuestions /></ProtectedRoute>} />
+            <Route path="/admin/questions/bulk-import" element={<ProtectedRoute allowedRoles={["admin"]}><BulkQuestionImport /></ProtectedRoute>} />
+            <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackages /></ProtectedRoute>} />
+            <Route path="/admin/packages/:packageId/questions" element={<ProtectedRoute allowedRoles={["admin"]}><PackageQuestions /></ProtectedRoute>} />
+            <Route path="/admin/packages/:packageId/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPackageMaterials /></ProtectedRoute>} />
+            <Route path="/admin/categories" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCategories /></ProtectedRoute>} />
+            <Route path="/admin/products" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProducts /></ProtectedRoute>} />
+            <Route path="/admin/promo-codes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPromoCodes /></ProtectedRoute>} />
+            <Route path="/admin/vouchers" element={<ProtectedRoute allowedRoles={["admin"]}><AdminVouchers /></ProtectedRoute>} />
+            <Route path="/admin/materials" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMaterials /></ProtectedRoute>} />
+            <Route path="/admin/tryouts" element={<ProtectedRoute allowedRoles={["admin"]}><AdminTryouts /></ProtectedRoute>} />
+            <Route path="/admin/rankings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRankings /></ProtectedRoute>} />
+            <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProfile /></ProtectedRoute>} />
+            <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrders /></ProtectedRoute>} />
 
-          {/* User Routes */}
-          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/packages" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
-          <Route path="/dashboard/user/orders" element={<ProtectedRoute allowedRoles={["user"]}><UserOrders /></ProtectedRoute>} />
-          <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
-          <Route path="/dashboard/tryout-akbar" element={<ProtectedRoute allowedRoles={["user"]}><UserTryoutAkbar /></ProtectedRoute>} />
-          <Route path="/dashboard/checkout" element={<ProtectedRoute allowedRoles={["user"]}><UserCheckout /></ProtectedRoute>} />
-          <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserMaterials /></ProtectedRoute>} />
-          <Route path="/dashboard/materials/:id" element={<ProtectedRoute allowedRoles={["user"]}><MaterialDetail /></ProtectedRoute>} />
-          <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/rankings" element={<ProtectedRoute allowedRoles={["user"]}><UserRankings /></ProtectedRoute>} />
-          <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><UserProfile /></ProtectedRoute>} />
-          <Route path="/dashboard/test" element={<ProtectedRoute allowedRoles={["user"]}><UserTest /></ProtectedRoute>} />
+            {/* User Routes */}
+            <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/packages" element={<ProtectedRoute allowedRoles={["user"]}><UserPackages /></ProtectedRoute>} />
+            <Route path="/dashboard/user/orders" element={<ProtectedRoute allowedRoles={["user"]}><UserOrders /></ProtectedRoute>} />
+            <Route path="/dashboard/tryouts" element={<ProtectedRoute allowedRoles={["user"]}><UserPractice /></ProtectedRoute>} />
+            <Route path="/dashboard/tryout-akbar" element={<ProtectedRoute allowedRoles={["user"]}><UserTryoutAkbar /></ProtectedRoute>} />
+            <Route path="/dashboard/checkout" element={<ProtectedRoute allowedRoles={["user"]}><UserCheckout /></ProtectedRoute>} />
+            <Route path="/dashboard/materials" element={<ProtectedRoute allowedRoles={["user"]}><UserMaterials /></ProtectedRoute>} />
+            <Route path="/dashboard/materials/:id" element={<ProtectedRoute allowedRoles={["user"]}><MaterialDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/history" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/rankings" element={<ProtectedRoute allowedRoles={["user"]}><UserRankings /></ProtectedRoute>} />
+            <Route path="/dashboard/profile" element={<ProtectedRoute allowedRoles={["user"]}><UserProfile /></ProtectedRoute>} />
+            <Route path="/dashboard/test" element={<ProtectedRoute allowedRoles={["user"]}><UserTest /></ProtectedRoute>} />
 
-          {/* Practice Session */}
-          <Route path="/practice" element={<ProtectedRoute><PracticeSession /></ProtectedRoute>} />
-          <Route path="/lockdown-practice" element={<LockdownPracticeSession />} />
+            {/* Practice Session */}
+            <Route path="/practice" element={<ProtectedRoute><PracticeSession /></ProtectedRoute>} />
+            <Route path="/lockdown-practice" element={<LockdownPracticeSession />} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

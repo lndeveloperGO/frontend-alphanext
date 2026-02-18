@@ -1,0 +1,52 @@
+import { Helmet } from "react-helmet-async";
+
+interface SEOProps {
+    title?: string;
+    description?: string;
+    keywords?: string;
+    ogTitle?: string;
+    ogDescription?: string;
+    ogImage?: string;
+    ogUrl?: string;
+    twitterCard?: string;
+    canonical?: string;
+}
+
+export const SEO = ({
+    title = "AlphaNext",
+    description = "AlphaNext Learning Platform - Persiapkan ujian masuk perguruan tinggi dengan latihan cerdas, analitik mendalam, dan materi komprehensif.",
+    keywords = "AlphaNext, tryout, ujian, belajar, PTN, dinas",
+    ogTitle,
+    ogDescription,
+    ogImage = "/og-image.png", // Default image path
+    ogUrl = window.location.href,
+    twitterCard = "summary_large_image",
+    canonical,
+}: SEOProps) => {
+    const fullTitle = title === "AlphaNext" ? title : `${title} | AlphaNext`;
+
+    return (
+        <Helmet>
+            {/* Standard metadata tags */}
+            <title>{fullTitle}</title>
+            <meta name="description" content={ogDescription || description} />
+            <meta name="keywords" content={keywords} />
+
+            {/* Open Graph tags */}
+            <meta property="og:title" content={ogTitle || fullTitle} />
+            <meta property="og:description" content={ogDescription || description} />
+            <meta property="og:type" content="website" />
+            <meta property="og:url" content={ogUrl} />
+            <meta property="og:image" content={ogImage} />
+
+            {/* Twitter Card tags */}
+            <meta name="twitter:card" content={twitterCard} />
+            <meta name="twitter:title" content={ogTitle || fullTitle} />
+            <meta name="twitter:description" content={ogDescription || description} />
+            <meta name="twitter:image" content={ogImage} />
+
+            {/* Canonical link */}
+            {canonical && <link rel="canonical" href={canonical} />}
+        </Helmet>
+    );
+};
