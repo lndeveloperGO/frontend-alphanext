@@ -54,7 +54,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     const birthDateString = birthDate ? format(birthDate, "yyyy-MM-dd") : undefined;
-    
+
     const result = await register(name, email, password, phone, schoolOrigin, birthDateString);
 
     if (result.success) {
@@ -205,7 +205,7 @@ export default function RegisterPage() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border-0 overflow-hidden min-w-[320px]">
-                    
+
                     {/* Advanced Date Picker */}
                     <AdvancedDatePicker
                       selected={birthDate}
@@ -216,7 +216,7 @@ export default function RegisterPage() {
                       fromDate={new Date(1950, 0, 1)}
                       toDate={new Date()}
                     />
-                    
+
                     {/* Footer */}
                     <div className="px-4 pb-4 flex gap-2">
                       <Button
@@ -288,9 +288,9 @@ export default function RegisterPage() {
               <input type="checkbox" id="terms" className="mt-1 rounded border-input" required />
               <label htmlFor="terms" className="text-sm text-muted-foreground">
                 Saya setuju dengan{" "}
-                <a href="#" className="text-primary hover:underline">Ketentuan Layanan</a>
+                <Link to="/terms-of-service" className="text-primary hover:underline">Ketentuan Layanan</Link>
                 {" "}dan{" "}
-                <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a>
+                <Link to="/privacy-policy" className="text-primary hover:underline">Kebijakan Privasi</Link>
               </label>
             </div>
 
