@@ -12,15 +12,17 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { User, Mail, Lock, Calendar, Phone, School, Eye, EyeOff, Check } from "lucide-react";
 import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
 
 export default function UserProfile() {
   const { user, setUser } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -49,7 +51,11 @@ export default function UserProfile() {
           birth_date: result.data.birth_date || "",
         }));
       } else {
-        setErrorMessage(result.error || "Gagal memuat data pengguna");
+        toast({
+          title: "Kesalahan",
+          description: result.error || "Gagal memuat data pengguna",
+          variant: "destructive",
+        });
       }
       setIsLoading(false);
     };
@@ -69,8 +75,7 @@ export default function UserProfile() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-    setErrorMessage("");
+    setIsSavingProfile(true);
 
     const result = await authService.updateProfile({
       name: formData.name,
@@ -82,29 +87,42 @@ export default function UserProfile() {
 
     if (result.success) {
       setUser(result.data);
-      setSuccessMessage("Profil berhasil diperbarui!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      toast({
+        title: "Berhasil",
+        description: "Profil Anda telah diperbarui.",
+      });
     } else {
-      setErrorMessage(result.error || "Failed to update profile");
+      toast({
+        title: "Kesalahan",
+        description: result.error || "Gagal memperbarui profil",
+        variant: "destructive",
+      });
     }
-    setIsSaving(false);
+    setIsSavingProfile(false);
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage("");
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setErrorMessage("Kata sandi baru tidak cocok");
+      toast({
+        title: "Kesalahan",
+        description: "Konfirmasi kata sandi tidak cocok",
+        variant: "destructive",
+      });
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      setErrorMessage("Kata sandi harus minimal 6 karakter");
+      toast({
+        title: "Kesalahan",
+        description: "Kata sandi harus minimal 6 karakter",
+        variant: "destructive",
+      });
       return;
     }
 
-    setIsSaving(true);
+    setIsChangingPassword(true);
 
     const result = await authService.changePassword({
       current_password: formData.currentPassword,
@@ -120,12 +138,18 @@ export default function UserProfile() {
         confirmPassword: "",
       }));
 
-      setSuccessMessage("Kata sandi berhasil diubah!");
-      setTimeout(() => setSuccessMessage(""), 3000);
+      toast({
+        title: "Berhasil",
+        description: "Kata sandi Anda telah diperbarui.",
+      });
     } else {
-      setErrorMessage(result.error || "Gagal mengubah kata sandi");
+      toast({
+        title: "Kesalahan",
+        description: result.error || "Gagal mengubah kata sandi",
+        variant: "destructive",
+      });
     }
-    setIsSaving(false);
+    setIsChangingPassword(false);
   };
 
   const createdAtDate = user?.createdAt
@@ -158,25 +182,6 @@ export default function UserProfile() {
             Kelola informasi akun dan pengaturan keamanan Anda
           </p>
         </div>
-
-        {/* Success Message */}
-        {successMessage && (
-          <Alert className="border-green-200 bg-green-50">
-            <Check className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
-              {successMessage}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Error Message */}
-        {errorMessage && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertDescription className="text-red-800">
-              {errorMessage}
-            </AlertDescription>
-          </Alert>
-        )}
 
         {/* Profile Overview Card */}
         <Card>
@@ -348,8 +353,8 @@ export default function UserProfile() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isSaving} className="w-full md:w-auto">
-                {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
+              <Button type="submit" disabled={isSavingProfile} className="w-full md:w-auto">
+                {isSavingProfile ? "Menyimpan..." : "Simpan Perubahan"}
               </Button>
             </form>
           </CardContent>
@@ -441,8 +446,8 @@ export default function UserProfile() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={isSaving} className="w-full md:w-auto">
-                {isSaving ? "Memperbarui..." : "Ganti Kata Sandi"}
+              <Button type="submit" disabled={isChangingPassword} className="w-full md:w-auto">
+                {isChangingPassword ? "Memperbarui..." : "Ganti Kata Sandi"}
               </Button>
             </form>
           </CardContent>
