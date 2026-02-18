@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { getAppName, getOgTitle, getOgDescription, getOgImage } from "@/lib/env";
 
 interface SEOProps {
     title?: string;
@@ -13,17 +14,17 @@ interface SEOProps {
 }
 
 export const SEO = ({
-    title = "AlphaNext",
-    description = "AlphaNext Learning Platform - Persiapkan ujian masuk perguruan tinggi dengan latihan cerdas, analitik mendalam, dan materi komprehensif.",
+    title = getAppName(),
+    description = getOgDescription(),
     keywords = "AlphaNext, tryout, ujian, belajar, PTN, dinas",
-    ogTitle,
-    ogDescription,
-    ogImage = "/og-image.png", // Default image path
+    ogTitle = getOgTitle(),
+    ogDescription = getOgDescription(),
+    ogImage = getOgImage(),
     ogUrl = window.location.href,
     twitterCard = "summary_large_image",
     canonical,
 }: SEOProps) => {
-    const fullTitle = title === "AlphaNext" ? title : `${title} | AlphaNext`;
+    const fullTitle = title === getAppName() ? title : `${title} | ${getAppName()}`;
 
     return (
         <Helmet>
