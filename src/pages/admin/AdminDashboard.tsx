@@ -61,7 +61,7 @@ export default function AdminDashboard() {
       const errorMessage = err instanceof Error ? err.message : "Failed to load dashboard data";
       setError(errorMessage);
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description: errorMessage,
         variant: "destructive",
       });
@@ -79,8 +79,8 @@ export default function AdminDashboard() {
       <DashboardLayout type="admin">
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-            <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+            <h1 className="text-2xl font-bold">Ringkasan Dashboard</h1>
+            <p className="text-muted-foreground">Selamat datang kembali! Berikut adalah ringkasan hari ini.</p>
           </div>
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -96,8 +96,8 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+          <h1 className="text-2xl font-bold">Ringkasan Dashboard</h1>
+          <p className="text-muted-foreground">Selamat datang kembali! Berikut adalah ringkasan hari ini.</p>
         </div>
 
         {/* Stats Grid */}
@@ -120,25 +120,25 @@ export default function AdminDashboard() {
           ) : (
             <>
               <StatCard
-                title="Total Users"
+                title="Total Pengguna"
                 value={stats.totalUsers.toLocaleString()}
-                subtitle={`${stats.activeUsers} active`}
+                subtitle={`${stats.activeUsers} aktif`}
                 icon={Users}
                 trend={{ value: 12, isPositive: true }}
               />
               <StatCard
-                title="Total Questions"
+                title="Total Pertanyaan"
                 value={stats.totalQuestions.toLocaleString()}
                 icon={FileQuestion}
                 variant="primary"
               />
               <StatCard
-                title="Active Packages"
+                title="Paket Aktif"
                 value={stats.totalPackages}
                 icon={Package}
               />
               <StatCard
-                title="Total Revenue"
+                title="Total Pendapatan"
                 value={`Rp ${(stats.totalRevenue / 1000000).toFixed(1)}M`}
                 icon={DollarSign}
                 trend={{ value: 8, isPositive: true }}
@@ -167,17 +167,17 @@ export default function AdminDashboard() {
           ) : (
             <>
               <StatCard
-                title="Active Tryouts"
+                title="Tryout Aktif"
                 value={stats.activeTryouts}
                 icon={ClipboardList}
               />
               <StatCard
-                title="Learning Materials"
+                title="Materi Pembelajaran"
                 value={stats.totalMaterials}
                 icon={BookOpen}
               />
               <StatCard
-                title="This Month Growth"
+                title="Pertumbuhan Bulan Ini"
                 value={`+${stats.growth}%`}
                 icon={TrendingUp}
                 variant="primary"
@@ -191,8 +191,8 @@ export default function AdminDashboard() {
           {/* Recent Users */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Users</CardTitle>
-              <CardDescription>Latest registered users</CardDescription>
+              <CardTitle>Pengguna Terbaru</CardTitle>
+              <CardDescription>Pengguna yang baru mendaftar</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <Badge variant={user.is_active ? "default" : "secondary"}>
-                        {user.is_active ? "active" : "inactive"}
+                        {user.is_active ? "aktif" : "nonaktif"}
                       </Badge>
                     </div>
                   ))}
@@ -237,8 +237,8 @@ export default function AdminDashboard() {
           {/* Active Tryouts */}
           <Card>
             <CardHeader>
-              <CardTitle>Active Tryouts</CardTitle>
-              <CardDescription>Currently running tryout packages</CardDescription>
+              <CardTitle>Tryout Aktif</CardTitle>
+              <CardDescription>Paket tryout yang sedang berjalan</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
                       <div>
                         <p className="font-medium">{pkg.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {pkg.category?.name || 'No category'}
+                          {pkg.category?.name || 'Tidak ada kategori'}
                         </p>
                       </div>
                       <Badge variant="default">

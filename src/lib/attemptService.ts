@@ -46,10 +46,13 @@ export interface QuestionData {
   no: number;
   question_id: number;
   question: string;
+  question_type: "text" | "image";
+  image_url: string | null;
   options: Array<{
     id: number;
     label: string;
     text: string;
+    image_url: string | null;
   }>;
   selected_option_id: number | null;
   is_marked: boolean;
@@ -82,13 +85,18 @@ export interface SubmitResponse {
   success: boolean;
   data: {
     attempt_id: number;
-    status: "submitted";
+    status: "submitted" | "expired";
     submitted_at: string;
     total_score: number;
+    passing_score: number;
+    is_passed: boolean;
     summary: {
       total_questions: number;
       answered: number;
       unanswered: number;
+      correct: number;
+      wrong: number;
+      accuracy: number;
       progress_percent: number;
     };
   };

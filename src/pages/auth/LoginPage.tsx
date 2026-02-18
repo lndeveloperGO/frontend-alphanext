@@ -28,8 +28,8 @@ export default function LoginPage() {
 
     if (result.success) {
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "Selamat datang kembali!",
+        description: "Anda telah berhasil masuk.",
       });
 
       // Check role and redirect
@@ -41,8 +41,8 @@ export default function LoginPage() {
       }
     } else {
       toast({
-        title: "Login failed",
-        description: result.error || "Invalid credentials",
+        title: "Gagal masuk",
+        description: result.error || "Email atau password salah",
         variant: "destructive",
       });
     }
@@ -70,13 +70,13 @@ export default function LoginPage() {
               Selamat Datang di {appName}
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Masuk untuk melanjutkan ke belajar
+              Masuk untuk melanjutkan belajar
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="email">Alamat Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Masukkan password Anda"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -112,18 +112,18 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
                 <input type="checkbox" className="rounded border-input" />
-                <span className="text-sm text-muted-foreground">Remember me</span>
+                Ingat saya
               </label>
-              <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                Forgot password?
+              <Link to="/forgot-password" university-id="" className="text-sm font-medium text-primary hover:underline">
+                Lupa password?
               </Link>
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Sign in
+              Masuk
             </Button>
           </form>
 
@@ -134,7 +134,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Demo Accounts
+                  Akun Demo
                 </span>
               </div>
             </div>

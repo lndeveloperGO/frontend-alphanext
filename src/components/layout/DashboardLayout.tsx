@@ -35,30 +35,30 @@ interface NavItem {
 
 const adminNavItems: NavItem[] = [
   { title: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { title: "Categories", href: "/admin/categories", icon: Tag },
-  { title: "Products", href: "/admin/products", icon: ShoppingCart },
-  { title: "Promo Codes", href: "/admin/promo-codes", icon: Ticket },
-  { title: "Packages", href: "/admin/packages", icon: Package },
-  { title: "Questions", href: "/admin/questions", icon: FileQuestion },
-  { title: "Users", href: "/admin/users", icon: Users },
-  { title: "Orders", href: "/admin/orders", icon: FileQuestion },
+  { title: "Kategori", href: "/admin/categories", icon: Tag },
+  { title: "Produk", href: "/admin/products", icon: ShoppingCart },
+  { title: "Kode Promo", href: "/admin/promo-codes", icon: Ticket },
+  { title: "Paket", href: "/admin/packages", icon: Package },
+  { title: "Pertanyaan", href: "/admin/questions", icon: FileQuestion },
+  { title: "Pengguna", href: "/admin/users", icon: Users },
+  { title: "Pesanan", href: "/admin/orders", icon: FileQuestion },
   // { title: "Vouchers", href: "/admin/vouchers", icon: Ticket },
-  { title: "Materials", href: "/admin/materials", icon: BookOpen },
+  { title: "Materi", href: "/admin/materials", icon: BookOpen },
   // { title: "Rankings", href: "/admin/rankings", icon: Trophy },
-  { title: "Profile", href: "/admin/profile", icon: User },
+  { title: "Profil", href: "/admin/profile", icon: User },
 ];
 
 const userNavItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "My Packages", href: "/dashboard/packages", icon: Package },
-  { title: "Orders", href: "/dashboard/user/orders", icon: FileQuestion },
-  { title: "Tryouts", href: "/dashboard/tryouts", icon: ClipboardList },
+  { title: "Paket", href: "/dashboard/packages", icon: Package },
+  { title: "Pesanan Saya", href: "/dashboard/user/orders", icon: FileQuestion },
+  { title: "Tryouts & Latihan", href: "/dashboard/tryouts", icon: ClipboardList },
   { title: "Tryout Akbar", href: "/dashboard/tryout-akbar", icon: Trophy },
-  { title: "Materials", href: "/dashboard/materials", icon: BookOpen },
-  { title: "Profile", href: "/dashboard/profile", icon: User },
+  { title: "Materi", href: "/dashboard/materials", icon: BookOpen },
+  { title: "Profil Saya", href: "/dashboard/profile", icon: User },
   // { title: "Test Page", href: "/dashboard/test", icon: FileQuestion },
   // { title: "History", href: "/dashboard/history", icon: BookOpen },
-   { title: "Rankings", href: "/dashboard/rankings", icon: Trophy },
+  { title: "Peringkat", href: "/dashboard/rankings", icon: Trophy },
 ];
 
 interface DashboardLayoutProps {

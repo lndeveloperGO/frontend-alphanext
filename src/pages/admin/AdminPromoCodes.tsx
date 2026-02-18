@@ -55,7 +55,7 @@ export default function AdminPromoCodes() {
   const [packages, setPackages] = useState<Package[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
   const [selectedPackageIds, setSelectedPackageIds] = useState<number[]>([]);
-  
+
   // Assigned products and packages from API (for display in the modal)
   const [assignedProducts, setAssignedProducts] = useState<PromoCodeAssignmentProduct[]>([]);
   const [assignedPackages, setAssignedPackages] = useState<PromoCodeAssignmentPackage[]>([]);
@@ -82,8 +82,8 @@ export default function AdminPromoCodes() {
       setPromoCodes(response.data.data);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to fetch promo codes",
+        title: "Kesalahan",
+        description: "Gagal mengambil kode promo",
         variant: "destructive",
       });
     } finally {
@@ -153,38 +153,38 @@ export default function AdminPromoCodes() {
 
   const handleOpenAssignmentDialog = async (promoCode: PromoCode) => {
     setAssigningPromoCode(promoCode);
-    
+
     // Fetch assigned products and packages using the new endpoint
     try {
       const assignmentsResponse = await promoService.getPromoCodeAssignments(promoCode.id);
       const assignments = assignmentsResponse.data;
-      
+
       // Store assigned products and packages for display
       setAssignedProducts(assignments.products);
       setAssignedPackages(assignments.packages);
-      
+
       // Get assigned product IDs and package IDs for selection state
       setSelectedProductIds(assignments.products.map(p => p.id));
       setSelectedPackageIds(assignments.packages.map(p => p.id));
+      setSelectedProductIds((assignments.products || []).map(p => p.id));
+      setSelectedPackageIds((assignments.packages || []).map(p => p.id));
     } catch (error) {
-      console.error("Failed to fetch promo code assignments:", error);
-      // Fallback to empty arrays if the call fails
-      setAssignedProducts([]);
-      setAssignedPackages([]);
-      setSelectedProductIds([]);
-      setSelectedPackageIds([]);
+      toast({
+        title: "Kesalahan",
+        description: "Gagal mengambil penugasan kode promo",
+        variant: "destructive",
+      });
     }
-    
+
     // Also fetch all products and packages for the selection list
     await fetchProductsAndPackages();
-    setIsAssignmentDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!formData.code || !formData.value || !formData.starts_at || !formData.ends_at) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Kesalahan Validasi",
+        description: "Silakan isi semua bidang yang wajib diisi.",
         variant: "destructive",
       });
       return;
@@ -192,23 +192,28 @@ export default function AdminPromoCodes() {
 
     if (formData.type === "percent" && formData.value > 100) {
       toast({
-        title: "Validation Error",
-        description: "Percentage value cannot exceed 100.",
+        title: "Kesalahan Validasi",
+        description: "Nilai persentase tidak boleh melebihi 100.",
         variant: "destructive",
       });
       return;
     }
 
+    setSaving(true);
     try {
-      setSaving(true);
-      const input = { ...formData, code: formData.code.toUpperCase() };
+      const input = {
+        ...formData,
+        code: formData.code.toUpperCase(),
+        min_purchase: formData.min_purchase || 0,
+        max_uses: formData.max_uses || 0,
+      };
 
       if (editingPromoCode) {
         await promoService.updatePromoCode(editingPromoCode.id, input as UpdatePromoCodeInput);
-        toast({ title: "Promo code updated successfully" });
+        toast({ title: "Kode promo berhasil diperbarui" });
       } else {
         await promoService.createPromoCode(input);
-        toast({ title: "Promo code created successfully" });
+        toast({ title: "Kode promo berhasil dibuat" });
       }
 
       setIsDialogOpen(false);
@@ -231,14 +236,15 @@ export default function AdminPromoCodes() {
       setAssigningProducts(true);
       const productsToAssign = selectedProductIds.map(id => ({ product_id: id }));
       await promoService.assignProducts(assigningPromoCode.id, productsToAssign);
-      toast({ title: "Products assigned successfully" });
-      
+      toast({ title: "Produk berhasil ditugaskan" });
+
       // Refresh assignments after saving
       const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
       const assignments = assignmentsResponse.data;
-      setAssignedProducts(assignments.products);
-      setSelectedProductIds(assignments.products.map(p => p.id));
-      
+      setAssignedProducts(assignments.products || []);
+      setSelectedProductIds((assignments.products || []).map(p => p.id));
+
+      // Refresh main promo codes list to update the counters in the table
       fetchPromoCodes();
     } catch (error: any) {
       toast({
@@ -258,14 +264,15 @@ export default function AdminPromoCodes() {
       setAssigningPackages(true);
       const packagesToAssign = selectedPackageIds.map(id => ({ package_id: id }));
       await promoService.assignPackages(assigningPromoCode.id, packagesToAssign);
-      toast({ title: "Packages assigned successfully" });
-      
+      toast({ title: "Paket berhasil ditugaskan" });
+
       // Refresh assignments after saving
       const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
       const assignments = assignmentsResponse.data;
-      setAssignedPackages(assignments.packages);
-      setSelectedPackageIds(assignments.packages.map(p => p.id));
-      
+      setAssignedPackages(assignments.packages || []);
+      setSelectedPackageIds((assignments.packages || []).map(p => p.id));
+
+      // Refresh main promo codes list to update the counters in the table
       fetchPromoCodes();
     } catch (error: any) {
       toast({
@@ -283,13 +290,13 @@ export default function AdminPromoCodes() {
 
     try {
       await promoService.deletePromoCode(deletingId);
-      toast({ title: "Promo code deleted successfully" });
+      toast({ title: "Kode promo berhasil dihapus" });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
       fetchPromoCodes();
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description: error.message,
         variant: "destructive",
       });
@@ -298,21 +305,21 @@ export default function AdminPromoCodes() {
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Code copied to clipboard" });
+    toast({ title: "Kode berhasil disalin ke papan klip" });
   };
 
   const toggleProductSelection = (productId: number) => {
-    setSelectedProductIds(prev => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId)
+    setSelectedProductIds((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
         : [...prev, productId]
     );
   };
 
   const togglePackageSelection = (packageId: number) => {
-    setSelectedPackageIds(prev => 
-      prev.includes(packageId) 
-        ? prev.filter(id => id !== packageId)
+    setSelectedPackageIds((prev) =>
+      prev.includes(packageId)
+        ? prev.filter((id) => id !== packageId)
         : [...prev, packageId]
     );
   };
@@ -324,24 +331,24 @@ export default function AdminPromoCodes() {
     try {
       setUnassigningProductId(productId);
       await promoService.unassignProduct(assigningPromoCode.id, productId);
-      
-      toast({ 
-        title: "Product unassigned successfully",
-        description: "The product has been removed from this promo code."
+
+      toast({
+        title: "Produk berhasil dilepas",
+        description: "Produk telah dihapus dari kode promo ini."
       });
-      
+
       // Refresh assignments from API
       const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
       const assignments = assignmentsResponse.data;
-      setAssignedProducts(assignments.products);
-      setSelectedProductIds(assignments.products.map(p => p.id));
-      
+      setAssignedProducts(assignments.products || []);
+      setSelectedProductIds((assignments.products || []).map(p => p.id));
+
       // Refresh main promo codes list
       fetchPromoCodes();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to unassign product",
+        title: "Kesalahan",
+        description: error.message || "Gagal melepas produk",
         variant: "destructive",
       });
     } finally {
@@ -356,24 +363,24 @@ export default function AdminPromoCodes() {
     try {
       setUnassigningPackageId(packageId);
       await promoService.unassignPackage(assigningPromoCode.id, packageId);
-      
-      toast({ 
-        title: "Package unassigned successfully",
-        description: "The package has been removed from this promo code."
+
+      toast({
+        title: "Paket berhasil dilepas",
+        description: "Paket telah dihapus dari kode promo ini."
       });
-      
+
       // Refresh assignments from API
       const assignmentsResponse = await promoService.getPromoCodeAssignments(assigningPromoCode.id);
       const assignments = assignmentsResponse.data;
-      setAssignedPackages(assignments.packages);
-      setSelectedPackageIds(assignments.packages.map(p => p.id));
-      
+      setAssignedPackages(assignments.packages || []);
+      setSelectedPackageIds((assignments.packages || []).map(p => p.id));
+
       // Refresh main promo codes list
       fetchPromoCodes();
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to unassign package",
+        title: "Kesalahan",
+        description: error.message || "Gagal melepas paket",
         variant: "destructive",
       });
     } finally {
@@ -381,18 +388,23 @@ export default function AdminPromoCodes() {
     }
   };
 
-  const getStatusBadge = (status: PromoCode["status"]) => {
-    const variants = {
+  const getStatusBadge = (promoCode: PromoCode) => {
+    const status = promoCode.status as string;
+    const variants: Record<string, "default" | "destructive" | "outline" | "secondary"> = {
       active: "default",
-      upcoming: "secondary",
+      upcoming: "outline",
       expired: "destructive",
-      disabled: "outline",
+      disabled: "secondary",
       quota_exhausted: "destructive",
-    } as const;
+    };
 
     return (
-      <Badge variant={variants[status]}>
-        {status.replace("_", " ").toUpperCase()}
+      <Badge variant={variants[status] || "default"}>
+        {status === "active" ? "AKTIF" :
+          status === "upcoming" ? "MENDATANG" :
+            status === "expired" ? "KEDALUWARSA" :
+              status === "disabled" ? "NONAKTIF" :
+                status === "quota_exhausted" ? "KUOTA HABIS" : (status ? status.toUpperCase() : "")}
       </Badge>
     );
   };
@@ -420,12 +432,12 @@ export default function AdminPromoCodes() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Promo Codes</h1>
-            <p className="text-muted-foreground">Manage discount promo codes</p>
+            <h1 className="text-2xl font-bold">Kode Promo</h1>
+            <p className="text-muted-foreground">Kelola kode promo diskon</p>
           </div>
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Promo Code
+            Tambah Kode Promo
           </Button>
         </div>
 
@@ -433,7 +445,7 @@ export default function AdminPromoCodes() {
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search promo codes..."
+              placeholder="Cari kode promo..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -444,12 +456,12 @@ export default function AdminPromoCodes() {
             onValueChange={(value) => setIsActiveFilter(value === "all" ? null : value === "true")}
           >
             <SelectTrigger className="w-40">
-              <SelectValue placeholder="Filter by status" />
+              <SelectValue placeholder="Filter status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="true">Active</SelectItem>
-              <SelectItem value="false">Inactive</SelectItem>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="true">Aktif</SelectItem>
+              <SelectItem value="false">Nonaktif</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -460,10 +472,10 @@ export default function AdminPromoCodes() {
           </div>
         ) : promoCodes.length === 0 ? (
           <EmptyState
-            title="No promo codes found"
-            description="Get started by creating your first promo code."
+            title="Kode promo tidak ditemukan"
+            description="Mulai dengan membuat kode promo pertama Anda."
             action={{
-              label: "Add Promo Code",
+              label: "Tambah Kode Promo",
               onClick: () => handleOpenDialog()
             }}
           />
@@ -472,14 +484,14 @@ export default function AdminPromoCodes() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Value</TableHead>
-                  <TableHead>Usage</TableHead>
-                  <TableHead>Assignments</TableHead>
-                  <TableHead>Period</TableHead>
+                  <TableHead>Kode</TableHead>
+                  <TableHead>Tipe</TableHead>
+                  <TableHead>Nilai</TableHead>
+                  <TableHead>Penggunaan</TableHead>
+                  <TableHead>Penugasan</TableHead>
+                  <TableHead>Periode</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -501,7 +513,7 @@ export default function AdminPromoCodes() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{promoCode.type}</Badge>
+                      <Badge variant="outline">{promoCode.type === "percent" ? "Persen" : "Tetap"}</Badge>
                     </TableCell>
                     <TableCell>
                       <span className="font-semibold">
@@ -516,29 +528,29 @@ export default function AdminPromoCodes() {
                         {promoCode.promo_products && promoCode.promo_products.length > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             <ShoppingCart className="h-3 w-3 mr-1" />
-                            {promoCode.promo_products.length} products
+                            {promoCode.promo_products.length} produk
                           </Badge>
                         )}
                         {promoCode.promo_packages && promoCode.promo_packages.length > 0 && (
                           <Badge variant="secondary" className="text-xs">
                             <PackageIcon className="h-3 w-3 mr-1" />
-                            {promoCode.promo_packages.length} packages
+                            {promoCode.promo_packages.length} paket
                           </Badge>
                         )}
-                        {(!promoCode.promo_products || promoCode.promo_products.length === 0) && 
-                         (!promoCode.promo_packages || promoCode.promo_packages.length === 0) && (
-                          <span className="text-xs text-muted-foreground">No assignments</span>
-                        )}
+                        {(!promoCode.promo_products || promoCode.promo_products.length === 0) &&
+                          (!promoCode.promo_packages || promoCode.promo_packages.length === 0) && (
+                            <span className="text-xs text-muted-foreground">Tidak ada penugasan</span>
+                          )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
                         <p>{new Date(promoCode.starts_at).toLocaleDateString()}</p>
-                        <p className="text-muted-foreground">to {new Date(promoCode.ends_at).toLocaleDateString()}</p>
+                        <p className="text-muted-foreground">sampai {new Date(promoCode.ends_at).toLocaleDateString()}</p>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(promoCode.status)}
+                      {getStatusBadge(promoCode)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -546,7 +558,7 @@ export default function AdminPromoCodes() {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenAssignmentDialog(promoCode)}
-                          title="Assign Products/Packages"
+                          title="Tugaskan Produk/Paket"
                         >
                           <PackageIcon className="h-4 w-4" />
                         </Button>
@@ -581,24 +593,24 @@ export default function AdminPromoCodes() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingPromoCode ? "Edit Promo Code" : "Add New Promo Code"}</DialogTitle>
+            <DialogTitle>{editingPromoCode ? "Edit Kode Promo" : "Tambah Kode Promo Baru"}</DialogTitle>
             <DialogDescription>
-              {editingPromoCode ? "Update promo code details" : "Create a new discount promo code"}
+              {editingPromoCode ? "Perbarui detail kode promo" : "Buat kode promo diskon baru"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Promo Code</Label>
+              <Label htmlFor="code">Kode Promo</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="e.g., SAVE20"
+                placeholder="misal: HEMAT20"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="type">Tipe</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value: "percent" | "fixed") => setFormData({ ...formData, type: value })}
@@ -607,13 +619,13 @@ export default function AdminPromoCodes() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="percent">Percent</SelectItem>
-                    <SelectItem value="fixed">Fixed</SelectItem>
+                    <SelectItem value="percent">Persen</SelectItem>
+                    <SelectItem value="fixed">Tetap (IDR)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="value">Value</Label>
+                <Label htmlFor="value">Nilai</Label>
                 <Input
                   id="value"
                   type="number"
@@ -625,7 +637,7 @@ export default function AdminPromoCodes() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="minPurchase">Minimum Purchase (IDR)</Label>
+              <Label htmlFor="minPurchase">Pembelian Minimal (IDR)</Label>
               <Input
                 id="minPurchase"
                 type="number"
@@ -636,7 +648,7 @@ export default function AdminPromoCodes() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="maxUses">Max Uses</Label>
+              <Label htmlFor="maxUses">Maks Penggunaan</Label>
               <Input
                 id="maxUses"
                 type="number"
@@ -646,7 +658,7 @@ export default function AdminPromoCodes() {
             </div>
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="starts_at">Starts At</Label>
+                <Label htmlFor="starts_at">Mulai Pada</Label>
                 <Input
                   id="starts_at"
                   type="datetime-local"
@@ -655,7 +667,7 @@ export default function AdminPromoCodes() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ends_at">Ends At</Label>
+                <Label htmlFor="ends_at">Berakhir Pada</Label>
                 <Input
                   id="ends_at"
                   type="datetime-local"
@@ -665,7 +677,7 @@ export default function AdminPromoCodes() {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">Aktif</Label>
               <Switch
                 id="is_active"
                 checked={formData.is_active}
@@ -675,11 +687,11 @@ export default function AdminPromoCodes() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingPromoCode ? "Save Changes" : "Create Promo Code"}
+              {editingPromoCode ? "Simpan Perubahan" : "Buat Kode Promo"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -689,24 +701,24 @@ export default function AdminPromoCodes() {
       <Dialog open={isAssignmentDialogOpen} onOpenChange={setIsAssignmentDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Assign Products/Packages</DialogTitle>
+            <DialogTitle>Tugaskan Produk/Paket</DialogTitle>
             <DialogDescription>
-              Assign products or packages to promo code: <span className="font-mono font-semibold">{assigningPromoCode?.code}</span>
+              Tugaskan produk atau paket ke kode promo: <span className="font-mono font-semibold">{assigningPromoCode?.code}</span>
             </DialogDescription>
           </DialogHeader>
-          
+
           <Tabs defaultValue="products" className="w-full flex-1 flex flex-col overflow-hidden">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="products" className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
-                Products ({selectedProductIds.length} selected)
+                Produk ({selectedProductIds.length} dipilih)
               </TabsTrigger>
               <TabsTrigger value="packages" className="flex items-center gap-2">
                 <PackageIcon className="h-4 w-4" />
-                Packages ({selectedPackageIds.length} selected)
+                Paket ({selectedPackageIds.length} dipilih)
               </TabsTrigger>
             </TabsList>
-            
+
             {/* Products Tab */}
             <TabsContent value="products" className="mt-4 flex-1 flex flex-col overflow-hidden min-h-0">
               <ScrollArea className="flex-1 pr-4">
@@ -716,21 +728,21 @@ export default function AdminPromoCodes() {
                     <div className="space-y-2">
                       <h4 className="text-sm font-semibold flex items-center gap-2">
                         <ShoppingCart className="h-4 w-4 text-primary" />
-                        Selected Products ({selectedProductIds.length})
+                        Produk Terpilih ({selectedProductIds.length})
                       </h4>
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Name</TableHead>                     
+                            <TableHead>Nama</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right">Aksi</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {selectedProductIds.map((productId) => {
                             const product = products.find(p => p.id === productId);
                             const isAlreadyAssigned = assignedProducts.some(ap => ap.id === productId);
-                            
+
                             if (!product) return null;
 
                             return (
@@ -755,7 +767,7 @@ export default function AdminPromoCodes() {
                                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                       onClick={() => handleUnassignProduct(productId)}
                                       disabled={unassigningProductId === productId}
-                                      title="Remove assignment (Will save immediately)"
+                                      title="Hapus penugasan (Akan segera disimpan)"
                                     >
                                       {unassigningProductId === productId ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -769,7 +781,7 @@ export default function AdminPromoCodes() {
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                       onClick={() => toggleProductSelection(productId)}
-                                      title="Remove selection"
+                                      title="Hapus pilihan"
                                     >
                                       <X className="h-4 w-4" />
                                     </Button>
@@ -782,16 +794,16 @@ export default function AdminPromoCodes() {
                       </Table>
                     </div>
                   )}
-                  
+
                   {/* Available Products Selection */}
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold">
-                      Add Products
-                      {getUnassignedProducts().length > 0 && ` (${getUnassignedProducts().length} available)`}
+                      Tambah Produk
+                      {getUnassignedProducts().length > 0 && ` (${getUnassignedProducts().length} tersedia)`}
                     </h4>
                     {getUnassignedProducts().length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
-                        {products.length === 0 ? "No products found" : "All available products selected"}
+                        {products.length === 0 ? "Produk tidak ditemukan" : "Semua produk yang tersedia telah dipilih"}
                       </div>
                     ) : (
                       <div className="space-y-2 max-h-[250px] overflow-y-auto border rounded-lg p-2">
@@ -824,8 +836,8 @@ export default function AdminPromoCodes() {
               </ScrollArea>
               <div className="pt-4 border-t mt-4 flex justify-end gap-2">
                 {/* Only show save button if there are pending changes */}
-                <Button 
-                  onClick={handleAssignProducts} 
+                <Button
+                  onClick={handleAssignProducts}
                   disabled={assigningProducts || selectedProductIds.filter(id => !assignedProducts.some(ap => ap.id === id)).length === 0}
                   className="w-full sm:w-auto"
                 >
@@ -834,7 +846,7 @@ export default function AdminPromoCodes() {
                 </Button>
               </div>
             </TabsContent>
-            
+
             {/* Packages Tab */}
             <TabsContent value="packages" className="mt-4 flex-1 flex flex-col overflow-hidden min-h-0">
               <ScrollArea className="flex-1 pr-4">
@@ -856,12 +868,12 @@ export default function AdminPromoCodes() {
                         </TableHeader>
                         <TableBody>
                           {selectedPackageIds.map((packageId) => {
-                             const pkg = packages.find(p => p.id === packageId);
-                             const isAlreadyAssigned = assignedPackages.some(ap => ap.id === packageId);
-                             
-                             if (!pkg) return null;
+                            const pkg = packages.find(p => p.id === packageId);
+                            const isAlreadyAssigned = assignedPackages.some(ap => ap.id === packageId);
 
-                             return (
+                            if (!pkg) return null;
+
+                            return (
                               <TableRow key={packageId} className={isAlreadyAssigned ? "bg-green-50/50" : "bg-yellow-50/50"}>
                                 <TableCell className="font-medium">{pkg.name}</TableCell>
                                 <TableCell>
@@ -910,7 +922,7 @@ export default function AdminPromoCodes() {
                       </Table>
                     </div>
                   )}
-                  
+
                   {/* Available Packages Selection */}
                   <div className="space-y-2">
                     <h4 className="text-sm font-semibold">
@@ -950,10 +962,10 @@ export default function AdminPromoCodes() {
                   </div>
                 </div>
               </ScrollArea>
-               <div className="pt-4 border-t mt-4 flex justify-end gap-2">
+              <div className="pt-4 border-t mt-4 flex justify-end gap-2">
                 {/* Only show save button if there are pending changes */}
-                <Button 
-                  onClick={handleAssignPackages} 
+                <Button
+                  onClick={handleAssignPackages}
                   disabled={assigningPackages || selectedPackageIds.filter(id => !assignedPackages.some(ap => ap.id === id)).length === 0}
                   className="w-full sm:w-auto"
                 >

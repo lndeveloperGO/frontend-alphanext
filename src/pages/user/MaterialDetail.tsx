@@ -39,7 +39,7 @@ export default function MaterialDetail() {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [completedParts, setCompletedParts] = useState<Set<number>>(new Set());
   const [isVideoEnded, setIsVideoEnded] = useState(false);
-  
+
   // Refs for YouTube player
   const youtubePlayerRef = useRef<any>(null);
   const youtubeApiLoadedRef = useRef(false);
@@ -59,10 +59,10 @@ export default function MaterialDetail() {
     } catch (error: any) {
       if (error.message?.includes("Access denied")) {
         setError(
-          "This material requires a premium subscription. Please upgrade your plan to access it.",
+          "Materi ini memerlukan langganan premium. Silakan tingkatkan paket Anda untuk mengaksesnya.",
         );
       } else {
-        setError("Failed to load material");
+        setError("Gagal memuat materi");
       }
     } finally {
       setLoading(false);
@@ -73,8 +73,8 @@ export default function MaterialDetail() {
     // Check if the part is unlocked
     if (!isPartUnlocked(index)) {
       toast({
-        title: "Part Locked",
-        description: "Please complete the previous video to unlock this part.",
+        title: "Bagian Terkunci",
+        description: "Silakan selesaikan video sebelumnya untuk membuka bagian ini.",
         variant: "destructive",
       });
       return;
@@ -107,8 +107,8 @@ export default function MaterialDetail() {
       return newSet;
     });
     toast({
-      title: "Video Completed",
-      description: "Great job! You can now proceed to the next part.",
+      title: "Video Selesai",
+      description: "Bagus! Anda sekarang dapat lanjut ke bagian berikutnya.",
       variant: "default",
     });
   }, [toast]);
@@ -116,13 +116,13 @@ export default function MaterialDetail() {
   // Load YouTube IFrame API
   useEffect(() => {
     if (youtubeApiLoadedRef.current) return;
-    
+
     const script = document.createElement('script');
     script.src = 'https://www.youtube.com/iframe_api';
     script.async = true;
     document.body.appendChild(script);
     youtubeApiLoadedRef.current = true;
-    
+
     return () => {
       // Clean up if needed
     };
@@ -158,7 +158,7 @@ export default function MaterialDetail() {
       <DashboardLayout type="user">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading material...</span>
+          <span className="ml-2">Memuat materi...</span>
         </div>
       </DashboardLayout>
     );
@@ -174,12 +174,12 @@ export default function MaterialDetail() {
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Materials
+            Kembali ke Materi
           </Button>
 
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error || "Material not found"}</AlertDescription>
+            <AlertDescription>{error || "Materi tidak ditemukan"}</AlertDescription>
           </Alert>
 
           {error?.includes("premium") && (
@@ -188,13 +188,13 @@ export default function MaterialDetail() {
                 <div className="text-center">
                   <Lock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold mb-2">
-                    Premium Content
+                    Konten Premium
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    This material is available with a premium subscription.
+                    Materi ini hanya tersedia untuk langganan premium.
                   </p>
                   <Button onClick={() => navigate("/dashboard/packages")}>
-                    View Packages
+                    Lihat Paket
                   </Button>
                 </div>
               </CardContent>
@@ -217,7 +217,7 @@ export default function MaterialDetail() {
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Materials
+          Kembali ke Materi
         </Button>
 
         {/* Material Header */}
@@ -254,9 +254,9 @@ export default function MaterialDetail() {
               </p>
               <div className="flex items-center gap-4 mt-4 text-sm text-muted-foreground">
                 {material.type === "video" ? (
-                  <span>{material.duration} minutes total</span>
+                  <span>{material.duration} menit total</span>
                 ) : (
-                  <span>{material.pages} pages</span>
+                  <span>{material.pages} halaman</span>
                 )}
               </div>
             </div>
@@ -319,7 +319,7 @@ export default function MaterialDetail() {
                                     }
                                   });
                                 };
-                                
+
                                 // If API already loaded, create player immediately
                                 if ((window as any).YT && (window as any).YT.Player) {
                                   youtubePlayerRef.current = new (window as any).YT.Player(el, {
@@ -366,7 +366,7 @@ export default function MaterialDetail() {
                               {currentPart.title}
                             </p>
                             <p className="text-sm opacity-75 mb-4">
-                              Unsupported video format
+                              Format video tidak didukung
                             </p>
                           </div>
                         </div>
@@ -375,11 +375,11 @@ export default function MaterialDetail() {
                   ) : (
                     <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
                       <p className="text-muted-foreground">
-                        No video parts available
+                        Tidak ada bagian video yang tersedia
                       </p>
                     </div>
                   )}
-                  
+
                   {/* Video Status & Controls */}
                   {currentPart && (
                     <div className="p-4 border-t">
@@ -388,30 +388,30 @@ export default function MaterialDetail() {
                           {isPartCompleted(currentPartIndex) ? (
                             <Badge variant="default" className="bg-green-600 hover:bg-green-700">
                               <CheckCircle className="mr-1 h-3 w-3" />
-                              Completed
+                              Selesai
                             </Badge>
                           ) : isVideoEnded ? (
                             <Badge variant="outline" className="text-amber-600">
                               <Lock className="mr-1 h-3 w-3" />
-                              Watch to complete
+                              Tonton untuk menyelesaikan
                             </Badge>
                           ) : (
                             <Badge variant="outline">
                               <Play className="mr-1 h-3 w-3" />
-                              In Progress
+                              Sedang Dipelajari
                             </Badge>
                           )}
                         </div>
-                        
+
                         {!isPartCompleted(currentPartIndex) && (
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => markAsCompleted(currentPartIndex)}
                             className="text-xs"
                           >
                             <CheckCircle className="mr-1 h-3 w-3" />
-                            Mark as Complete
+                            Tandai Selesai
                           </Button>
                         )}
                       </div>
@@ -423,23 +423,22 @@ export default function MaterialDetail() {
 
             {/* Playlist */}
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Video Parts</h3>
+              <h3 className="text-lg font-semibold">Bagian Video</h3>
               <div className="space-y-2 max-h-96 overflow-y-auto">
                 {material.parts?.map((part, index) => {
                   const isUnlocked = isPartUnlocked(index);
                   const isCompleted = isPartCompleted(index);
                   const isCurrent = index === currentPartIndex;
-                  
+
                   return (
                     <Card
                       key={part.id}
-                      className={`cursor-pointer transition-colors ${
-                        isCurrent
+                      className={`cursor-pointer transition-colors ${isCurrent
                           ? "ring-2 ring-primary bg-primary/5"
                           : isUnlocked
                             ? "hover:bg-muted/50"
                             : "opacity-60 cursor-not-allowed"
-                      }`}
+                        }`}
                       onClick={() => handlePartSelect(index)}
                     >
                       <CardContent className="p-3">
@@ -456,15 +455,14 @@ export default function MaterialDetail() {
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-medium line-clamp-1 text-sm ${
-                              !isUnlocked ? "text-muted-foreground" : ""
-                            }`}>
+                            <p className={`font-medium line-clamp-1 text-sm ${!isUnlocked ? "text-muted-foreground" : ""
+                              }`}>
                               {part.title}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {formatDuration(part.duration_seconds)}
-                              {isCompleted && " • Completed"}
-                              {!isUnlocked && " • Locked"}
+                              {isCompleted && " • Selesai"}
+                              {!isUnlocked && " • Terkunci"}
                             </p>
                           </div>
                           {!isUnlocked && (
@@ -480,7 +478,7 @@ export default function MaterialDetail() {
                 <div className="text-sm text-muted-foreground">
                   <div className="flex items-center justify-between">
                     <span>
-                      Total: {material.parts.length} parts • {" "}
+                      Total: {material.parts.length} bagian • {" "}
                       {formatDuration(
                         material.parts.reduce(
                           (total, part) => total + part.duration_seconds,
@@ -489,7 +487,7 @@ export default function MaterialDetail() {
                       )}
                     </span>
                     <span>
-                      {completedParts.size}/{material.parts.length} completed
+                      {completedParts.size}/{material.parts.length} selesai
                     </span>
                   </div>
                 </div>
@@ -502,19 +500,22 @@ export default function MaterialDetail() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Read Ebook</h3>
+                <h3 className="text-xl font-semibold mb-2">Baca Ebook</h3>
+                <p className="mb-4 max-w-sm text-sm text-muted-foreground">
+                  Anda belum memiliki paket Tryout Akbar. Beli paket di Paket Saya untuk mengikuti tryout skala besar.
+                </p>
                 <p className="text-muted-foreground mb-6">
-                  Click the button below to open the ebook in a new tab
+                  Klik tombol di bawah untuk membuka ebook di tab baru
                 </p>
                 <Button
                   size="lg"
                   onClick={() => window.open(material.ebook_url, "_blank")}
                 >
                   <BookOpen className="mr-2 h-5 w-5" />
-                  Read Ebook
+                  Baca Ebook
                 </Button>
                 <p className="text-sm text-muted-foreground mt-4">
-                  {material.pages} pages • PDF format
+                  {material.pages} halaman • format PDF
                 </p>
               </div>
             </CardContent>

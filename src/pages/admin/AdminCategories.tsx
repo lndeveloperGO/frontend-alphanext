@@ -63,9 +63,9 @@ export default function AdminCategories() {
       setCategories(data);
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to load categories",
+          error instanceof Error ? error.message : "Gagal memuat kategori",
         variant: "destructive",
       });
     } finally {
@@ -94,8 +94,8 @@ export default function AdminCategories() {
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast({
-        title: "Error",
-        description: "Category name is required",
+        title: "Kesalahan",
+        description: "Nama kategori wajib diisi",
         variant: "destructive",
       });
       return;
@@ -107,8 +107,8 @@ export default function AdminCategories() {
       if (dialogMode === "create") {
         await categoryService.createCategory(formData as CreateCategoryInput);
         toast({
-          title: "Success",
-          description: "Category created successfully",
+          title: "Berhasil",
+          description: "Kategori berhasil dibuat",
         });
       } else if (dialogMode === "edit" && selectedCategory) {
         await categoryService.updateCategory(
@@ -116,8 +116,8 @@ export default function AdminCategories() {
           formData as UpdateCategoryInput
         );
         toast({
-          title: "Success",
-          description: "Category updated successfully",
+          title: "Berhasil",
+          description: "Kategori berhasil diperbarui",
         });
       }
 
@@ -125,9 +125,9 @@ export default function AdminCategories() {
       loadCategories();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Operation failed",
+          error instanceof Error ? error.message : "Operasi gagal",
         variant: "destructive",
       });
     } finally {
@@ -147,17 +147,17 @@ export default function AdminCategories() {
       setSubmitting(true);
       await categoryService.deleteCategory(selectedCategory.id);
       toast({
-        title: "Success",
-        description: "Category deleted successfully",
+        title: "Berhasil",
+        description: "Kategori berhasil dihapus",
       });
       setDeleteDialogOpen(false);
       setSelectedCategory(null);
       loadCategories();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to delete category",
+          error instanceof Error ? error.message : "Gagal menghapus kategori",
         variant: "destructive",
       });
     } finally {
@@ -171,21 +171,21 @@ export default function AdminCategories() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Categories</h1>
-            <p className="text-muted-foreground">Manage question categories</p>
+            <h1 className="text-2xl font-bold">Kategori</h1>
+            <p className="text-muted-foreground">Kelola kategori pertanyaan</p>
           </div>
           <Button onClick={() => handleOpenDialog("create")}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Category
+            Tambah Kategori
           </Button>
         </div>
 
         {/* Categories Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Category List</CardTitle>
+            <CardTitle>Daftar Kategori</CardTitle>
             <CardDescription>
-              Total categories: {categories.length}
+              Total kategori: {categories.length}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -195,7 +195,7 @@ export default function AdminCategories() {
               </div>
             ) : categories.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                No categories found. Create one to get started.
+                Kategori tidak ditemukan. Buat satu untuk memulai.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -203,8 +203,8 @@ export default function AdminCategories() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -245,21 +245,21 @@ export default function AdminCategories() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "create" ? "Create Category" : "Edit Category"}
+              {dialogMode === "create" ? "Buat Kategori" : "Edit Kategori"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "create"
-                ? "Add a new category for questions"
-                : "Update category information"}
+                ? "Tambah kategori baru untuk pertanyaan"
+                : "Perbarui informasi kategori"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Category Name</Label>
+              <Label htmlFor="name">Nama Kategori</Label>
               <Input
                 id="name"
-                placeholder="e.g., Mathematics, Biology"
+                placeholder="misal: Matematika, Biologi"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -275,16 +275,16 @@ export default function AdminCategories() {
               onClick={handleCloseDialog}
               disabled={submitting}
             >
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Menyimpan...
                 </>
               ) : (
-                "Save"
+                "Simpan"
               )}
             </Button>
           </DialogFooter>
@@ -294,13 +294,13 @@ export default function AdminCategories() {
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Delete Category</AlertDialogTitle>
+          <AlertDialogTitle>Hapus Kategori</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this category? This action cannot
-            be undone.
+            Apakah Anda yakin ingin menghapus kategori ini? Tindakan ini tidak dapat
+            dibatalkan.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={submitting}
@@ -309,10 +309,10 @@ export default function AdminCategories() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Menghapus...
                 </>
               ) : (
-                "Delete"
+                "Hapus"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

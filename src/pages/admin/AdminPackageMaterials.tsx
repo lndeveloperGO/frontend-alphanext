@@ -107,8 +107,8 @@ export default function AdminPackageMaterials() {
       );
 
       toast({
-        title: "Success",
-        description: "Materials attached successfully",
+        title: "Berhasil",
+        description: "Materi berhasil dilampirkan",
       });
 
       setAttachDialogOpen(false);
@@ -117,9 +117,9 @@ export default function AdminPackageMaterials() {
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to attach materials",
+          error instanceof Error ? error.message : "Gagal melampirkan materi",
         variant: "destructive",
       });
     } finally {
@@ -147,10 +147,10 @@ export default function AdminPackageMaterials() {
       return;
     }
 
-    const materialId = typeof selectedMaterial.material_id === 'string' 
-      ? parseInt(selectedMaterial.material_id, 10) 
+    const materialId = typeof selectedMaterial.material_id === 'string'
+      ? parseInt(selectedMaterial.material_id, 10)
       : selectedMaterial.material_id;
-    
+
     if (isNaN(materialId)) {
       toast({
         title: "Error",
@@ -169,8 +169,8 @@ export default function AdminPackageMaterials() {
       );
 
       toast({
-        title: "Success",
-        description: "Material detached successfully",
+        title: "Berhasil",
+        description: "Materi berhasil dilepas",
       });
 
       setDetachDialogOpen(false);
@@ -178,9 +178,9 @@ export default function AdminPackageMaterials() {
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to detach material",
+          error instanceof Error ? error.message : "Gagal melepas materi",
         variant: "destructive",
       });
     } finally {
@@ -202,7 +202,7 @@ export default function AdminPackageMaterials() {
         .filter(m => m && m.material_id !== undefined && m.material_id !== null)
         .map(m => String(m.material_id))
     );
-    
+
     // Filter out materials that are already attached OR already selected in this session
     // Handle potential undefined/null values in allMaterials
     return allMaterials.filter(material => {
@@ -241,7 +241,7 @@ export default function AdminPackageMaterials() {
     return (
       <DashboardLayout type="admin">
         <div className="py-8 text-center text-muted-foreground">
-          Package not found
+          Paket tidak ditemukan
         </div>
       </DashboardLayout>
     );
@@ -259,68 +259,68 @@ export default function AdminPackageMaterials() {
               onClick={() => navigate("/admin/packages")}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Packages
+              Kembali ke Paket
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">Package Materials</h1>
+              <h1 className="text-2xl font-bold">Materi Paket</h1>
               <p className="text-muted-foreground">
-                Manage materials for: <strong>{pkg.name}</strong>
+                Kelola materi untuk: <strong>{pkg.name}</strong>
               </p>
             </div>
           </div>
           <Button onClick={() => setAttachDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Attach Materials
+            Lampirkan Materi
           </Button>
         </div>
 
         {/* Package Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Package Information</CardTitle>
+            <CardTitle>Informasi Paket</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <Label className="text-sm font-medium">Name</Label>
+                <Label className="text-sm font-medium">Nama</Label>
                 <p className="text-sm text-muted-foreground">{pkg.name}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium">Type</Label>
+                <Label className="text-sm font-medium">Tipe</Label>
                 <Badge className="mt-1" variant="outline">
                   {pkg.type}
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium">Category</Label>
+                <Label className="text-sm font-medium">Kategori</Label>
                 <p className="text-sm text-muted-foreground">
                   {pkg.category?.name || '-'}
                 </p>
               </div>
               <div>
-                <Label className="text-sm font-medium">Duration</Label>
+                <Label className="text-sm font-medium">Durasi</Label>
                 <p className="text-sm text-muted-foreground">
-                  {pkg.duration_seconds ? `${Math.floor(pkg.duration_seconds / 60)} minutes` : '-'}
+                  {pkg.duration_seconds ? `${Math.floor(pkg.duration_seconds / 60)} menit` : '-'}
                 </p>
               </div>
               <div>
                 <Label className="text-sm font-medium">Status</Label>
                 <Badge className="mt-1" variant={pkg.is_active ? "default" : "secondary"}>
-                  {pkg.is_active ? "Active" : "Inactive"}
+                  {pkg.is_active ? "Aktif" : "Nonaktif"}
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium">Access</Label>
+                <Label className="text-sm font-medium">Akses</Label>
                 <Badge className="mt-1" variant={pkg.is_free ? "secondary" : "outline"}>
-                  {pkg.is_free ? "Free" : "Premium"}
+                  {pkg.is_free ? "Gratis" : "Premium"}
                 </Badge>
               </div>
               <div>
-                <Label className="text-sm font-medium">Questions</Label>
+                <Label className="text-sm font-medium">Pertanyaan</Label>
                 <p className="text-sm text-muted-foreground">{pkg.questions_count}</p>
               </div>
               <div>
-                <Label className="text-sm font-medium">Materials</Label>
+                <Label className="text-sm font-medium">Materi</Label>
                 <p className="text-sm text-muted-foreground">{packageMaterials.length}</p>
               </div>
             </div>
@@ -330,27 +330,27 @@ export default function AdminPackageMaterials() {
         {/* Attached Materials */}
         <Card>
           <CardHeader>
-            <CardTitle>Attached Materials</CardTitle>
+            <CardTitle>Materi yang Dilampirkan</CardTitle>
             <CardDescription>
-              Materials currently attached to this package ({packageMaterials.length})
+              Materi yang saat ini dilampirkan ke paket ini ({packageMaterials.length})
             </CardDescription>
           </CardHeader>
           <CardContent>
             {packageMaterials.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                No materials attached yet. Click "Attach Materials" to add some.
+                Belum ada materi yang dilampirkan. Klik "Lampirkan Materi" untuk menambahkan.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Order</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Type</TableHead>
+                      <TableHead>Urutan</TableHead>
+                      <TableHead>Judul</TableHead>
+                      <TableHead>Tipe</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Free</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
+                      <TableHead>Gratis</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -372,12 +372,12 @@ export default function AdminPackageMaterials() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={material.is_active ? "default" : "secondary"}>
-                            {material.is_active ? "Active" : "Inactive"}
+                            {material.is_active ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={material.is_free ? "secondary" : "outline"}>
-                            {material.is_free ? "Free" : "Premium"}
+                            {material.is_free ? "Gratis" : "Premium"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -403,21 +403,21 @@ export default function AdminPackageMaterials() {
       <Dialog open={attachDialogOpen} onOpenChange={setAttachDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Attach Materials to Package</DialogTitle>
+            <DialogTitle>Lampirkan Materi ke Paket</DialogTitle>
             <DialogDescription>
-              Select materials to attach to "{pkg.name}"
+              Pilih materi untuk dilampirkan ke "{pkg.name}"
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Search */}
             <div className="space-y-2">
-              <Label htmlFor="search">Search Materials</Label>
+              <Label htmlFor="search">Cari Materi</Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder="Search by title or type..."
+                  placeholder="Cari berdasarkan judul atau tipe..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -427,11 +427,11 @@ export default function AdminPackageMaterials() {
 
             {/* Available Materials */}
             <div className="space-y-2">
-              <Label>Available Materials ({filteredAvailableMaterials.length})</Label>
+              <Label>Materi Tersedia ({filteredAvailableMaterials.length})</Label>
               <div className="border rounded-lg max-h-60 overflow-y-auto">
                 {filteredAvailableMaterials.length === 0 ? (
                   <div className="p-4 text-center text-muted-foreground">
-                    {searchTerm ? "No materials match your search" : "All materials are already attached"}
+                    {searchTerm ? "Tidak ada materi yang cocok dengan pencarian Anda" : "Semua materi sudah dilampirkan"}
                   </div>
                 ) : (
                   <div className="p-2 space-y-2">
@@ -445,7 +445,7 @@ export default function AdminPackageMaterials() {
                           <div>
                             <p className="font-medium text-sm">{material.title}</p>
                             <p className="text-xs text-muted-foreground">
-                              {material.type} • {material.is_free ? 'Free' : 'Premium'}
+                              {material.type} • {material.is_free ? 'Gratis' : 'Premium'}
                             </p>
                           </div>
                         </div>
@@ -476,7 +476,7 @@ export default function AdminPackageMaterials() {
                           }}
                           disabled={submitting}
                         >
-                          {selectedMaterials.some(m => m.material_id === (typeof material.id === 'string' ? parseInt(material.id) : material.id)) ? 'Selected' : 'Select'}
+                          {selectedMaterials.some(m => m.material_id === (typeof material.id === 'string' ? parseInt(material.id) : material.id)) ? 'Dipilih' : 'Pilih'}
                         </Button>
                       </div>
                     ))}
@@ -489,7 +489,7 @@ export default function AdminPackageMaterials() {
             {selectedMaterials.length > 0 && (
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-medium">
-                  {selectedMaterials.length} material{selectedMaterials.length > 1 ? 's' : ''} selected
+                  {selectedMaterials.length} materi dipilih
                 </p>
               </div>
             )}
@@ -505,7 +505,7 @@ export default function AdminPackageMaterials() {
               }}
               disabled={submitting}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               onClick={handleAttachMaterials}
@@ -514,10 +514,10 @@ export default function AdminPackageMaterials() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Attaching...
+                  Melampirkan...
                 </>
               ) : (
-                `Attach ${selectedMaterials.length} Material${selectedMaterials.length > 1 ? 's' : ''}`
+                `Lampirkan ${selectedMaterials.length} Materi`
               )}
             </Button>
           </DialogFooter>
@@ -527,12 +527,12 @@ export default function AdminPackageMaterials() {
       {/* Detach Confirmation Dialog */}
       <AlertDialog open={detachDialogOpen} onOpenChange={setDetachDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Detach Material</AlertDialogTitle>
+          <AlertDialogTitle>Lepas Materi</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to detach "{selectedMaterial?.title}" from this package?
+            Apakah Anda yakin ingin melepas "{selectedMaterial?.title}" dari paket ini?
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDetachConfirm}
               disabled={submitting}
@@ -541,10 +541,10 @@ export default function AdminPackageMaterials() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Detaching...
+                  Melepas...
                 </>
               ) : (
-                "Detach"
+                "Lepas"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

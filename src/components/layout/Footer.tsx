@@ -100,7 +100,7 @@ export function Footer() {
         </div> */}
 
         <div className="border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} EduLearn. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} AlphaNext.id Hak cipta dilindungi undang-undang.</p>
         </div>
       </div>
     </footer>

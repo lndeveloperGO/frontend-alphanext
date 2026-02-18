@@ -9,6 +9,8 @@ export interface QuestionOption {
   label: string;
   text: string;
   score_value: number;
+  image?: string | null;
+  image_url?: string;
 }
 
 export interface Category {
@@ -25,7 +27,10 @@ export interface Question {
   updated_at?: string;
   options_count?: number;
   type?: string;
+  question_type?: "text" | "image";
   difficulty?: string;
+  image?: string | null;
+  image_url?: string;
   category: Category;
   options?: QuestionOption[];
 }
@@ -34,24 +39,30 @@ export interface CreateQuestionInput {
   category_id: number;
   question: string;
   explanation?: string;
+  question_type?: "text" | "image";
+  image?: File | null;
 }
 
 export interface UpdateQuestionInput {
   category_id?: number;
   question?: string;
   explanation?: string;
+  question_type?: "text" | "image";
+  image?: File | null;
 }
 
 export interface CreateOptionInput {
   label: string;
   text: string;
   score_value: number;
+  image?: File | null;
 }
 
 export interface UpdateOptionInput {
   label?: string;
   text?: string;
   score_value?: number;
+  image?: File | null;
 }
 
 export interface BulkQuestionItem {
@@ -75,12 +86,17 @@ export interface BulkCreateResponse {
   };
 }
 
-const getAuthHeader = () => {
+const getAuthHeaders = (isFormData: boolean = false) => {
   const token = useAuthStore.getState().token;
-  return {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
   };
+
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  return headers;
 };
 
 export const questionService = {
@@ -88,7 +104,7 @@ export const questionService = {
   async getQuestions(): Promise<Question[]> {
     const response = await fetch(`${getApiUrl()}/admin/questions`, {
       method: "GET",
-      headers: getAuthHeader(),
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -109,7 +125,7 @@ export const questionService = {
   async getQuestion(id: number): Promise<Question> {
     const response = await fetch(`${getApiUrl()}/admin/questions/${id}`, {
       method: "GET",
-      headers: getAuthHeader(),
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -122,10 +138,26 @@ export const questionService = {
 
   // Create question
   async createQuestion(input: CreateQuestionInput): Promise<Question> {
+    const hasImage = input.image instanceof File;
+    let body: any;
+    let isFormData = false;
+
+    if (hasImage) {
+      isFormData = true;
+      body = new FormData();
+      Object.entries(input).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          body.append(key, value);
+        }
+      });
+    } else {
+      body = JSON.stringify(input);
+    }
+
     const response = await fetch(`${getApiUrl()}/admin/questions`, {
       method: "POST",
-      headers: getAuthHeader(),
-      body: JSON.stringify(input),
+      headers: getAuthHeaders(isFormData),
+      body: body,
     });
 
     if (!response.ok) {
@@ -142,10 +174,28 @@ export const questionService = {
     id: number,
     input: UpdateQuestionInput
   ): Promise<Question> {
+    const hasImage = input.image instanceof File;
+    let body: any;
+    let isFormData = false;
+
+    if (hasImage) {
+      isFormData = true;
+      body = new FormData();
+      // Laravel PATCH with FormData can be tricky, often need _method=PATCH or use POST
+      body.append("_method", "PATCH");
+      Object.entries(input).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          body.append(key, value);
+        }
+      });
+    } else {
+      body = JSON.stringify(input);
+    }
+
     const response = await fetch(`${getApiUrl()}/admin/questions/${id}`, {
-      method: "PUT",
-      headers: getAuthHeader(),
-      body: JSON.stringify(input),
+      method: "POST", // Use POST with _method=PATCH for FormData compatibility in many PHP frameworks
+      headers: getAuthHeaders(isFormData),
+      body: body,
     });
 
     if (!response.ok) {
@@ -161,7 +211,7 @@ export const questionService = {
   async deleteQuestion(id: number): Promise<void> {
     const response = await fetch(`${getApiUrl()}/admin/questions/${id}`, {
       method: "DELETE",
-      headers: getAuthHeader(),
+      headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
@@ -175,12 +225,28 @@ export const questionService = {
     questionId: number,
     input: CreateOptionInput
   ): Promise<QuestionOption> {
+    const hasImage = input.image instanceof File;
+    let body: any;
+    let isFormData = false;
+
+    if (hasImage) {
+      isFormData = true;
+      body = new FormData();
+      Object.entries(input).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          body.append(key, value);
+        }
+      });
+    } else {
+      body = JSON.stringify(input);
+    }
+
     const response = await fetch(
       `${getApiUrl()}/admin/questions/${questionId}/options`,
       {
         method: "POST",
-        headers: getAuthHeader(),
-        body: JSON.stringify(input),
+        headers: getAuthHeaders(isFormData),
+        body: body,
       }
     );
 
@@ -198,12 +264,29 @@ export const questionService = {
     optionId: number,
     input: UpdateOptionInput
   ): Promise<QuestionOption> {
+    const hasImage = input.image instanceof File;
+    let body: any;
+    let isFormData = false;
+
+    if (hasImage) {
+      isFormData = true;
+      body = new FormData();
+      body.append("_method", "PATCH");
+      Object.entries(input).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          body.append(key, value);
+        }
+      });
+    } else {
+      body = JSON.stringify(input);
+    }
+
     const response = await fetch(
       `${getApiUrl()}/admin/options/${optionId}`,
       {
-        method: "PATCH",
-        headers: getAuthHeader(),
-        body: JSON.stringify(input),
+        method: "POST", // Use POST with _method=PATCH for FormData
+        headers: getAuthHeaders(isFormData),
+        body: body,
       }
     );
 
@@ -222,7 +305,7 @@ export const questionService = {
       `${getApiUrl()}/admin/options/${optionId}`,
       {
         method: "DELETE",
-        headers: getAuthHeader(),
+        headers: getAuthHeaders(),
       }
     );
 
@@ -232,13 +315,13 @@ export const questionService = {
     }
   },
 
-  // Bulk create questions with options
+  // Bulk create questions with options (JSON)
   async bulkCreateQuestions(
     input: BulkCreateQuestionInput
   ): Promise<BulkCreateResponse> {
     const response = await fetch(`${getApiUrl()}/admin/questions/bulk`, {
       method: "POST",
-      headers: getAuthHeader(),
+      headers: getAuthHeaders(),
       body: JSON.stringify(input),
     });
 
@@ -250,4 +333,25 @@ export const questionService = {
     const data = await response.json();
     return data.data || data;
   },
+
+  // New: Import questions from Excel
+  async importQuestions(file: File): Promise<BulkCreateResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${getApiUrl()}/admin/questions/import`, {
+      method: "POST",
+      headers: getAuthHeaders(true),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to import questions");
+    }
+
+    const data = await response.json();
+    return data.data || data;
+  },
 };
+

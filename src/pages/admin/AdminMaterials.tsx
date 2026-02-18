@@ -81,8 +81,8 @@ export default function AdminMaterials() {
     const matchesSearch = m.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === "all" || m.type === typeFilter;
     const matchesStatus = statusFilter === "all" ||
-                         (statusFilter === "active" && m.is_active) ||
-                         (statusFilter === "inactive" && !m.is_active);
+      (statusFilter === "active" && m.is_active) ||
+      (statusFilter === "inactive" && !m.is_active);
     return matchesSearch && matchesType && matchesStatus;
   });
 
@@ -120,8 +120,8 @@ export default function AdminMaterials() {
   const handleSave = async () => {
     if (!formData.title || !formData.cover_url) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Kesalahan Validasi",
+        description: "Silakan isi semua bidang yang wajib diisi.",
         variant: "destructive",
       });
       return;
@@ -129,8 +129,8 @@ export default function AdminMaterials() {
 
     if (formData.type === "ebook" && !formData.ebook_url) {
       toast({
-        title: "Validation Error",
-        description: "Ebook URL is required for ebook materials.",
+        title: "Kesalahan Validasi",
+        description: "URL Ebook wajib diisi untuk materi ebook.",
         variant: "destructive",
       });
       return;
@@ -155,12 +155,12 @@ export default function AdminMaterials() {
     }
 
     if (result) {
-      toast({ title: editingMaterial ? "Material updated successfully" : "Material created successfully" });
+      toast({ title: editingMaterial ? "Materi berhasil diperbarui" : "Materi berhasil dibuat" });
       setIsDialogOpen(false);
     } else {
       toast({
-        title: "Error",
-        description: error || "Failed to save material",
+        title: "Kesalahan",
+        description: error || "Gagal menyimpan materi",
         variant: "destructive",
       });
       clearError();
@@ -172,13 +172,13 @@ export default function AdminMaterials() {
 
     await deleteMaterial(deletingId.toString());
     if (!error) {
-      toast({ title: "Material deleted successfully" });
+      toast({ title: "Materi berhasil dihapus" });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
     } else {
       toast({
-        title: "Error",
-        description: error || "Failed to delete material",
+        title: "Kesalahan",
+        description: error || "Gagal menghapus materi",
         variant: "destructive",
       });
       clearError();
@@ -190,12 +190,12 @@ export default function AdminMaterials() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Learning Materials</h1>
-            <p className="text-muted-foreground">Manage ebooks and video tutorials</p>
+            <h1 className="text-2xl font-bold">Materi Pembelajaran</h1>
+            <p className="text-muted-foreground">Kelola ebook dan tutorial video</p>
           </div>
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Material
+            Tambah Materi
           </Button>
         </div>
 
@@ -204,7 +204,7 @@ export default function AdminMaterials() {
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search materials..."
+              placeholder="Cari materi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -216,7 +216,7 @@ export default function AdminMaterials() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="all">Semua Tipe</SelectItem>
                 <SelectItem value="ebook">Ebook</SelectItem>
                 <SelectItem value="video">Video</SelectItem>
               </SelectContent>
@@ -226,9 +226,9 @@ export default function AdminMaterials() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Nonaktif</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -238,25 +238,25 @@ export default function AdminMaterials() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Material</TableHead>
-                <TableHead>Type</TableHead>
+                <TableHead>Materi</TableHead>
+                <TableHead>Tipe</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Access</TableHead>
-                <TableHead>Details</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>Akses</TableHead>
+                <TableHead>Detail</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoadingMaterials ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    Loading materials...
+                    Memuat materi...
                   </TableCell>
                 </TableRow>
               ) : filteredMaterials.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
-                    No materials found
+                    Materi tidak ditemukan
                   </TableCell>
                 </TableRow>
               ) : (
@@ -286,18 +286,18 @@ export default function AdminMaterials() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={material.is_active ? "default" : "secondary"}>
-                        {material.is_active ? "Active" : "Inactive"}
+                        {material.is_active ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <Badge variant={material.is_free ? "default" : "secondary"}>
-                        {material.is_free ? "Free" : "Premium"}
+                      <Badge variant={material.is_free ? "default" : "secondary"}>
+                        {material.is_free ? "Gratis" : "Premium"}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {material.type === "video"
-                        ? `${material.duration || 0} min`
-                        : `${material.pages || 0} pages`}
+                        ? `${material.duration || 0} mnt`
+                        : `${material.pages || 0} hal`}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -344,36 +344,36 @@ export default function AdminMaterials() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingMaterial ? "Edit Material" : "Add New Material"}</DialogTitle>
+            <DialogTitle>{editingMaterial ? "Edit Materi" : "Tambah Materi Baru"}</DialogTitle>
             <DialogDescription>
-              {editingMaterial ? "Update material details" : "Add a new learning material"}
+              {editingMaterial ? "Perbarui detail materi" : "Tambah materi pembelajaran baru"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">Judul *</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Material title"
+                placeholder="Judul materi"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Deskripsi</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description"
+                placeholder="Deskripsi singkat"
                 rows={2}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Tipe</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value: "ebook" | "video") =>
@@ -423,7 +423,7 @@ export default function AdminMaterials() {
               </div>
             ) : (
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">Durasi (menit)</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -439,7 +439,7 @@ export default function AdminMaterials() {
                 checked={formData.is_free}
                 onCheckedChange={(checked) => setFormData({ ...formData, is_free: checked })}
               />
-              <Label htmlFor="is_free">Free Access</Label>
+              <Label htmlFor="is_free">Akses Gratis</Label>
             </div>
 
             <div className="flex items-center space-x-2">
@@ -448,15 +448,15 @@ export default function AdminMaterials() {
                 checked={formData.is_active}
                 onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
               />
-              <Label htmlFor="is_active">Active (Published)</Label>
+              <Label htmlFor="is_active">Aktif (Diterbitkan)</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSave} disabled={isCreatingMaterial || isUpdatingMaterial}>
-              {isCreatingMaterial || isUpdatingMaterial ? "Saving..." : (editingMaterial ? "Save Changes" : "Create Material")}
+              {isCreatingMaterial || isUpdatingMaterial ? "Menyimpan..." : (editingMaterial ? "Simpan Perubahan" : "Buat Materi")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -466,17 +466,17 @@ export default function AdminMaterials() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Material</DialogTitle>
+            <DialogTitle>Hapus Materi</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this material? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus materi ini? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeletingMaterial}>
-              {isDeletingMaterial ? "Deleting..." : "Delete"}
+              {isDeletingMaterial ? "Menghapus..." : "Hapus"}
             </Button>
           </DialogFooter>
         </DialogContent>

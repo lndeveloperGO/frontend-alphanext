@@ -13,126 +13,55 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   questionService,
-  BulkCreateQuestionInput,
-  BulkQuestionItem,
 } from "@/lib/questionService";
-import { Upload, FileJson, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, Loader2, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function BulkQuestionImport() {
-  const [jsonInput, setJsonInput] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<BulkQuestionItem[]>([]);
   const [resultOpen, setResultOpen] = useState(false);
   const [result, setResult] = useState<any>(null);
   const { toast } = useToast();
 
-  const handleParseJSON = () => {
-    try {
-      const parsed = JSON.parse(jsonInput);
+  const TEMPLATE_LINK = "https://docs.google.com/spreadsheets/d/14D2YG23BEtuaZjwelRvhTKfvSiCwVbIZ8xTbRcwjpwI/edit?usp=sharing";
 
-      if (!parsed.items || !Array.isArray(parsed.items)) {
-        throw new Error("Invalid format: 'items' array is required");
-      }
-
-      // Validasi setiap item
-      parsed.items.forEach((item: any, index: number) => {
-        if (!item.category_id) {
-          throw new Error(`Item ${index + 1}: category_id is required`);
-        }
-        if (!item.question) {
-          throw new Error(`Item ${index + 1}: question text is required`);
-        }
-        if (!item.options || !Array.isArray(item.options)) {
-          throw new Error(`Item ${index + 1}: options array is required`);
-        }
-        if (item.options.length === 0) {
-          throw new Error(`Item ${index + 1}: at least one option is required`);
-        }
-      });
-
-      setPreviewData(parsed.items);
-      setPreviewOpen(true);
-    } catch (error) {
-      toast({
-        title: "Invalid JSON",
-        description:
-          error instanceof Error ? error.message : "Failed to parse JSON",
-        variant: "destructive",
-      });
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
     }
   };
 
-  const handleLoadTemplate = () => {
-    const template = {
-      items: [
-        {
-          category_id: 1,
-          question: "2 + 2 = ?",
-          explanation: "2 + 2 = 4",
-          options: [
-            { label: "A", text: "3", score_value: 0 },
-            { label: "B", text: "4", score_value: 5 },
-            { label: "C", text: "5", score_value: 1 },
-            { label: "D", text: "6", score_value: -1 },
-          ],
-        },
-        {
-          category_id: 1,
-          question: "10 / 2 = ?",
-          explanation: "10 / 2 = 5",
-          options: [
-            { label: "A", text: "2", score_value: 0 },
-            { label: "B", text: "5", score_value: 5 },
-          ],
-        },
-      ],
-    };
-    setJsonInput(JSON.stringify(template, null, 2));
-  };
+  const handleSubmitImport = async () => {
+    if (!file) {
+      toast({
+        title: "Kesalahan",
+        description: "Silakan pilih file terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleSubmitBulk = async () => {
     try {
       setLoading(true);
-      const input: BulkCreateQuestionInput = {
-        items: previewData,
-      };
-
-      const response = await questionService.bulkCreateQuestions(input);
+      const response = await questionService.importQuestions(file);
       setResult(response);
-      setPreviewOpen(false);
       setResultOpen(true);
 
       toast({
-        title: "Success",
-        description: `Created ${response.success} question(s)`,
+        title: "Berhasil",
+        description: response.message || `Berhasil membuat ${response.success} pertanyaan`,
       });
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to create questions",
+          error instanceof Error ? error.message : "Gagal mengimpor pertanyaan",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      setJsonInput(text);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to read file",
-        variant: "destructive",
-      });
     }
   };
 
@@ -141,145 +70,141 @@ export default function BulkQuestionImport() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Bulk Import Questions</h1>
+          <h1 className="text-2xl font-bold">Impor Pertanyaan Massal</h1>
           <p className="text-muted-foreground">
-            Import multiple questions with options using JSON format
+            Impor beberapa pertanyaan beserta pilihan menggunakan templat Excel
           </p>
         </div>
 
         {/* Upload Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Import Questions</CardTitle>
+            <CardTitle>Impor Pertanyaan</CardTitle>
             <CardDescription>
-              Paste JSON or upload a JSON file to create multiple questions at once
+              Unggah file Excel (.xlsx, .xls) mengikuti templat yang disediakan
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* File Upload */}
-            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-muted/50 cursor-pointer transition">
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="font-medium">Upload JSON file</p>
-                <p className="text-sm text-muted-foreground">
-                  or drag and drop
-                </p>
-              </label>
+          <CardContent className="space-y-6">
+            {/* Template Information */}
+            <div className="bg-muted/50 p-4 rounded-lg flex items-center justify-between">
+              <div>
+                <p className="font-medium">Templat Excel</p>
+                <p className="text-sm text-muted-foreground">Unduh atau salin templat untuk memastikan format yang benar</p>
+              </div>
+              <Button variant="outline" asChild>
+                <a href={TEMPLATE_LINK} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Lihat Templat
+                </a>
+              </Button>
             </div>
 
-            {/* JSON Input */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">JSON Input</label>
-              <textarea
-                value={jsonInput}
-                onChange={(e) => setJsonInput(e.target.value)}
-                placeholder="Paste your JSON here..."
-                className="w-full h-64 p-3 border rounded-md font-mono text-sm"
+            {/* File Upload */}
+            <div className="border-2 border-dashed rounded-lg p-10 text-center hover:bg-muted/50 cursor-pointer transition relative">
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                id="file-upload"
               />
+              <div className="space-y-2">
+                <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                  <Upload className="h-6 w-6 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium">
+                    {file ? file.name : "Klik untuk mengunggah atau seret dan lepas"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    File Excel (.xlsx, .xls)
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={handleLoadTemplate}>
-                Load Template
-              </Button>
-              <Button onClick={handleParseJSON}>
-                <FileJson className="mr-2 h-4 w-4" />
-                Preview & Validate
+              <Button
+                onClick={handleSubmitImport}
+                disabled={!file || loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Mengimpor...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                    Unggah & Impor
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* JSON Format Guide */}
+        {/* Format Guide */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">JSON Format Guide</CardTitle>
+            <CardTitle className="text-base">Panduan Format Excel</CardTitle>
+            <CardDescription>Kolom yang wajib di file Excel Anda</CardDescription>
           </CardHeader>
           <CardContent>
-            <pre className="bg-muted p-4 rounded-md overflow-x-auto text-xs">
-{`{
-  "items": [
-    {
-      "category_id": 1,
-      "question": "2 + 2 = ?",
-      "explanation": "2 + 2 = 4",
-      "options": [
-        { "label": "A", "text": "3", "score_value": 0 },
-        { "label": "B", "text": "4", "score_value": 5 },
-        { "label": "C", "text": "5", "score_value": 1 },
-        { "label": "D", "text": "6", "score_value": -1 }
-      ]
-    }
-  ]
-}`}
-            </pre>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-muted text-left">
+                    <th className="p-2 border">Kolom</th>
+                    <th className="p-2 border">Deskripsi</th>
+                    <th className="p-2 border">Wajib</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="p-2 border font-mono">category_id</td>
+                    <td className="p-2 border">ID kategori pertanyaan</td>
+                    <td className="p-2 border text-green-600">Ya</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-mono">question</td>
+                    <td className="p-2 border">Teks pertanyaan</td>
+                    <td className="p-2 border text-green-600">Ya</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-mono">question_type</td>
+                    <td className="p-2 border">'text' atau 'image'</td>
+                    <td className="p-2 border">Tidak (default: text)</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-mono">question_image_url</td>
+                    <td className="p-2 border">URL publik untuk gambar pertanyaan</td>
+                    <td className="p-2 border">Tidak</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-mono">opt_x_text</td>
+                    <td className="p-2 border">Teks untuk pilihan A, B, C...</td>
+                    <td className="p-2 border text-green-600">Min 2</td>
+                  </tr>
+                  <tr>
+                    <td className="p-2 border font-mono">opt_x_score</td>
+                    <td className="p-2 border">Nilai skor untuk pilihan X</td>
+                    <td className="p-2 border text-green-600">Ya</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Preview Dialog */}
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Preview Questions</DialogTitle>
-            <DialogDescription>
-              Review the questions before importing ({previewData.length} items)
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-3">
-            {previewData.map((item, index) => (
-              <div key={index} className="p-3 border rounded-md bg-muted/50">
-                <div className="font-medium mb-2">
-                  {index + 1}. {item.question.substring(0, 80)}
-                  {item.question.length > 80 ? "..." : ""}
-                </div>
-                <div className="text-xs space-y-1 ml-2">
-                  <div>Category ID: {item.category_id}</div>
-                  <div>Options: {item.options.length}</div>
-                  {item.explanation && (
-                    <div>Explanation: {item.explanation.substring(0, 60)}...</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setPreviewOpen(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSubmitBulk} disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Importing...
-                </>
-              ) : (
-                "Import"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Result Dialog */}
       <Dialog open={resultOpen} onOpenChange={setResultOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Import Result</DialogTitle>
+            <DialogTitle>Hasil Impor</DialogTitle>
           </DialogHeader>
 
           {result && (
@@ -291,7 +216,7 @@ export default function BulkQuestionImport() {
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Created
+                          Dibuat
                         </p>
                         <p className="text-2xl font-bold">{result.success}</p>
                       </div>
@@ -303,7 +228,7 @@ export default function BulkQuestionImport() {
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-5 w-5 text-red-600" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Failed</p>
+                        <p className="text-sm text-muted-foreground">Gagal</p>
                         <p className="text-2xl font-bold">{result.failed}</p>
                       </div>
                     </div>
@@ -313,11 +238,11 @@ export default function BulkQuestionImport() {
 
               {result.data?.errors && result.data.errors.length > 0 && (
                 <div className="space-y-2">
-                  <p className="font-medium text-sm">Errors:</p>
-                  <div className="space-y-1">
+                  <p className="font-medium text-sm">Kesalahan:</p>
+                  <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                     {result.data.errors.map((err: any, idx: number) => (
-                      <div key={idx} className="text-sm p-2 bg-red-50 rounded text-red-700">
-                        Item {err.index + 1}: {err.error}
+                      <div key={idx} className="text-sm p-2 bg-red-50 rounded text-red-700 border border-red-100">
+                        Item {err.index != null ? err.index + 1 : idx + 1}: {err.error || JSON.stringify(err)}
                       </div>
                     ))}
                   </div>
@@ -329,7 +254,7 @@ export default function BulkQuestionImport() {
           )}
 
           <DialogFooter>
-            <Button onClick={() => setResultOpen(false)}>Close</Button>
+            <Button onClick={() => setResultOpen(false)}>Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

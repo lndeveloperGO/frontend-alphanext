@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
 
         if (!t || !e) {
             toast({
-                title: "Invalid link",
+                title: "Link tidak valid",
                 description: "Link reset password tidak valid atau sudah kadaluarsa.",
                 variant: "destructive",
             });
@@ -131,7 +131,7 @@ export default function ResetPasswordPage() {
                                 <Input
                                     id="password"
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="Password minimal 8 karakter"
+                                    placeholder="Password minimal 6 karakter"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required

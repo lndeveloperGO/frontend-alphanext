@@ -49,7 +49,7 @@ export default function AdminProfile() {
           birth_date: result.data.birth_date || "",
         }));
       } else {
-        setErrorMessage(result.error || "Failed to load user data");
+        setErrorMessage(result.error || "Gagal memuat data pengguna");
       }
       setIsLoading(false);
     };
@@ -79,10 +79,10 @@ export default function AdminProfile() {
 
     if (result.success) {
       setUser(result.data);
-      setSuccessMessage("Profile updated successfully!");
+      setSuccessMessage("Profil berhasil diperbarui!");
       setTimeout(() => setSuccessMessage(""), 3000);
     } else {
-      setErrorMessage(result.error || "Failed to update profile");
+      setErrorMessage(result.error || "Gagal memperbarui profil");
     }
     setIsSaving(false);
   };
@@ -92,12 +92,12 @@ export default function AdminProfile() {
     setErrorMessage("");
 
     if (formData.newPassword !== formData.confirmPassword) {
-      setErrorMessage("New passwords do not match");
+      setErrorMessage("Kata sandi baru tidak cocok");
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      setErrorMessage("Password must be at least 6 characters");
+      setErrorMessage("Kata sandi minimal harus 6 karakter");
       return;
     }
 
@@ -117,10 +117,10 @@ export default function AdminProfile() {
         confirmPassword: "",
       }));
 
-      setSuccessMessage("Password changed successfully!");
+      setSuccessMessage("Kata sandi berhasil diubah!");
       setTimeout(() => setSuccessMessage(""), 3000);
     } else {
-      setErrorMessage(result.error || "Failed to change password");
+      setErrorMessage(result.error || "Gagal mengubah kata sandi");
     }
     setIsSaving(false);
   };
@@ -139,7 +139,7 @@ export default function AdminProfile() {
     return (
       <DashboardLayout type="admin">
         <div className="flex items-center justify-center min-h-screen">
-          <p className="text-muted-foreground">Loading profile...</p>
+          <p className="text-muted-foreground">Memuat profil...</p>
         </div>
       </DashboardLayout>
     );
@@ -150,9 +150,9 @@ export default function AdminProfile() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">My Profile</h1>
+          <h1 className="text-2xl font-bold">Profil Saya</h1>
           <p className="text-muted-foreground">
-            Manage your account information and security settings
+            Kelola informasi akun dan pengaturan keamanan Anda
           </p>
         </div>
 
@@ -178,8 +178,8 @@ export default function AdminProfile() {
         {/* Profile Overview Card */}
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Your basic account details</CardDescription>
+            <CardTitle>Informasi Profil</CardTitle>
+            <CardDescription>Detail dasar akun Anda</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-6 md:flex-row md:items-start">
@@ -192,7 +192,7 @@ export default function AdminProfile() {
                 <div className="text-center">
                   <p className="font-semibold text-sm">{user?.name}</p>
                   <Badge variant="outline" className="mt-2">
-                    {user?.role === "admin" ? "Administrator" : "Student"}
+                    {user?.role === "admin" ? "Administrator" : "Siswa"}
                   </Badge>
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function AdminProfile() {
                     <User className="h-5 w-5 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Full Name</p>
+                    <p className="text-sm text-muted-foreground">Nama Lengkap</p>
                     <p className="font-semibold">{user?.name}</p>
                   </div>
                 </div>
@@ -218,7 +218,7 @@ export default function AdminProfile() {
                     <Mail className="h-5 w-5 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Email Address</p>
+                    <p className="text-sm text-muted-foreground">Alamat Email</p>
                     <p className="font-semibold">{user?.email}</p>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export default function AdminProfile() {
                     <Calendar className="h-5 w-5 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Member Since</p>
+                    <p className="text-sm text-muted-foreground">Anggota Sejak</p>
                     <p className="font-semibold">{createdAtDate}</p>
                   </div>
                 </div>
@@ -274,34 +274,34 @@ export default function AdminProfile() {
         {/* Edit Profile Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Edit Profile</CardTitle>
-            <CardDescription>Update your account information</CardDescription>
+            <CardTitle>Edit Profil</CardTitle>
+            <CardDescription>Perbarui informasi akun Anda</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSaveProfile} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Name Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="name">Nama Lengkap</Label>
                   <Input
                     id="name"
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="Enter your full name"
+                    placeholder="Masukkan nama lengkap Anda"
                   />
                 </div>
 
                 {/* Email Field */}
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">Alamat Email</Label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="Enter your email address"
+                    placeholder="Masukkan alamat email Anda"
                   />
                 </div>
 
@@ -352,7 +352,7 @@ export default function AdminProfile() {
               </div>
 
               <Button type="submit" disabled={isSaving} className="w-full md:w-auto">
-                {isSaving ? "Saving..." : "Save Changes"}
+                {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
               </Button>
             </form>
           </CardContent>
@@ -361,14 +361,14 @@ export default function AdminProfile() {
         {/* Change Password Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Security</CardTitle>
-            <CardDescription>Manage your password and security settings</CardDescription>
+            <CardTitle>Keamanan</CardTitle>
+            <CardDescription>Kelola kata sandi dan pengaturan keamanan Anda</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleChangePassword} className="space-y-4">
               {/* Current Password */}
               <div className="space-y-2">
-                <Label htmlFor="currentPassword">Current Password</Label>
+                <Label htmlFor="currentPassword">Kata Sandi Saat Ini</Label>
                 <div className="relative">
                   <Input
                     id="currentPassword"
@@ -376,7 +376,7 @@ export default function AdminProfile() {
                     type={showPassword ? "text" : "password"}
                     value={formData.currentPassword}
                     onChange={handleInputChange}
-                    placeholder="Enter your current password"
+                    placeholder="Masukkan kata sandi saat ini"
                   />
                   <button
                     type="button"
@@ -394,7 +394,7 @@ export default function AdminProfile() {
 
               {/* New Password */}
               <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
+                <Label htmlFor="newPassword">Kata Sandi Baru</Label>
                 <div className="relative">
                   <Input
                     id="newPassword"
@@ -402,7 +402,7 @@ export default function AdminProfile() {
                     type={showNewPassword ? "text" : "password"}
                     value={formData.newPassword}
                     onChange={handleInputChange}
-                    placeholder="Enter your new password"
+                    placeholder="Masukkan kata sandi baru"
                   />
                   <button
                     type="button"
@@ -420,7 +420,7 @@ export default function AdminProfile() {
 
               {/* Confirm Password */}
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Label htmlFor="confirmPassword">Konfirmasi Kata Sandi Baru</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -428,7 +428,7 @@ export default function AdminProfile() {
                     type={showNewPassword ? "text" : "password"}
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    placeholder="Confirm your new password"
+                    placeholder="Konfirmasi kata sandi baru Anda"
                   />
                   <button
                     type="button"
@@ -445,7 +445,7 @@ export default function AdminProfile() {
               </div>
 
               <Button type="submit" disabled={isSaving} className="w-full md:w-auto">
-                {isSaving ? "Updating..." : "Change Password"}
+                {isSaving ? "Memperbarui..." : "Ubah Kata Sandi"}
               </Button>
             </form>
           </CardContent>

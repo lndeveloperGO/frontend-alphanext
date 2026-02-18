@@ -94,8 +94,8 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
   const handleSavePart = async () => {
     if (!partFormData.title || !partFormData.video_url) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Kesalahan Validasi",
+        description: "Silakan isi semua bidang yang wajib diisi.",
         variant: "destructive",
       });
       return;
@@ -109,12 +109,12 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
     }
 
     if (result) {
-      toast({ title: editingPart ? "Part updated successfully" : "Part created successfully" });
+      toast({ title: editingPart ? "Bagian berhasil diperbarui" : "Bagian berhasil dibuat" });
       setIsPartDialogOpen(false);
     } else {
       toast({
-        title: "Error",
-        description: error || "Failed to save part",
+        title: "Kesalahan",
+        description: error || "Gagal menyimpan bagian",
         variant: "destructive",
       });
       clearError();
@@ -126,12 +126,12 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
 
     await deletePart(materialId.toString(), deletingPartId.toString());
     if (!error) {
-      toast({ title: "Part deleted successfully" });
+      toast({ title: "Bagian berhasil dihapus" });
       setDeletingPartId(null);
     } else {
       toast({
-        title: "Error",
-        description: error || "Failed to delete part",
+        title: "Kesalahan",
+        description: error || "Gagal menghapus bagian",
         variant: "destructive",
       });
       clearError();
@@ -149,19 +149,19 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
-            <DialogTitle>Manage Video Parts - {materialTitle}</DialogTitle>
+            <DialogTitle>Kelola Bagian Video - {materialTitle}</DialogTitle>
             <DialogDescription>
-              Add, edit, and reorder video parts for this material
+              Tambah, edit, dan urutkan ulang bagian video untuk materi ini
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm text-muted-foreground">
-              Total parts: {parts.length} | Total duration: {formatDuration(parts.reduce((sum, part) => sum + part.duration_seconds, 0))}
+              Total bagian: {parts.length} | Total durasi: {formatDuration(parts.reduce((sum, part) => sum + part.duration_seconds, 0))}
             </div>
             <Button onClick={() => handleOpenPartDialog()}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Part
+              Tambah Bagian
             </Button>
           </div>
 
@@ -171,24 +171,24 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-12"></TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Order</TableHead>
+                    <TableHead>Judul</TableHead>
+                    <TableHead>Durasi</TableHead>
+                    <TableHead>Urutan</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoadingParts ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8">
-                        Loading parts...
+                        Memuat bagian...
                       </TableCell>
                     </TableRow>
                   ) : parts.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8">
-                        No video parts found. Add your first part to get started.
+                        Bagian video tidak ditemukan. Tambahkan bagian pertama Anda untuk memulai.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -222,7 +222,7 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
                           </TableCell>
                           <TableCell>
                             <Badge variant={part.is_active ? "default" : "secondary"}>
-                              {part.is_active ? "Active" : "Inactive"}
+                              {part.is_active ? "Aktif" : "Nonaktif"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -253,7 +253,7 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>
-              Close
+              Tutup
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -263,19 +263,19 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
       <Dialog open={isPartDialogOpen} onOpenChange={setIsPartDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingPart ? "Edit Video Part" : "Add Video Part"}</DialogTitle>
+            <DialogTitle>{editingPart ? "Edit Bagian Video" : "Tambah Bagian Video"}</DialogTitle>
             <DialogDescription>
-              {editingPart ? "Update part details" : "Add a new video part"}
+              {editingPart ? "Perbarui detail bagian" : "Tambah bagian video baru"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="part_title">Title *</Label>
+              <Label htmlFor="part_title">Judul *</Label>
               <Input
                 id="part_title"
                 value={partFormData.title}
                 onChange={(e) => setPartFormData({ ...partFormData, title: e.target.value })}
-                placeholder="Part title"
+                placeholder="Judul bagian"
               />
             </div>
 
@@ -291,7 +291,7 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="duration_seconds">Duration (seconds) *</Label>
+                <Label htmlFor="duration_seconds">Durasi (detik) *</Label>
                 <Input
                   id="duration_seconds"
                   type="number"
@@ -301,7 +301,7 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sort_order">Sort Order</Label>
+                <Label htmlFor="sort_order">Urutan</Label>
                 <Input
                   id="sort_order"
                   type="number"
@@ -318,15 +318,15 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
                 checked={partFormData.is_active}
                 onCheckedChange={(checked) => setPartFormData({ ...partFormData, is_active: checked })}
               />
-              <Label htmlFor="part_is_active">Active</Label>
+              <Label htmlFor="part_is_active">Aktif</Label>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsPartDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSavePart} disabled={isCreatingPart || isUpdatingPart}>
-              {isCreatingPart || isUpdatingPart ? "Saving..." : (editingPart ? "Save Changes" : "Create Part")}
+              {isCreatingPart || isUpdatingPart ? "Menyimpan..." : (editingPart ? "Simpan Perubahan" : "Buat Bagian")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -336,17 +336,17 @@ export default function ManageVideoParts({ materialId, materialTitle, isOpen, on
       <Dialog open={!!deletingPartId} onOpenChange={() => setDeletingPartId(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Video Part</DialogTitle>
+            <DialogTitle>Hapus Bagian Video</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this video part? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus bagian video ini? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeletingPartId(null)}>
-              Cancel
+              Batal
             </Button>
             <Button variant="destructive" onClick={handleDeletePart} disabled={isDeletingPart}>
-              {isDeletingPart ? "Deleting..." : "Delete"}
+              {isDeletingPart ? "Menghapus..." : "Hapus"}
             </Button>
           </DialogFooter>
         </DialogContent>

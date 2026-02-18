@@ -75,8 +75,8 @@ export default function AdminVouchers() {
   const handleSave = () => {
     if (!formData.code || !formData.discount || !formData.validFrom || !formData.validUntil) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Kesalahan Validasi",
+        description: "Silakan isi semua bidang yang wajib diisi.",
         variant: "destructive",
       });
       return;
@@ -88,7 +88,7 @@ export default function AdminVouchers() {
           ? { ...v, ...formData }
           : v
       ));
-      toast({ title: "Voucher updated successfully" });
+      toast({ title: "Voucher berhasil diperbarui" });
     } else {
       const newVoucher: Voucher = {
         id: String(vouchers.length + 1),
@@ -97,7 +97,7 @@ export default function AdminVouchers() {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setVouchers([...vouchers, newVoucher]);
-      toast({ title: "Voucher created successfully" });
+      toast({ title: "Voucher berhasil dibuat" });
     }
 
     setIsDialogOpen(false);
@@ -106,7 +106,7 @@ export default function AdminVouchers() {
   const handleDelete = () => {
     if (deletingId) {
       setVouchers(vouchers.filter((v) => v.id !== deletingId));
-      toast({ title: "Voucher deleted successfully" });
+      toast({ title: "Voucher berhasil dihapus" });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
     }
@@ -114,7 +114,7 @@ export default function AdminVouchers() {
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    toast({ title: "Code copied to clipboard" });
+    toast({ title: "Kode berhasil disalin ke papan klip" });
   };
 
   return (
@@ -122,19 +122,19 @@ export default function AdminVouchers() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Voucher Management</h1>
-            <p className="text-muted-foreground">Create and manage discount vouchers</p>
+            <h1 className="text-2xl font-bold">Manajemen Voucher</h1>
+            <p className="text-muted-foreground">Buat dan kelola voucher diskon</p>
           </div>
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Voucher
+            Tambah Voucher
           </Button>
         </div>
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search vouchers..."
+            placeholder="Cari voucher..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -145,12 +145,12 @@ export default function AdminVouchers() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Code</TableHead>
-                <TableHead>Discount</TableHead>
-                <TableHead>Usage</TableHead>
-                <TableHead>Valid Period</TableHead>
+                <TableHead>Kode</TableHead>
+                <TableHead>Diskon</TableHead>
+                <TableHead>Penggunaan</TableHead>
+                <TableHead>Periode Berlaku</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -180,12 +180,12 @@ export default function AdminVouchers() {
                   <TableCell>
                     <div className="text-sm">
                       <p>{voucher.validFrom}</p>
-                      <p className="text-muted-foreground">to {voucher.validUntil}</p>
+                      <p className="text-muted-foreground">sampai {voucher.validUntil}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant={voucher.isActive ? "default" : "secondary"}>
-                      {voucher.isActive ? "Active" : "Inactive"}
+                      {voucher.isActive ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -220,24 +220,24 @@ export default function AdminVouchers() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingVoucher ? "Edit Voucher" : "Add New Voucher"}</DialogTitle>
+            <DialogTitle>{editingVoucher ? "Edit Voucher" : "Tambah Voucher Baru"}</DialogTitle>
             <DialogDescription>
-              {editingVoucher ? "Update voucher details" : "Create a new discount voucher"}
+              {editingVoucher ? "Perbarui detail voucher" : "Buat voucher diskon baru"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="code">Voucher Code</Label>
+              <Label htmlFor="code">Kode Voucher</Label>
               <Input
                 id="code"
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                placeholder="e.g., SAVE20"
+                placeholder="misal: HEMAT20"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="discount">Discount (%)</Label>
+                <Label htmlFor="discount">Diskon (%)</Label>
                 <Input
                   id="discount"
                   type="number"
@@ -248,7 +248,7 @@ export default function AdminVouchers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxUses">Max Uses</Label>
+                <Label htmlFor="maxUses">Maks Penggunaan</Label>
                 <Input
                   id="maxUses"
                   type="number"
@@ -259,7 +259,7 @@ export default function AdminVouchers() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="validFrom">Valid From</Label>
+                <Label htmlFor="validFrom">Berlaku Dari</Label>
                 <Input
                   id="validFrom"
                   type="date"
@@ -268,7 +268,7 @@ export default function AdminVouchers() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="validUntil">Valid Until</Label>
+                <Label htmlFor="validUntil">Berlaku Sampai</Label>
                 <Input
                   id="validUntil"
                   type="date"
@@ -278,7 +278,7 @@ export default function AdminVouchers() {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">Aktif</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -288,10 +288,10 @@ export default function AdminVouchers() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSave}>
-              {editingVoucher ? "Save Changes" : "Create Voucher"}
+              {editingVoucher ? "Simpan Perubahan" : "Buat Voucher"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -301,17 +301,17 @@ export default function AdminVouchers() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Voucher</DialogTitle>
+            <DialogTitle>Hapus Voucher</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this voucher? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus voucher ini? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              Hapus
             </Button>
           </DialogFooter>
         </DialogContent>
