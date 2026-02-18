@@ -26,6 +26,11 @@ export const SEO = ({
 }: SEOProps) => {
     const fullTitle = title === getAppName() ? title : `${title} | ${getAppName()}`;
 
+    // Ensure ogImage is an absolute URL for better compatibility with scrapers (WhatsApp, etc)
+    const absoluteOgImage = ogImage.startsWith('http')
+        ? ogImage
+        : `${window.location.origin}${ogImage.startsWith('/') ? ogImage : `/${ogImage}`}`;
+
     return (
         <Helmet>
             {/* Standard metadata tags */}
@@ -38,13 +43,17 @@ export const SEO = ({
             <meta property="og:description" content={ogDescription || description} />
             <meta property="og:type" content="website" />
             <meta property="og:url" content={ogUrl} />
-            <meta property="og:image" content={ogImage} />
+            <meta property="og:image" content={absoluteOgImage} />
+            <meta property="og:image:secure_url" content={absoluteOgImage} />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:image:type" content="image/jpeg" />
 
             {/* Twitter Card tags */}
             <meta name="twitter:card" content={twitterCard} />
             <meta name="twitter:title" content={ogTitle || fullTitle} />
             <meta name="twitter:description" content={ogDescription || description} />
-            <meta name="twitter:image" content={ogImage} />
+            <meta name="twitter:image" content={absoluteOgImage} />
 
             {/* Canonical link */}
             {canonical && <link rel="canonical" href={canonical} />}
