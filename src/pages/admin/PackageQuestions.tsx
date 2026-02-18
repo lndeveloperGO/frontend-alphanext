@@ -148,8 +148,8 @@ export default function PackageQuestions() {
   const handleAddQuestions = () => {
     if (selectedQuestionIds.size === 0) {
       toast({
-        title: "Warning",
-        description: "Please select at least one question",
+        title: "Peringatan",
+        description: "Silakan pilih setidaknya satu pertanyaan",
       });
       return;
     }
@@ -168,8 +168,8 @@ export default function PackageQuestions() {
     setOpenDialog(false);
     setSelectedQuestionIds(new Set());
     toast({
-      title: "Success",
-      description: `Added ${newQuestions.length} question(s) to package`,
+      title: "Berhasil",
+      description: `Berhasil menambahkan ${newQuestions.length} pertanyaan ke paket`,
     });
   };
 
@@ -214,8 +214,8 @@ export default function PackageQuestions() {
     const newQuestions = questions.filter((_, i) => i !== index);
     setQuestions(newQuestions);
     toast({
-      title: "Success",
-      description: "Question removed from package",
+      title: "Berhasil",
+      description: "Pertanyaan dihapus dari paket",
     });
   };
 
@@ -232,8 +232,8 @@ export default function PackageQuestions() {
 
       await packageService.syncPackageQuestions(numericPackageId, items);
       toast({
-        title: "Success",
-        description: "Package questions updated successfully",
+        title: "Berhasil",
+        description: "Pertanyaan paket berhasil diperbarui",
       });
       loadData();
     } catch (error) {
@@ -251,11 +251,11 @@ export default function PackageQuestions() {
   const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) {
-      return `${minutes} min`;
+      return `${minutes} mnt`;
     }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return `${hours}h ${mins}m`;
+    return `${hours}j ${mins}m`;
   };
 
   const truncateText = (text: string | undefined, maxLength: number = 80) => {
@@ -274,7 +274,7 @@ export default function PackageQuestions() {
             onClick={() => navigate("/admin/packages")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Packages
+            Kembali ke Paket
           </Button>
         </div>
 
@@ -291,11 +291,11 @@ export default function PackageQuestions() {
                 <CardDescription>
                   <div className="flex flex-wrap items-center gap-4 mt-2">
                     <div>
-                      <span className="text-sm font-semibold">Type: </span>
+                      <span className="text-sm font-semibold">Tipe: </span>
                       <Badge className="ml-1">{packageInfo.type}</Badge>
                     </div>
                     <div>
-                      <span className="text-sm font-semibold">Duration: </span>
+                      <span className="text-sm font-semibold">Durasi: </span>
                       <span className="ml-1">
                         {formatDuration(packageInfo.duration_seconds)}
                       </span>
@@ -306,7 +306,7 @@ export default function PackageQuestions() {
                         className="ml-1"
                         variant={packageInfo.is_active ? "default" : "secondary"}
                       >
-                        {packageInfo.is_active ? "Active" : "Inactive"}
+                        {packageInfo.is_active ? "Aktif" : "Nonaktif"}
                       </Badge>
                     </div>
                   </div>
@@ -318,9 +318,9 @@ export default function PackageQuestions() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Questions in Package</CardTitle>
+                  <CardTitle>Pertanyaan dalam Paket</CardTitle>
                   <CardDescription>
-                    Total: {questions.length} questions (Drag to reorder)
+                    Total: {questions.length} pertanyaan (Seret untuk mengurutkan ulang)
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
@@ -331,14 +331,14 @@ export default function PackageQuestions() {
                         variant="outline"
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Questions
+                        Tambah Pertanyaan
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Add Questions to Package</DialogTitle>
+                        <DialogTitle>Tambah Pertanyaan ke Paket</DialogTitle>
                         <DialogDescription>
-                          Select a category and choose questions to add to this package
+                          Pilih kategori dan pilih pertanyaan untuk ditambahkan ke paket ini
                         </DialogDescription>
                       </DialogHeader>
 
@@ -348,7 +348,7 @@ export default function PackageQuestions() {
                         </div>
                       ) : categories.length === 0 ? (
                         <div className="py-8 text-center text-muted-foreground">
-                          No categories available
+                          Kategori tidak tersedia
                         </div>
                       ) : (
                         <Tabs
@@ -381,7 +381,7 @@ export default function PackageQuestions() {
                                 </div>
                               ) : categoryQuestions.length === 0 ? (
                                 <div className="py-8 text-center text-muted-foreground">
-                                  No questions available in this category
+                                  Pertanyaan tidak tersedia di kategori ini
                                 </div>
                               ) : (
                                 <div className="space-y-2">
@@ -433,15 +433,15 @@ export default function PackageQuestions() {
                           variant="outline"
                           onClick={() => setOpenDialog(false)}
                         >
-                          Cancel
+                          Batal
                         </Button>
                         <Button
                           onClick={handleAddQuestions}
                           disabled={selectedQuestionIds.size === 0}
                         >
                           <Check className="mr-2 h-4 w-4" />
-                          Add {selectedQuestionIds.size > 0 ? selectedQuestionIds.size : ""}{" "}
-                          Question{selectedQuestionIds.size !== 1 ? "s" : ""}
+                          Tambah {selectedQuestionIds.size > 0 ? selectedQuestionIds.size : ""}{" "}
+                          Pertanyaan
                         </Button>
                       </div>
                     </DialogContent>
@@ -449,14 +449,14 @@ export default function PackageQuestions() {
 
                   <Button onClick={handleSave} disabled={saving}>
                     <Save className="mr-2 h-4 w-4" />
-                    {saving ? "Saving..." : "Save Order"}
+                    {saving ? "Menyimpan..." : "Simpan Urutan"}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
                 {questions.length === 0 ? (
                   <div className="py-8 text-center text-muted-foreground">
-                    No questions in this package yet.
+                    Belum ada pertanyaan dalam paket ini.
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -470,10 +470,9 @@ export default function PackageQuestions() {
                         onDrop={(e) => handleDrop(e, index)}
                         className={`
                           flex items-center gap-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-move group
-                          ${
-                            draggedItem === index
-                              ? "opacity-50 bg-muted border-primary/50 shadow-lg"
-                              : dragOverItem === index
+                          ${draggedItem === index
+                            ? "opacity-50 bg-muted border-primary/50 shadow-lg"
+                            : dragOverItem === index
                               ? "bg-primary/5 border-primary shadow-md ring-2 ring-primary/20"
                               : "bg-background border-border hover:border-primary/50 hover:shadow-sm"
                           }

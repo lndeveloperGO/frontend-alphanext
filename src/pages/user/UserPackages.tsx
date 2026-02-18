@@ -77,7 +77,7 @@ export default function UserPackages() {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Fetch dashboard data (bundles, regular packages, promos)
         const dashboardResponse = await userService.getDashboard();
         if (dashboardResponse.success) {
@@ -111,17 +111,17 @@ export default function UserPackages() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">My Packages</h1>
-          <p className="text-muted-foreground">View your purchased packages and explore more</p>
+          <h1 className="text-2xl font-bold">Paket Saya</h1>
+          <p className="text-muted-foreground">Lihat paket yang Anda beli dan jelajahi paket lainnya</p>
         </div>
 
         {/* Active Subscriptions - User's Purchased Packages */}
         <section>
-          <h2 className="mb-4 text-lg font-semibold">Active Subscriptions</h2>
+          <h2 className="mb-4 text-lg font-semibold">Langganan Aktif</h2>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="ml-2">Loading your packages...</span>
+              <span className="ml-2">Memuat paket Anda...</span>
             </div>
           ) : activePackages.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -129,10 +129,9 @@ export default function UserPackages() {
                 const isActive = pkg.status === "active";
                 return (
                   <Card key={pkg.package_id} className="relative overflow-hidden">
-                    <div className={`absolute right-0 top-0 rounded-bl-lg px-3 py-1 text-xs font-medium text-primary-foreground ${
-                      isActive ? "bg-green-600" : "bg-red-600"
-                    }`}>
-                      {isActive ? "Active" : "Expired"}
+                    <div className={`absolute right-0 top-0 rounded-bl-lg px-3 py-1 text-xs font-medium text-primary-foreground ${isActive ? "bg-green-600" : "bg-red-600"
+                      }`}>
+                      {isActive ? "Aktif" : "Kedaluwarsa"}
                     </div>
                     <CardHeader>
                       <CardTitle className="mt-4">{pkg.name}</CardTitle>
@@ -158,7 +157,7 @@ export default function UserPackages() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Status</span>
-                          <Badge 
+                          <Badge
                             variant={isActive ? "default" : "destructive"}
                             className={isActive ? "bg-green-600 hover:bg-green-600" : ""}
                           >
@@ -166,8 +165,8 @@ export default function UserPackages() {
                           </Badge>
                         </div>
                       </div>
-                      <Button 
-                        className="mt-4 w-full" 
+                      <Button
+                        className="mt-4 w-full"
                         variant={isActive ? "default" : "outline"}
                         disabled={!isActive || startingPackageId !== null}
                         onClick={() => handleStartAttempt(pkg.package_id)}
@@ -206,7 +205,7 @@ export default function UserPackages() {
         {loading && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading packages...</span>
+            <span className="ml-2">Memuat paket...</span>
           </div>
         )}
 
@@ -226,7 +225,7 @@ export default function UserPackages() {
               {bundles.map((bundle) => (
                 <Card key={bundle.id} className="relative overflow-hidden">
                   <div className="absolute right-0 top-0 rounded-bl-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                    {bundle.is_active ? 'Available' : 'Inactive'}
+                    {bundle.is_active ? 'Tersedia' : 'Nonaktif'}
                   </div>
                   <CardHeader>
                     {/* <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">
@@ -271,7 +270,7 @@ export default function UserPackages() {
               {regular.map((reg) => (
                 <Card key={reg.id} className="relative overflow-hidden">
                   <div className="absolute right-0 top-0 rounded-bl-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                    {reg.is_active ? 'Available' : 'Inactive'}
+                    {reg.is_active ? 'Tersedia' : 'Nonaktif'}
                   </div>
                   <CardHeader>
                     {/* <div className="flex h-1/3 w-1/3 items-center justify-center rounded-lg bg-primary/10 overflow-hidden">

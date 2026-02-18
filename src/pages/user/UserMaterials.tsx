@@ -78,7 +78,7 @@ export default function UserMaterials() {
   const handleMaterialClick = async (material: Material) => {
     try {
       // Check access by trying to fetch the detail
-      await materialService.getMaterial(material.id);
+      await materialService.getMaterial(String(material.id));
       navigate(`/dashboard/materials/${material.id}`);
     } catch (error: any) {
       if (error.message?.includes("Access denied")) {
@@ -216,8 +216,10 @@ export default function UserMaterials() {
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Learning Materials</h1>
-            <p className="text-muted-foreground">Access ebooks and video tutorials</p>
+            <h1 className="text-3xl font-bold tracking-tight">Materi Pembelajaran</h1>
+            <p className="text-muted-foreground">
+              Akses ribuan materi pembelajaran berkualitas tinggi
+            </p>
           </div>
           <div className="flex gap-2">
             <Button
@@ -242,7 +244,7 @@ export default function UserMaterials() {
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search materials..."
+              placeholder="Cari materi..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -253,25 +255,27 @@ export default function UserMaterials() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="ebook">Ebooks</SelectItem>
-              <SelectItem value="video">Videos</SelectItem>
+              <SelectItem value="all">Semua Tipe</SelectItem>
+              <SelectItem value="ebook">Ebook</SelectItem>
+              <SelectItem value="video">Video</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Materials Grid/List */}
         {loading && materials.length === 0 ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="ml-2">Loading materials...</span>
+          <div className="flex h-[400px] items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+              <p className="mt-2 text-muted-foreground">Memuat materi...</p>
+            </div>
           </div>
         ) : materials.length === 0 ? (
           <div className="text-center py-12">
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg font-medium mb-2">No materials found</p>
+            <p className="text-lg font-medium mb-2">Materi tidak ditemukan</p>
             <p className="text-sm text-muted-foreground">
-              Try adjusting your search or filters
+              Coba sesuaikan pencarian atau filter Anda
             </p>
           </div>
         ) : (

@@ -110,9 +110,9 @@ export default function AdminProducts() {
       setMaterials(materialsData.data || []);
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to load data",
+          error instanceof Error ? error.message : "Gagal memuat data",
         variant: "destructive",
       });
     } finally {
@@ -135,10 +135,10 @@ export default function AdminProducts() {
         package_id: product.package_id,
         packages: product.type === "bundle"
           ? product.packages?.map(pkg => ({
-              package_id: pkg.pivot.package_id,
-              qty: pkg.pivot.qty,
-              sort_order: pkg.pivot.sort_order,
-            })) || []
+            package_id: pkg.pivot.package_id,
+            qty: pkg.pivot.qty,
+            sort_order: pkg.pivot.sort_order,
+          })) || []
           : [],
         selectedMaterialIds: [], // TODO: Load from product if available
       });
@@ -161,8 +161,8 @@ export default function AdminProducts() {
   const handleAddPackageToBundle = () => {
     if (newPackageForBundle.package_id === 0) {
       toast({
-        title: "Error",
-        description: "Please select a package",
+        title: "Kesalahan",
+        description: "Silakan pilih paket",
         variant: "destructive",
       });
       return;
@@ -194,8 +194,8 @@ export default function AdminProducts() {
   const handleValidateForm = (): boolean => {
     if (!formData.name.trim()) {
       toast({
-        title: "Error",
-        description: "Product name is required",
+        title: "Kesalahan",
+        description: "Nama produk wajib diisi",
         variant: "destructive",
       });
       return false;
@@ -203,8 +203,8 @@ export default function AdminProducts() {
 
     if (formData.price <= 0) {
       toast({
-        title: "Error",
-        description: "Price must be greater than 0",
+        title: "Kesalahan",
+        description: "Harga harus lebih besar dari 0",
         variant: "destructive",
       });
       return false;
@@ -213,8 +213,8 @@ export default function AdminProducts() {
     if (formData.type === "single") {
       if (!formData.package_id || formData.package_id === 0) {
         toast({
-          title: "Error",
-          description: "Please select a package for single product",
+          title: "Kesalahan",
+          description: "Silakan pilih paket untuk produk satuan",
           variant: "destructive",
         });
         return false;
@@ -222,8 +222,8 @@ export default function AdminProducts() {
     } else {
       if (!formData.packages || formData.packages.length === 0) {
         toast({
-          title: "Error",
-          description: "Please add at least one package to the bundle",
+          title: "Kesalahan",
+          description: "Silakan tambah minimal satu paket ke bundel",
           variant: "destructive",
         });
         return false;
@@ -243,35 +243,35 @@ export default function AdminProducts() {
       const payload: CreateProductInput =
         formData.type === "single"
           ? {
-              type: "single",
-              name: formData.name,
-              package_id: formData.package_id!,
-              price: formData.price,
-              access_days: accessDaysValue,
-              is_active: formData.is_active,
-              material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
-            }
+            type: "single",
+            name: formData.name,
+            package_id: formData.package_id!,
+            price: formData.price,
+            access_days: accessDaysValue,
+            is_active: formData.is_active,
+            material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
+          }
           : {
-              type: "bundle",
-              name: formData.name,
-              price: formData.price,
-              access_days: accessDaysValue,
-              is_active: formData.is_active,
-              packages: formData.packages!,
-              material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
-            };
+            type: "bundle",
+            name: formData.name,
+            price: formData.price,
+            access_days: accessDaysValue,
+            is_active: formData.is_active,
+            packages: formData.packages!,
+            material_ids: formData.selectedMaterialIds.length > 0 ? formData.selectedMaterialIds : undefined,
+          };
 
       if (dialogMode === "create") {
         await productService.createProduct(payload);
         toast({
-          title: "Success",
-          description: "Product created successfully",
+          title: "Berhasil",
+          description: "Produk berhasil dibuat",
         });
       } else if (dialogMode === "edit" && selectedProduct) {
         await productService.updateProduct(selectedProduct.id, payload);
         toast({
-          title: "Success",
-          description: "Product updated successfully",
+          title: "Berhasil",
+          description: "Produk berhasil diperbarui",
         });
       }
 
@@ -301,17 +301,17 @@ export default function AdminProducts() {
       setSubmitting(true);
       await productService.deleteProduct(selectedProduct.id);
       toast({
-        title: "Success",
-        description: "Product deleted successfully",
+        title: "Berhasil",
+        description: "Produk berhasil dihapus",
       });
       setDeleteDialogOpen(false);
       setSelectedProduct(null);
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to delete product",
+          error instanceof Error ? error.message : "Gagal menghapus produk",
         variant: "destructive",
       });
     } finally {
@@ -330,21 +330,21 @@ export default function AdminProducts() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Products & Pricing</h1>
-            <p className="text-muted-foreground">Manage product pricing (single or bundle)</p>
+            <h1 className="text-2xl font-bold">Produk & Harga</h1>
+            <p className="text-muted-foreground">Kelola harga produk (satuan atau bundel)</p>
           </div>
           <Button onClick={() => handleOpenDialog("create")}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Product
+            Tambah Produk
           </Button>
         </div>
 
         {/* Products Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Product List</CardTitle>
+            <CardTitle>Daftar Produk</CardTitle>
             <CardDescription>
-              Total products: {products.length}
+              Total produk: {products.length}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -354,7 +354,7 @@ export default function AdminProducts() {
               </div>
             ) : products.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                No products found. Create one to get started.
+                Produk tidak ditemukan. Buat satu untuk memulai.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -362,13 +362,13 @@ export default function AdminProducts() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Tipe</TableHead>
+                      <TableHead className="text-right">Harga</TableHead>
                       <TableHead className="text-center">Masa Aktif</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Details</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
+                      <TableHead>Detail</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -378,7 +378,7 @@ export default function AdminProducts() {
                         <TableCell>{product.name}</TableCell>
                         <TableCell>
                           <Badge variant={product.type === "single" ? "default" : "secondary"}>
-                            {product.type === "single" ? "Single" : "Bundle"}
+                            {product.type === "single" ? "Satuan" : "Bundel"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-semibold">
@@ -389,14 +389,14 @@ export default function AdminProducts() {
                         </TableCell>
                         <TableCell>
                           <Badge variant={product.is_active ? "outline" : "destructive"}>
-                            {product.is_active ? "Active" : "Inactive"}
+                            {product.is_active ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {product.type === "single" ? (
                             <span>{getPackageName(product.package_id!)}</span>
                           ) : (
-                            <span>{product.packages?.length || 0} packages</span>
+                            <span>{product.packages?.length || 0} paket</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
@@ -432,19 +432,19 @@ export default function AdminProducts() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "create" ? "Create Product" : "Edit Product"}
+              {dialogMode === "create" ? "Buat Produk" : "Edit Produk"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "create"
-                ? "Add a new product (single or bundle)"
-                : "Update product information"}
+                ? "Tambah produk baru (satuan atau bundel)"
+                : "Perbarui informasi produk"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Product Type Selector */}
             <div className="space-y-2">
-              <Label htmlFor="type">Product Type</Label>
+              <Label htmlFor="type">Tipe Produk</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value) =>
@@ -461,23 +461,23 @@ export default function AdminProducts() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="single">Single Product</SelectItem>
-                  <SelectItem value="bundle">Bundle Product</SelectItem>
+                  <SelectItem value="single">Produk Satuan</SelectItem>
+                  <SelectItem value="bundle">Produk Bundel</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
                 {formData.type === "single"
-                  ? "A single product contains one package"
-                  : "A bundle product contains multiple packages"}
+                  ? "Produk satuan berisi satu paket"
+                  : "Produk bundel berisi beberapa paket"}
               </p>
             </div>
 
             {/* Product Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Product Name</Label>
+              <Label htmlFor="name">Nama Produk</Label>
               <Input
                 id="name"
-                placeholder="e.g., Tryout UTBK #1 or Paket Hemat UTBK"
+                placeholder="misal: Tryout UTBK #1 atau Paket Hemat UTBK"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -488,11 +488,11 @@ export default function AdminProducts() {
 
             {/* Price */}
             <div className="space-y-2">
-              <Label htmlFor="price">Price (Rp)</Label>
+              <Label htmlFor="price">Harga (Rp)</Label>
               <Input
                 id="price"
                 type="number"
-                placeholder="e.g., 49000"
+                placeholder="misal: 49000"
                 value={formData.price || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, price: parseInt(e.target.value) || 0 })
@@ -528,7 +528,7 @@ export default function AdminProducts() {
             {/* Single Product Package Selection */}
             {formData.type === "single" && (
               <div className="space-y-2">
-                <Label htmlFor="package">Package</Label>
+                <Label htmlFor="package">Paket</Label>
                 <Select
                   value={formData.package_id?.toString() || ""}
                   onValueChange={(value) =>
@@ -537,7 +537,7 @@ export default function AdminProducts() {
                   disabled={submitting}
                 >
                   <SelectTrigger id="package">
-                    <SelectValue placeholder="Select a package" />
+                    <SelectValue placeholder="Pilih paket" />
                   </SelectTrigger>
                   <SelectContent>
                     {packages.map((pkg) => (
@@ -554,12 +554,12 @@ export default function AdminProducts() {
             {formData.type === "bundle" && (
               <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
                 <div className="space-y-3">
-                  <Label>Packages in Bundle</Label>
+                  <Label>Paket dalam Bundel</Label>
 
                   {/* Add Package Section */}
                   <div className="space-y-2 p-3 bg-background rounded border">
                     <Label htmlFor="bundle-package" className="text-sm">
-                      Add Package
+                      Tambah Paket
                     </Label>
                     <div className="flex gap-2">
                       <Select
@@ -573,7 +573,7 @@ export default function AdminProducts() {
                         disabled={submitting}
                       >
                         <SelectTrigger id="bundle-package" className="flex-1">
-                          <SelectValue placeholder="Select package" />
+                          <SelectValue placeholder="Pilih paket" />
                         </SelectTrigger>
                         <SelectContent>
                           {packages.map((pkg) => (
@@ -639,7 +639,7 @@ export default function AdminProducts() {
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
-                        No packages added yet
+                        Belum ada paket yang ditambahkan
                       </p>
                     )}
                   </div>
@@ -737,7 +737,7 @@ export default function AdminProducts() {
             {/* Is Active Switch */}
             <div className="flex items-center justify-between p-3 border rounded-lg">
               <Label htmlFor="is_active" className="cursor-pointer">
-                Active
+                Aktif
               </Label>
               <Switch
                 id="is_active"
@@ -756,16 +756,16 @@ export default function AdminProducts() {
               onClick={handleCloseDialog}
               disabled={submitting}
             >
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Menyimpan...
                 </>
               ) : (
-                "Save"
+                "Simpan"
               )}
             </Button>
           </DialogFooter>
@@ -775,13 +775,13 @@ export default function AdminProducts() {
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Delete Product</AlertDialogTitle>
+          <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete "{selectedProduct?.name}"? This action cannot
-            be undone.
+            Apakah Anda yakin ingin menghapus "{selectedProduct?.name}"? Tindakan ini tidak dapat
+            dibatalkan.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={submitting}
@@ -790,10 +790,10 @@ export default function AdminProducts() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Menghapus...
                 </>
               ) : (
-                "Delete"
+                "Hapus"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

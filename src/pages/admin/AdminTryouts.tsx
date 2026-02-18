@@ -73,13 +73,13 @@ export default function AdminTryouts() {
         setIsLoading(true);
         const baseUrl = getApiBaseUrl();
         const response = await fetch(`${baseUrl}/packages`);
-        
+
         if (!response.ok) {
           throw new Error(`Failed to fetch tryouts: ${response.statusText}`);
         }
-        
+
         const apiData: ApiTryout[] = await response.json();
-        
+
         // Transform API data to Tryout format
         const transformedTryouts: Tryout[] = apiData.map((item) => ({
           id: String(item.id),
@@ -92,7 +92,7 @@ export default function AdminTryouts() {
           isActive: item.is_active === 1,
           createdAt: new Date(item.created_at).toISOString().split("T")[0],
         }));
-        
+
         setTryouts(transformedTryouts);
         setError(null);
       } catch (err) {
@@ -105,7 +105,7 @@ export default function AdminTryouts() {
         setIsLoading(false);
       }
     };
-    
+
     fetchTryouts();
   }, []);
 
@@ -141,8 +141,8 @@ export default function AdminTryouts() {
   const handleSave = () => {
     if (!formData.name || !formData.description) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Kesalahan Validasi",
+        description: "Silakan isi semua bidang yang wajib diisi.",
         variant: "destructive",
       });
       return;
@@ -163,7 +163,7 @@ export default function AdminTryouts() {
           ? { ...t, ...tryoutData }
           : t
       ));
-      toast({ title: "Tryout updated successfully" });
+      toast({ title: "Tryout berhasil diperbarui" });
     } else {
       const newTryout: Tryout = {
         id: String(tryouts.length + 1),
@@ -172,7 +172,7 @@ export default function AdminTryouts() {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setTryouts([...tryouts, newTryout]);
-      toast({ title: "Tryout created successfully" });
+      toast({ title: "Tryout berhasil dibuat" });
     }
 
     setIsDialogOpen(false);
@@ -181,7 +181,7 @@ export default function AdminTryouts() {
   const handleDelete = () => {
     if (deletingId) {
       setTryouts(tryouts.filter((t) => t.id !== deletingId));
-      toast({ title: "Tryout deleted successfully" });
+      toast({ title: "Tryout berhasil dihapus" });
       setIsDeleteDialogOpen(false);
       setDeletingId(null);
     }
@@ -192,19 +192,19 @@ export default function AdminTryouts() {
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Tryout Management</h1>
-            <p className="text-muted-foreground">Manage tryouts and mass tryout events</p>
+            <h1 className="text-2xl font-bold">Manajemen Tryout</h1>
+            <p className="text-muted-foreground">Kelola tryout dan acara tryout massal</p>
           </div>
           <Button onClick={() => handleOpenDialog()}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Tryout
+            Tambah Tryout
           </Button>
         </div>
 
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search tryouts..."
+            placeholder="Cari tryout..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -214,29 +214,29 @@ export default function AdminTryouts() {
         {error && (
           <div className="rounded-lg border border-destructive bg-destructive/5 p-4">
             <p className="text-sm text-destructive">
-              Error loading tryouts: {error}
+              Gagal memuat tryout: {error}
             </p>
           </div>
         )}
 
         {isLoading ? (
           <div className="rounded-lg border bg-card p-8 text-center">
-            <p className="text-muted-foreground">Loading tryouts...</p>
+            <p className="text-muted-foreground">Memuat tryout...</p>
           </div>
         ) : filteredTryouts.length === 0 ? (
           <div className="rounded-lg border bg-card p-8 text-center">
-            <p className="text-muted-foreground">No tryouts found.</p>
+            <p className="text-muted-foreground">Tryout tidak ditemukan.</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Tryout</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Duration</TableHead>
+                <TableHead>Tipe</TableHead>
+                <TableHead>Durasi</TableHead>
                 {/* <TableHead>Participants</TableHead> */}
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,7 +255,7 @@ export default function AdminTryouts() {
                       {tryout.type}
                     </Badge>
                   </TableCell>
-                  <TableCell>{tryout.duration} min</TableCell>
+                  <TableCell>{tryout.duration} mnt</TableCell>
                   {/* <TableCell>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -266,7 +266,7 @@ export default function AdminTryouts() {
                   </TableCell> */}
                   <TableCell>
                     <Badge variant={tryout.isActive ? "default" : "secondary"}>
-                      {tryout.isActive ? "Active" : "Inactive"}
+                      {tryout.isActive ? "Aktif" : "Nonaktif"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -301,43 +301,43 @@ export default function AdminTryouts() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingTryout ? "Edit Tryout" : "Add New Tryout"}</DialogTitle>
+            <DialogTitle>{editingTryout ? "Edit Tryout" : "Tambah Tryout Baru"}</DialogTitle>
             <DialogDescription>
-              {editingTryout ? "Update tryout details" : "Create a new tryout or mass tryout event"}
+              {editingTryout ? "Perbarui detail tryout" : "Buat tryout baru atau acara tryout massal"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Tryout Name</Label>
+              <Label htmlFor="name">Nama Tryout</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Enter tryout name"
+                placeholder="Masukkan nama tryout"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Deskripsi</Label>
               <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Brief description"
+                placeholder="Deskripsi singkat"
                 rows={2}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>Tipe</Label>
                 <Input
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  placeholder="e.g., tryout, practice, bundle"
+                  placeholder="misal: tryout, latihan, bundel"
                   disabled={editingTryout ? true : false}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Label htmlFor="duration">Durasi (menit)</Label>
                 <Input
                   id="duration"
                   type="number"
@@ -347,7 +347,7 @@ export default function AdminTryouts() {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="isActive">Active</Label>
+              <Label htmlFor="isActive">Aktif</Label>
               <Switch
                 id="isActive"
                 checked={formData.isActive}
@@ -357,10 +357,10 @@ export default function AdminTryouts() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSave}>
-              {editingTryout ? "Save Changes" : "Create Tryout"}
+              {editingTryout ? "Simpan Perubahan" : "Buat Tryout"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -370,17 +370,17 @@ export default function AdminTryouts() {
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Tryout</DialogTitle>
+            <DialogTitle>Hapus Tryout</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this tryout? This action cannot be undone.
+              Apakah Anda yakin ingin menghapus tryout ini? Tindakan ini tidak dapat dibatalkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
+              Batal
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              Delete
+              Hapus
             </Button>
           </DialogFooter>
         </DialogContent>

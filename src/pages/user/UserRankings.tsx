@@ -49,7 +49,7 @@ export default function UserRankings() {
 
           // Fetch rankings untuk semua paket
           const rankingsMap = new Map<number, PackageRankingResponse>();
-          
+
           for (const pkg of tryoutAkbarPackages) {
             try {
               const rankings = await fetchPackageRankings(pkg.package_id);
@@ -60,11 +60,11 @@ export default function UserRankings() {
               console.error(`Error fetching rankings for package ${pkg.package_id}:`, err);
             }
           }
-          
+
           setPackageRankingsMap(rankingsMap);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load rankings data");
+        setError(err instanceof Error ? err.message : "Gagal memuat data peringkat");
         console.error("Error loading rankings:", err);
       } finally {
         setLoading(false);
@@ -118,8 +118,8 @@ export default function UserRankings() {
   ) || [];
 
   // Get current selected rankings
-  const currentRankings = selectedPackageId 
-    ? packageRankingsMap.get(selectedPackageId) 
+  const currentRankings = selectedPackageId
+    ? packageRankingsMap.get(selectedPackageId)
     : null;
 
   const currentPackage = tryoutAkbarPackages.find(
@@ -135,14 +135,14 @@ export default function UserRankings() {
       <DashboardLayout type="user">
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold">Rankings & Leaderboard</h1>
+            <h1 className="text-2xl font-bold">Peringkat & Klasemen</h1>
             <p className="text-muted-foreground">
-              View top performers across all tryouts and akbars
+              Lihat performa terbaik di semua tryout dan akbar
             </p>
           </div>
           <div className="rounded-lg border border-dashed p-8 text-center">
             <p className="text-muted-foreground">
-              No tryout or akbar packages available yet.
+              Belum ada paket tryout atau akbar yang tersedia.
             </p>
           </div>
         </div>
@@ -155,9 +155,9 @@ export default function UserRankings() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Rankings & Leaderboard</h1>
+          <h1 className="text-2xl font-bold">Peringkat & Klasemen</h1>
           <p className="text-muted-foreground">
-            View top performers across all tryouts and akbars
+            Lihat performa terbaik di semua tryout dan akbar
           </p>
         </div>
 
@@ -171,15 +171,15 @@ export default function UserRankings() {
 
         {/* Tabs for Package Selection */}
         {tryoutAkbarPackages.length > 0 && (
-          <Tabs 
-            value={selectedPackageId?.toString() || ""} 
+          <Tabs
+            value={selectedPackageId?.toString() || ""}
             onValueChange={(value) => setSelectedPackageId(parseInt(value))}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
               {tryoutAkbarPackages.map((pkg: ActivePackage) => (
-                <TabsTrigger 
-                  key={pkg.package_id} 
+                <TabsTrigger
+                  key={pkg.package_id}
                   value={pkg.package_id.toString()}
                   className="truncate text-xs sm:text-sm"
                 >
@@ -189,8 +189,8 @@ export default function UserRankings() {
             </TabsList>
 
             {tryoutAkbarPackages.map((pkg: ActivePackage) => (
-              <TabsContent 
-                key={pkg.package_id} 
+              <TabsContent
+                key={pkg.package_id}
                 value={pkg.package_id.toString()}
                 className="space-y-6"
               >
@@ -212,7 +212,7 @@ export default function UserRankings() {
                         <h3 className="font-semibold">{ranking.user.name}</h3>
                         <div className="mt-4">
                           <p className="text-3xl font-bold text-primary">{ranking.score}</p>
-                          <p className="text-sm text-muted-foreground">points</p>
+                          <p className="text-sm text-muted-foreground">poin</p>
                         </div>
                         {ranking.submitted_at && (
                           <p className="mt-2 text-xs text-muted-foreground">
@@ -234,12 +234,12 @@ export default function UserRankings() {
                           <AvatarFallback>{userProfile.name?.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm text-muted-foreground">Your Current Rank</p>
+                          <p className="text-sm text-muted-foreground">Peringkat Anda Saat Ini</p>
                           <p className="font-semibold">#{myRank}</p>
                         </div>
                       </div>
                       <Badge variant="default">
-                        View Details
+                        Lihat Detail
                       </Badge>
                     </div>
                   </div>
@@ -249,7 +249,7 @@ export default function UserRankings() {
                 {rankings.length > 0 ? (
                   <div className="rounded-lg border bg-card">
                     <div className="border-b p-4">
-                      <h3 className="font-semibold">All Rankings</h3>
+                      <h3 className="font-semibold">Semua Peringkat</h3>
                     </div>
                     <div className="divide-y">
                       {rankings.map((ranking: RankingItem) => (
@@ -285,7 +285,7 @@ export default function UserRankings() {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed p-8 text-center">
-                    <p className="text-muted-foreground">No rankings data available for this package yet.</p>
+                    <p className="text-muted-foreground">Belum ada data peringkat untuk paket ini.</p>
                   </div>
                 )}
               </TabsContent>

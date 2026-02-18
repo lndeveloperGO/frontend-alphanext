@@ -111,9 +111,9 @@ export default function AdminQuestions() {
       setQuestions(data);
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to load questions",
+          error instanceof Error ? error.message : "Gagal memuat pertanyaan",
         variant: "destructive",
       });
     } finally {
@@ -186,8 +186,8 @@ export default function AdminQuestions() {
   const handleSubmit = async () => {
     if (!formData.category_id) {
       toast({
-        title: "Error",
-        description: "Please select a category",
+        title: "Kesalahan",
+        description: "Silakan pilih kategori",
         variant: "destructive",
       });
       return;
@@ -195,8 +195,8 @@ export default function AdminQuestions() {
 
     if (!formData.question.trim()) {
       toast({
-        title: "Error",
-        description: "Question text is required",
+        title: "Kesalahan",
+        description: "Teks pertanyaan wajib diisi",
         variant: "destructive",
       });
       return;
@@ -210,8 +210,8 @@ export default function AdminQuestions() {
       if (dialogMode === "create") {
         await questionService.createQuestion(input as CreateQuestionInput);
         toast({
-          title: "Success",
-          description: "Question created successfully",
+          title: "Berhasil",
+          description: "Pertanyaan berhasil dibuat",
         });
       } else if (dialogMode === "edit" && selectedQuestion) {
         await questionService.updateQuestion(
@@ -219,8 +219,8 @@ export default function AdminQuestions() {
           input as UpdateQuestionInput
         );
         toast({
-          title: "Success",
-          description: "Question updated successfully",
+          title: "Berhasil",
+          description: "Pertanyaan berhasil diperbarui",
         });
       }
 
@@ -250,17 +250,17 @@ export default function AdminQuestions() {
       setSubmitting(true);
       await questionService.deleteQuestion(selectedQuestion.id);
       toast({
-        title: "Success",
-        description: "Question deleted successfully",
+        title: "Berhasil",
+        description: "Pertanyaan berhasil dihapus",
       });
       setDeleteDialogOpen(false);
       setSelectedQuestion(null);
       loadQuestions();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to delete question",
+          error instanceof Error ? error.message : "Gagal menghapus pertanyaan",
         variant: "destructive",
       });
     } finally {
@@ -302,8 +302,8 @@ export default function AdminQuestions() {
   const handleSubmitOption = async () => {
     if (!optionFormData.label.trim()) {
       toast({
-        title: "Error",
-        description: "Option label is required",
+        title: "Kesalahan",
+        description: "Label opsi wajib diisi",
         variant: "destructive",
       });
       return;
@@ -311,8 +311,8 @@ export default function AdminQuestions() {
 
     if (!optionFormData.text.trim()) {
       toast({
-        title: "Error",
-        description: "Option text is required",
+        title: "Kesalahan",
+        description: "Teks opsi wajib diisi",
         variant: "destructive",
       });
       return;
@@ -331,8 +331,8 @@ export default function AdminQuestions() {
           input as CreateOptionInput
         );
         toast({
-          title: "Success",
-          description: "Option created successfully",
+          title: "Berhasil",
+          description: "Opsi berhasil dibuat",
         });
       } else if (optionMode === "edit" && selectedOption?.id) {
         await questionService.updateOption(
@@ -340,8 +340,8 @@ export default function AdminQuestions() {
           input as UpdateOptionInput
         );
         toast({
-          title: "Success",
-          description: "Option updated successfully",
+          title: "Berhasil",
+          description: "Opsi berhasil diperbarui",
         });
       }
 
@@ -367,15 +367,15 @@ export default function AdminQuestions() {
     try {
       await questionService.deleteOption(option.id);
       toast({
-        title: "Success",
-        description: "Option deleted successfully",
+        title: "Berhasil",
+        description: "Opsi berhasil dihapus",
       });
       loadQuestions();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to delete option",
+          error instanceof Error ? error.message : "Gagal menghapus opsi",
         variant: "destructive",
       });
     }
@@ -402,9 +402,9 @@ export default function AdminQuestions() {
       setDetailDialogOpen(true);
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to load question details",
+          error instanceof Error ? error.message : "Gagal memuat detail pertanyaan",
         variant: "destructive",
       });
     } finally {
@@ -431,9 +431,9 @@ export default function AdminQuestions() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Questions</h1>
+            <h1 className="text-2xl font-bold">Pertanyaan</h1>
             <p className="text-muted-foreground">
-              Manage questions and answer options
+              Kelola pertanyaan dan opsi jawaban
             </p>
           </div>
           <div className="flex gap-2">
@@ -442,11 +442,11 @@ export default function AdminQuestions() {
               onClick={() => navigate("/admin/questions/bulk-import")}
             >
               <Upload className="mr-2 h-4 w-4" />
-              Bulk Import
+              Impor Massal
             </Button>
             <Button onClick={() => handleOpenDialog("create")}>
               <Plus className="mr-2 h-4 w-4" />
-              Add Question
+              Tambah Pertanyaan
             </Button>
           </div>
         </div>
@@ -454,9 +454,9 @@ export default function AdminQuestions() {
         {/* Questions Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Question List</CardTitle>
+            <CardTitle>Daftar Pertanyaan</CardTitle>
             <CardDescription>
-              Total questions: {questions.length}
+              Total pertanyaan: {questions.length}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -466,7 +466,7 @@ export default function AdminQuestions() {
               </div>
             ) : questions.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                No questions found. Create one to get started.
+                Pertanyaan tidak ditemukan. Buat satu untuk memulai.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -474,9 +474,9 @@ export default function AdminQuestions() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Question</TableHead>
-                      <TableHead className="w-20 text-center">Options</TableHead>
-                      <TableHead className="w-24 text-right">Actions</TableHead>
+                      <TableHead>Pertanyaan</TableHead>
+                      <TableHead className="w-20 text-center">Opsi</TableHead>
+                      <TableHead className="w-24 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -549,19 +549,19 @@ export default function AdminQuestions() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "create" ? "Create Question" : "Edit Question"}
+              {dialogMode === "create" ? "Buat Pertanyaan" : "Edit Pertanyaan"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "create"
-                ? "Add a new question"
-                : "Update question information"}
+                ? "Tambah pertanyaan baru"
+                : "Perbarui informasi pertanyaan"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category_id">Category</Label>
+                <Label htmlFor="category_id">Kategori</Label>
                 <select
                   id="category_id"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -574,7 +574,7 @@ export default function AdminQuestions() {
                   }
                   disabled={submitting}
                 >
-                  <option value={0}>-- Select Category --</option>
+                  <option value={0}>-- Pilih Kategori --</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -584,7 +584,7 @@ export default function AdminQuestions() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="question_type">Question Type</Label>
+                <Label htmlFor="question_type">Tipe Pertanyaan</Label>
                 <select
                   id="question_type"
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -597,17 +597,17 @@ export default function AdminQuestions() {
                   }
                   disabled={submitting}
                 >
-                  <option value="text">Text Only</option>
-                  <option value="image">With Image</option>
+                  <option value="text">Hanya Teks</option>
+                  <option value="image">Dengan Gambar</option>
                 </select>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="question">Question Text</Label>
+              <Label htmlFor="question">Teks Pertanyaan</Label>
               <Textarea
                 id="question"
-                placeholder="Enter the question text"
+                placeholder="Masukkan teks pertanyaan"
                 value={formData.question}
                 onChange={(e) =>
                   setFormData({ ...formData, question: e.target.value })
@@ -618,7 +618,7 @@ export default function AdminQuestions() {
             </div>
 
             <div className="space-y-2">
-              <Label>Question Image</Label>
+              <Label>Gambar Pertanyaan</Label>
               <div className="flex items-start gap-4">
                 <div className="flex-1">
                   <Input
@@ -628,14 +628,14 @@ export default function AdminQuestions() {
                     disabled={submitting}
                   />
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Upload an image for this question. Supported formats: JPG, PNG, WebP.
+                    Unggah gambar untuk pertanyaan ini. Format yang didukung: JPG, PNG, WebP.
                   </p>
                 </div>
                 {questionImagePreview && (
                   <div className="h-20 w-32 rounded-md border overflow-hidden bg-muted flex-shrink-0 relative">
                     <img
                       src={questionImagePreview}
-                      alt="Preview"
+                      alt="Pratinjau"
                       className="h-full w-full object-contain"
                     />
                   </div>
@@ -644,10 +644,10 @@ export default function AdminQuestions() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="explanation">Explanation (Optional)</Label>
+              <Label htmlFor="explanation">Penjelasan (Opsional)</Label>
               <Textarea
                 id="explanation"
-                placeholder="Enter the explanation or answer key"
+                placeholder="Masukkan penjelasan atau kunci jawaban"
                 value={formData.explanation || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, explanation: e.target.value })
@@ -664,16 +664,16 @@ export default function AdminQuestions() {
               onClick={handleCloseDialog}
               disabled={submitting}
             >
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Menyimpan...
                 </>
               ) : (
-                "Save"
+                "Simpan"
               )}
             </Button>
           </DialogFooter>
@@ -684,24 +684,24 @@ export default function AdminQuestions() {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Question Details</DialogTitle>
+            <DialogTitle>Detail Pertanyaan</DialogTitle>
             <DialogDescription>
-              Manage options for this question
+              Kelola opsi untuk pertanyaan ini
             </DialogDescription>
           </DialogHeader>
 
           {selectedQuestion && (
             <Tabs defaultValue="details" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="details">Detail</TabsTrigger>
                 <TabsTrigger value="options">
-                  Options ({selectedQuestion.options?.length || 0})
+                  Opsi ({selectedQuestion.options?.length || 0})
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="details" className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-sm font-semibold">Question</Label>
+                  <Label className="text-sm font-semibold">Pertanyaan</Label>
                   <p className="text-sm p-3 bg-muted rounded-md whitespace-pre-wrap">
                     {selectedQuestion.question}
                   </p>
@@ -718,7 +718,7 @@ export default function AdminQuestions() {
 
                 {selectedQuestion.explanation && (
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Explanation</Label>
+                    <Label className="text-sm font-semibold">Penjelasan</Label>
                     <p className="text-sm p-3 bg-muted rounded-md whitespace-pre-wrap">
                       {selectedQuestion.explanation}
                     </p>
@@ -730,7 +730,7 @@ export default function AdminQuestions() {
                 <div className="space-y-3">
                   {(!selectedQuestion.options || selectedQuestion.options.length === 0) ? (
                     <p className="text-sm text-muted-foreground text-center py-4">
-                      No options yet. Add one to get started.
+                      Belum ada opsi. Tambah satu untuk memulai.
                     </p>
                   ) : (
                     selectedQuestion.options.map((option) => {
@@ -769,7 +769,7 @@ export default function AdminQuestions() {
                                 Score: {option.score_value}
                                 {isHighest && (
                                   <Badge className="ml-2" variant="default">
-                                    Highest
+                                    Tertinggi
                                   </Badge>
                                 )}
                               </div>

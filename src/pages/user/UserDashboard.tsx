@@ -107,13 +107,13 @@ export default function UserDashboard() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Welcome back, {user?.name?.split(" ")[0]}!</h1>
-          <p className="text-muted-foreground">Track your progress and continue learning.</p>
+          <h1 className="text-2xl font-bold">Selamat datang kembali, {user?.name?.split(" ")[0]}!</h1>
+          <p className="text-muted-foreground">Pantau kemajuan Anda dan teruslah belajar.</p>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Loading dashboard...</p>
+            <p className="text-muted-foreground">Memuat dashboard...</p>
           </div>
         ) : error ? (
           <div className="rounded-lg border border-destructive bg-destructive/10 p-4">
@@ -124,17 +124,17 @@ export default function UserDashboard() {
             {/* Stats Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
-                title="Active Packages"
+                title="Paket Aktif"
                 value={data.summary.active_packages}
                 icon={Package}
               />
               <StatCard
-                title="Completed Practices"
+                title="Latihan Selesai"
                 value={data.summary.completed_practices}
                 icon={FileQuestion}
               />
               <StatCard
-                title="Completed Tryouts"
+                title="Tryout Selesai"
                 value={data.summary.completed_tryouts}
                 icon={ClipboardList}
               />
@@ -142,21 +142,21 @@ export default function UserDashboard() {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
-                title="Average Score"
+                title="Skor Rata-rata"
                 value={`${data.summary.average_score_percent}%`}
                 icon={TrendingUp}
                 variant="gradient"
               />
               <StatCard
-                title="Current Rank"
+                title="Peringkat Saat Ini"
                 value={`#${data.summary.current_rank}`}
                 icon={Trophy}
                 variant="primary"
               />
               <StatCard
-                title="Study Time"
-                value={`${Math.round(data.summary.study_time_minutes / 60)}h`}
-                subtitle={`${data.summary.study_time_minutes} minutes total`}
+                title="Waktu Belajar"
+                value={`${Math.round(data.summary.study_time_minutes / 60)}j`}
+                subtitle={`total ${data.summary.study_time_minutes} menit`}
                 icon={Clock}
               />
             </div>
@@ -164,14 +164,14 @@ export default function UserDashboard() {
             {/* Progress Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Learning Progress</CardTitle>
-                <CardDescription>Your overall learning journey</CardDescription>
+                <CardTitle>Kemajuan Belajar</CardTitle>
+                <CardDescription>Perjalanan belajar Anda secara keseluruhan</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
                     <div className="mb-2 flex justify-between text-sm">
-                      <span>Practice Questions</span>
+                      <span>Pertanyaan Latihan</span>
                       <span className="text-muted-foreground">
                         {data.learning_progress.practice_questions_percent}%
                       </span>
@@ -180,7 +180,7 @@ export default function UserDashboard() {
                   </div>
                   <div>
                     <div className="mb-2 flex justify-between text-sm">
-                      <span>Tryout Completion</span>
+                      <span>Penyelesaian Tryout</span>
                       <span className="text-muted-foreground">
                         {data.learning_progress.tryout_completion_percent}%
                       </span>
@@ -189,7 +189,7 @@ export default function UserDashboard() {
                   </div>
                   <div>
                     <div className="mb-2 flex justify-between text-sm">
-                      <span>Materials Studied</span>
+                      <span>Materi yang Dipelajari</span>
                       <span className="text-muted-foreground">
                         {data.learning_progress.materials_studied_percent}%
                       </span>
@@ -265,8 +265,8 @@ export default function UserDashboard() {
               {/* Recent Practice */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your practice history</CardDescription>
+                  <CardTitle>Aktivitas Terbaru</CardTitle>
+                  <CardDescription>Riwayat latihan Anda</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -276,7 +276,7 @@ export default function UserDashboard() {
                           <div>
                             <p className="font-medium">{activity.package_name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {activity.correct_count}/{activity.total_questions} correct
+                              {activity.correct_count}/{activity.total_questions} benar
                             </p>
                           </div>
                           <div className="text-right">
@@ -288,7 +288,7 @@ export default function UserDashboard() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-muted-foreground">No recent activity</p>
+                      <p className="text-sm text-muted-foreground">Tidak ada aktivitas terbaru</p>
                     )}
                   </div>
                 </CardContent>

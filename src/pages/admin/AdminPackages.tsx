@@ -95,9 +95,9 @@ export default function AdminPackages() {
       setCategories(categoriesData);
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to load data",
+          error instanceof Error ? error.message : "Gagal memuat data",
         variant: "destructive",
       });
     } finally {
@@ -147,8 +147,8 @@ export default function AdminPackages() {
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
       toast({
-        title: "Error",
-        description: "Package name is required",
+        title: "Kesalahan",
+        description: "Nama paket wajib diisi",
         variant: "destructive",
       });
       return;
@@ -156,8 +156,8 @@ export default function AdminPackages() {
 
     if (formData.category_id === 0) {
       toast({
-        title: "Error",
-        description: "Please select a category",
+        title: "Kesalahan",
+        description: "Silakan pilih kategori",
         variant: "destructive",
       });
       return;
@@ -165,8 +165,8 @@ export default function AdminPackages() {
 
     if (formData.duration_minutes === 0) {
       toast({
-        title: "Error",
-        description: "Duration must be greater than 0",
+        title: "Kesalahan",
+        description: "Durasi harus lebih besar dari 0",
         variant: "destructive",
       });
       return;
@@ -184,8 +184,8 @@ export default function AdminPackages() {
       if (dialogMode === "create") {
         await packageService.createPackage(packageData as CreatePackageInput);
         toast({
-          title: "Success",
-          description: "Package created successfully",
+          title: "Berhasil",
+          description: "Paket berhasil dibuat",
         });
       } else if (dialogMode === "edit" && selectedPackage) {
         await packageService.updatePackage(
@@ -193,8 +193,8 @@ export default function AdminPackages() {
           packageData as UpdatePackageInput
         );
         toast({
-          title: "Success",
-          description: "Package updated successfully",
+          title: "Berhasil",
+          description: "Paket berhasil diperbarui",
         });
       }
 
@@ -202,9 +202,9 @@ export default function AdminPackages() {
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Operation failed",
+          error instanceof Error ? error.message : "Operasi gagal",
         variant: "destructive",
       });
     } finally {
@@ -224,17 +224,17 @@ export default function AdminPackages() {
       setSubmitting(true);
       await packageService.deletePackage(selectedPackage.id);
       toast({
-        title: "Success",
-        description: "Package deleted successfully",
+        title: "Berhasil",
+        description: "Paket berhasil dihapus",
       });
       setDeleteDialogOpen(false);
       setSelectedPackage(null);
       loadData();
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to delete package",
+          error instanceof Error ? error.message : "Gagal menghapus paket",
         variant: "destructive",
       });
     } finally {
@@ -271,21 +271,21 @@ export default function AdminPackages() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Packages</h1>
-            <p className="text-muted-foreground">Manage practice packages</p>
+            <h1 className="text-2xl font-bold">Paket</h1>
+            <p className="text-muted-foreground">Kelola paket latihan</p>
           </div>
           <Button onClick={() => handleOpenDialog("create")}>
             <Plus className="mr-2 h-4 w-4" />
-            Add Package
+            Tambah Paket
           </Button>
         </div>
 
         {/* Packages Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Package List</CardTitle>
+            <CardTitle>Daftar Paket</CardTitle>
             <CardDescription>
-              Total packages: {packages.length}
+              Total paket: {packages.length}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -295,7 +295,7 @@ export default function AdminPackages() {
               </div>
             ) : packages.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
-                No packages found. Create one to get started.
+                Paket tidak ditemukan. Buat satu untuk memulai.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -303,15 +303,15 @@ export default function AdminPackages() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Questions</TableHead>
-                      <TableHead>Materials</TableHead>
-                      <TableHead>Free</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Tipe</TableHead>
+                      <TableHead>Kategori</TableHead>
+                      <TableHead>Durasi</TableHead>
+                      <TableHead>Pertanyaan</TableHead>
+                      <TableHead>Materi</TableHead>
+                      <TableHead>Akses</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-32 text-right">Actions</TableHead>
+                      <TableHead className="w-32 text-right">Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -330,12 +330,12 @@ export default function AdminPackages() {
                         <TableCell className="text-center">{pkg.material_count || 0}</TableCell>
                         <TableCell>
                           <Badge variant={pkg.is_free ? "secondary" : "outline"}>
-                            {pkg.is_free ? "Free" : "Paid"}
+                            {pkg.is_free ? "Gratis" : "Berbayar"}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant={pkg.is_active ? "default" : "secondary"}>
-                            {pkg.is_active ? "Active" : "Inactive"}
+                            {pkg.is_active ? "Aktif" : "Nonaktif"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -348,7 +348,7 @@ export default function AdminPackages() {
                                   `/admin/packages/${pkg.id}/materials`
                                 )
                               }
-                              title="Manage Materials"
+                              title="Kelola Materi"
                             >
                               <BookOpen className="h-4 w-4" />
                             </Button>
@@ -360,7 +360,7 @@ export default function AdminPackages() {
                                   `/admin/packages/${pkg.id}/questions`
                                 )
                               }
-                              title="Manage Questions"
+                              title="Kelola Pertanyaan"
                             >
                               <Settings className="h-4 w-4" />
                             </Button>
@@ -395,21 +395,21 @@ export default function AdminPackages() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === "create" ? "Create Package" : "Edit Package"}
+              {dialogMode === "create" ? "Buat Paket" : "Edit Paket"}
             </DialogTitle>
             <DialogDescription>
               {dialogMode === "create"
-                ? "Add a new package"
-                : "Update package information"}
+                ? "Tambah paket baru"
+                : "Perbarui informasi paket"}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Package Name</Label>
+              <Label htmlFor="name">Nama Paket</Label>
               <Input
                 id="name"
-                placeholder="e.g., Mathematics Practice Set"
+                placeholder="misal: Set Latihan Matematika"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -419,7 +419,7 @@ export default function AdminPackages() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="type">Package Type</Label>
+              <Label htmlFor="type">Tipe Paket</Label>
               <Select
                 value={formData.type}
                 onValueChange={(value: PackageType) =>
@@ -439,7 +439,7 @@ export default function AdminPackages() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category</Label>
+              <Label htmlFor="category_id">Kategori</Label>
               <Select
                 value={formData.category_id.toString()}
                 onValueChange={(value) =>
@@ -461,11 +461,11 @@ export default function AdminPackages() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="duration_minutes">Duration (minutes)</Label>
+              <Label htmlFor="duration_minutes">Durasi (menit)</Label>
               <Input
                 id="duration_minutes"
                 type="number"
-                placeholder="e.g., 60 (1 hour)"
+                placeholder="misal: 60 (1 jam)"
                 value={formData.duration_minutes}
                 onChange={(e) =>
                   setFormData({
@@ -486,7 +486,7 @@ export default function AdminPackages() {
                 }
                 disabled={submitting}
               />
-              <Label htmlFor="is_active">Active</Label>
+              <Label htmlFor="is_active">Aktif</Label>
             </div>
 
             <div className="flex items-center gap-2">
@@ -498,7 +498,7 @@ export default function AdminPackages() {
                 }
                 disabled={submitting}
               />
-              <Label htmlFor="is_free">Free Package</Label>
+              <Label htmlFor="is_free">Paket Gratis</Label>
             </div>
           </div>
 
@@ -508,16 +508,16 @@ export default function AdminPackages() {
               onClick={handleCloseDialog}
               disabled={submitting}
             >
-              Cancel
+              Batal
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Menyimpan...
                 </>
               ) : (
-                "Save"
+                "Simpan"
               )}
             </Button>
           </DialogFooter>
@@ -527,13 +527,13 @@ export default function AdminPackages() {
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogTitle>Delete Package</AlertDialogTitle>
+          <AlertDialogTitle>Hapus Paket</AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this package? This action cannot
-            be undone.
+            Apakah Anda yakin ingin menghapus paket ini? Tindakan ini tidak dapat
+            dibatalkan.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={submitting}
@@ -542,10 +542,10 @@ export default function AdminPackages() {
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Menghapus...
                 </>
               ) : (
-                "Delete"
+                "Hapus"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

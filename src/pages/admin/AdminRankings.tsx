@@ -35,8 +35,8 @@ export default function AdminRankings() {
     <DashboardLayout type="admin">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Rankings & Leaderboard</h1>
-          <p className="text-muted-foreground">View top performers across all tryouts</p>
+          <h1 className="text-2xl font-bold">Peringkat & Papan Skor</h1>
+          <p className="text-muted-foreground">Lihat performa terbaik di semua tryout</p>
         </div>
 
         {/* Top 3 Cards */}
@@ -57,16 +57,16 @@ export default function AdminRankings() {
               <p className="text-sm text-muted-foreground">{ranking.tryoutName}</p>
               <div className="mt-4">
                 <p className="text-3xl font-bold text-primary">{ranking.score}</p>
-                <p className="text-sm text-muted-foreground">points</p>
+                <p className="text-sm text-muted-foreground">poin</p>
               </div>
               <div className="mt-4 flex justify-center gap-4 text-sm">
                 <div>
                   <p className="font-medium">{ranking.correctAnswers}/{ranking.totalQuestions}</p>
-                  <p className="text-muted-foreground">Correct</p>
+                  <p className="text-muted-foreground">Benar</p>
                 </div>
                 <div>
                   <p className="font-medium">{Math.round(ranking.timeSpent / 60)}m</p>
-                  <p className="text-muted-foreground">Time</p>
+                  <p className="text-muted-foreground">Waktu</p>
                 </div>
               </div>
             </div>
@@ -76,7 +76,7 @@ export default function AdminRankings() {
         {/* Full Rankings Table */}
         <div className="rounded-lg border bg-card">
           <div className="p-4 border-b">
-            <h3 className="font-semibold">All Rankings</h3>
+            <h3 className="font-semibold">Semua Peringkat</h3>
           </div>
           <div className="divide-y">
             {rankings.map((ranking) => (
@@ -100,11 +100,11 @@ export default function AdminRankings() {
                 <div className="flex items-center gap-6">
                   <div className="text-right">
                     <p className="font-semibold">{ranking.correctAnswers}/{ranking.totalQuestions}</p>
-                    <p className="text-xs text-muted-foreground">Correct</p>
+                    <p className="text-xs text-muted-foreground">Benar</p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">{Math.round(ranking.timeSpent / 60)}m</p>
-                    <p className="text-xs text-muted-foreground">Time</p>
+                    <p className="text-xs text-muted-foreground">Waktu</p>
                   </div>
                   <Badge variant="default" className="ml-4">
                     {ranking.score} pts

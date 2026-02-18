@@ -35,8 +35,8 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
+        title: "Password tidak cocok",
+        description: "Pastikan konfirmasi password sama dengan password Anda.",
         variant: "destructive",
       });
       return;
@@ -44,8 +44,8 @@ export default function RegisterPage() {
 
     if (password.length < 6) {
       toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters.",
+        title: "Password terlalu pendek",
+        description: "Password harus minimal 6 karakter.",
         variant: "destructive",
       });
       return;
@@ -213,8 +213,8 @@ export default function RegisterPage() {
                         setBirthDate(date);
                         setBirthDateOpen(false);
                       }}
-                      fromDate={new Date(1950, 0, 1)}
-                      toDate={new Date()}
+                      fromYear={1950}
+                      toYear={new Date().getFullYear()}
                     />
 
                     {/* Footer */}
@@ -228,14 +228,14 @@ export default function RegisterPage() {
                         }}
                         className="flex-1 rounded-lg"
                       >
-                        Clear
+                        Hapus
                       </Button>
                       <Button
                         size="sm"
                         onClick={() => setBirthDateOpen(false)}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 rounded-lg"
                       >
-                        Confirm
+                        Konfirmasi
                       </Button>
                     </div>
                   </div>

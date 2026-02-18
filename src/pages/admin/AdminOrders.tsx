@@ -124,8 +124,8 @@ export default function AdminOrders() {
       setSummary(stats);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch orders",
+        title: "Kesalahan",
+        description: error instanceof Error ? error.message : "Gagal mengambil data order",
         variant: "destructive",
       });
     } finally {
@@ -141,8 +141,8 @@ export default function AdminOrders() {
       setSelectedUser(response.data);
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to fetch user details",
+        title: "Kesalahan",
+        description: error instanceof Error ? error.message : "Gagal mengambil detail pengguna",
         variant: "destructive",
       });
     } finally {
@@ -163,8 +163,8 @@ export default function AdminOrders() {
 
       if (response.success) {
         toast({
-          title: "Success",
-          description: "Order marked as paid and user packages have been granted",
+          title: "Berhasil",
+          description: "Order ditandai sebagai terbayar dan paket pengguna telah diberikan",
         });
 
         // Update the order in the list
@@ -175,8 +175,8 @@ export default function AdminOrders() {
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to mark order as paid",
+        title: "Kesalahan",
+        description: error instanceof Error ? error.message : "Gagal menandai order sebagai terbayar",
         variant: "destructive",
       });
     } finally {
@@ -189,33 +189,33 @@ export default function AdminOrders() {
 
     setIsCancelling(true);
     try {
-        await orderService.cancelOrder(orderToCancel.id);
-        
-        toast({
-            title: "Success",
-            description: "Order berhasil dibatalkan",
-        });
+      await orderService.cancelOrder(orderToCancel.id);
 
-        // Update list
-        setOrders(orders.map(o => o.id === orderToCancel.id ? { ...o, status: 'cancelled' } : o));
-        
-        // Update summary if needed (simplified)
-        fetchOrders();
+      toast({
+        title: "Berhasil",
+        description: "Order berhasil dibatalkan",
+      });
 
-        setOrderToCancel(null);
-        // Close detail dialog if it was open for this order
-        if (selectedOrder?.id === orderToCancel.id) {
-            setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
-        }
+      // Update list
+      setOrders(orders.map(o => o.id === orderToCancel.id ? { ...o, status: 'cancelled' } : o));
+
+      // Update summary if needed (simplified)
+      fetchOrders();
+
+      setOrderToCancel(null);
+      // Close detail dialog if it was open for this order
+      if (selectedOrder?.id === orderToCancel.id) {
+        setSelectedOrder(prev => prev ? { ...prev, status: 'cancelled' } : null);
+      }
 
     } catch (error) {
-        toast({
-            title: "Error",
-            description: error instanceof Error ? error.message : "Gagal membatalkan order",
-            variant: "destructive",
-        });
+      toast({
+        title: "Kesalahan",
+        description: error instanceof Error ? error.message : "Gagal membatalkan order",
+        variant: "destructive",
+      });
     } finally {
-        setIsCancelling(false);
+      setIsCancelling(false);
     }
   };
 
@@ -297,7 +297,7 @@ export default function AdminOrders() {
             </CardContent>
           </Card>
 
-            <Card>
+          <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2 text-red-700">
                 <XCircle className="h-4 w-4" />
@@ -444,12 +444,12 @@ export default function AdminOrders() {
                           </Button>
                           {order.status === 'pending' && (
                             <Button
-                                variant="destructive"
-                                size="sm"
-                                className="ml-2"
-                                onClick={() => setOrderToCancel(order)}
+                              variant="destructive"
+                              size="sm"
+                              className="ml-2"
+                              onClick={() => setOrderToCancel(order)}
                             >
-                                Batal
+                              Batal
                             </Button>
                           )}
                         </TableCell>
@@ -688,32 +688,32 @@ export default function AdminOrders() {
               {/* Payment Callback Info (VA Numbers etc) */}
               {selectedOrder.raw_callback && typeof selectedOrder.raw_callback === 'object' && (
                 <div className="space-y-3">
-                    <h3 className="font-semibold">Detail Teknis Pembayaran</h3>
-                    <div className="bg-muted p-4 rounded-lg space-y-3 text-sm overflow-x-auto">
-                        {/* VA Numbers */}
-                        {'va_numbers' in selectedOrder.raw_callback && 
-                         Array.isArray((selectedOrder.raw_callback as any).va_numbers) && 
-                         (selectedOrder.raw_callback as any).va_numbers.map((va: any, i: number) => (
-                            <div key={i} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
-                                <span className="text-muted-foreground font-medium uppercase">{va.bank} Virtual Account:</span>
-                                <span className="font-mono text-lg font-bold">{va.va_number}</span>
-                            </div>
-                        ))}
-                        
-                        {/* Other useful info if needed */}
-                        {'payment_type' in selectedOrder.raw_callback && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Tipe Pembayaran:</span>
-                                <span className="font-mono">{(selectedOrder.raw_callback as any).payment_type}</span>
-                            </div>
-                        )}
-                         {'transaction_time' in selectedOrder.raw_callback && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Waktu Transaksi:</span>
-                                <span>{(selectedOrder.raw_callback as any).transaction_time}</span>
-                            </div>
-                        )}
-                    </div>
+                  <h3 className="font-semibold">Detail Teknis Pembayaran</h3>
+                  <div className="bg-muted p-4 rounded-lg space-y-3 text-sm overflow-x-auto">
+                    {/* VA Numbers */}
+                    {'va_numbers' in selectedOrder.raw_callback &&
+                      Array.isArray((selectedOrder.raw_callback as any).va_numbers) &&
+                      (selectedOrder.raw_callback as any).va_numbers.map((va: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
+                          <span className="text-muted-foreground font-medium uppercase">{va.bank} Virtual Account:</span>
+                          <span className="font-mono text-lg font-bold">{va.va_number}</span>
+                        </div>
+                      ))}
+
+                    {/* Other useful info if needed */}
+                    {'payment_type' in selectedOrder.raw_callback && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Tipe Pembayaran:</span>
+                        <span className="font-mono">{(selectedOrder.raw_callback as any).payment_type}</span>
+                      </div>
+                    )}
+                    {'transaction_time' in selectedOrder.raw_callback && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Waktu Transaksi:</span>
+                        <span>{(selectedOrder.raw_callback as any).transaction_time}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -750,12 +750,12 @@ export default function AdminOrders() {
               </Button>
             )}
             {selectedOrder?.status === "pending" && (
-                <Button
-                    variant="destructive"
-                    onClick={() => setOrderToCancel(selectedOrder)}
-                >
-                    Batalkan Order
-                </Button>
+              <Button
+                variant="destructive"
+                onClick={() => setOrderToCancel(selectedOrder)}
+              >
+                Batalkan Order
+              </Button>
             )}
           </DialogFooter>
         </DialogContent>
@@ -767,21 +767,21 @@ export default function AdminOrders() {
           <AlertDialogHeader>
             <AlertDialogTitle>Batalkan Order?</AlertDialogTitle>
             <AlertDialogDescription>
-              Apakah Anda yakin ingin membatalkan order #{orderToCancel?.id}? 
+              Apakah Anda yakin ingin membatalkan order #{orderToCancel?.id}?
               Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCancelling}>Batal</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={(e) => {
-                    e.preventDefault();
-                    handleCancelOrder();
-                }}
-                disabled={isCancelling}
-                className="bg-red-600 hover:bg-red-700"
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelOrder();
+              }}
+              disabled={isCancelling}
+              className="bg-red-600 hover:bg-red-700"
             >
-                {isCancelling ? "Memproses..." : "Ya, Batalkan"}
+              {isCancelling ? "Memproses..." : "Ya, Batalkan"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -36,8 +36,8 @@ export default function BulkQuestionImport() {
   const handleSubmitImport = async () => {
     if (!file) {
       toast({
-        title: "Error",
-        description: "Please select a file first",
+        title: "Kesalahan",
+        description: "Silakan pilih file terlebih dahulu",
         variant: "destructive",
       });
       return;
@@ -50,14 +50,14 @@ export default function BulkQuestionImport() {
       setResultOpen(true);
 
       toast({
-        title: "Success",
-        description: response.message || `Created ${response.success} question(s)`,
+        title: "Berhasil",
+        description: response.message || `Berhasil membuat ${response.success} pertanyaan`,
       });
     } catch (error) {
       toast({
-        title: "Error",
+        title: "Kesalahan",
         description:
-          error instanceof Error ? error.message : "Failed to import questions",
+          error instanceof Error ? error.message : "Gagal mengimpor pertanyaan",
         variant: "destructive",
       });
     } finally {
@@ -70,31 +70,31 @@ export default function BulkQuestionImport() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold">Bulk Import Questions</h1>
+          <h1 className="text-2xl font-bold">Impor Pertanyaan Massal</h1>
           <p className="text-muted-foreground">
-            Import multiple questions with options using Excel template
+            Impor beberapa pertanyaan beserta pilihan menggunakan templat Excel
           </p>
         </div>
 
         {/* Upload Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Import Questions</CardTitle>
+            <CardTitle>Impor Pertanyaan</CardTitle>
             <CardDescription>
-              Upload an Excel file (.xlsx, .xls) following the provided template
+              Unggah file Excel (.xlsx, .xls) mengikuti templat yang disediakan
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Template Information */}
             <div className="bg-muted/50 p-4 rounded-lg flex items-center justify-between">
               <div>
-                <p className="font-medium">Excel Template</p>
-                <p className="text-sm text-muted-foreground">Download or copy the template to ensure correct format</p>
+                <p className="font-medium">Templat Excel</p>
+                <p className="text-sm text-muted-foreground">Unduh atau salin templat untuk memastikan format yang benar</p>
               </div>
               <Button variant="outline" asChild>
                 <a href={TEMPLATE_LINK} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  View Template
+                  Lihat Templat
                 </a>
               </Button>
             </div>
@@ -114,10 +114,10 @@ export default function BulkQuestionImport() {
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium">
-                    {file ? file.name : "Click to upload or drag and drop"}
+                    {file ? file.name : "Klik untuk mengunggah atau seret dan lepas"}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Excel files (.xlsx, .xls)
+                    File Excel (.xlsx, .xls)
                   </p>
                 </div>
               </div>
@@ -133,12 +133,12 @@ export default function BulkQuestionImport() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Importing...
+                    Mengimpor...
                   </>
                 ) : (
                   <>
                     <FileSpreadsheet className="mr-2 h-4 w-4" />
-                    Upload & Import
+                    Unggah & Impor
                   </>
                 )}
               </Button>
@@ -149,49 +149,49 @@ export default function BulkQuestionImport() {
         {/* Format Guide */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Excel Format Guide</CardTitle>
-            <CardDescription>Required columns in your Excel file</CardDescription>
+            <CardTitle className="text-base">Panduan Format Excel</CardTitle>
+            <CardDescription>Kolom yang wajib di file Excel Anda</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="bg-muted text-left">
-                    <th className="p-2 border">Column</th>
-                    <th className="p-2 border">Description</th>
-                    <th className="p-2 border">Required</th>
+                    <th className="p-2 border">Kolom</th>
+                    <th className="p-2 border">Deskripsi</th>
+                    <th className="p-2 border">Wajib</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td className="p-2 border font-mono">category_id</td>
-                    <td className="p-2 border">ID of the question category</td>
-                    <td className="p-2 border text-green-600">Yes</td>
+                    <td className="p-2 border">ID kategori pertanyaan</td>
+                    <td className="p-2 border text-green-600">Ya</td>
                   </tr>
                   <tr>
                     <td className="p-2 border font-mono">question</td>
-                    <td className="p-2 border">The question text</td>
-                    <td className="p-2 border text-green-600">Yes</td>
+                    <td className="p-2 border">Teks pertanyaan</td>
+                    <td className="p-2 border text-green-600">Ya</td>
                   </tr>
                   <tr>
                     <td className="p-2 border font-mono">question_type</td>
-                    <td className="p-2 border">'text' or 'image'</td>
-                    <td className="p-2 border">No (default: text)</td>
+                    <td className="p-2 border">'text' atau 'image'</td>
+                    <td className="p-2 border">Tidak (default: text)</td>
                   </tr>
                   <tr>
                     <td className="p-2 border font-mono">question_image_url</td>
-                    <td className="p-2 border">Public URL for question image</td>
-                    <td className="p-2 border">No</td>
+                    <td className="p-2 border">URL publik untuk gambar pertanyaan</td>
+                    <td className="p-2 border">Tidak</td>
                   </tr>
                   <tr>
                     <td className="p-2 border font-mono">opt_x_text</td>
-                    <td className="p-2 border">Text for option A, B, C...</td>
+                    <td className="p-2 border">Teks untuk pilihan A, B, C...</td>
                     <td className="p-2 border text-green-600">Min 2</td>
                   </tr>
                   <tr>
                     <td className="p-2 border font-mono">opt_x_score</td>
-                    <td className="p-2 border">Score value for option X</td>
-                    <td className="p-2 border text-green-600">Yes</td>
+                    <td className="p-2 border">Nilai skor untuk pilihan X</td>
+                    <td className="p-2 border text-green-600">Ya</td>
                   </tr>
                 </tbody>
               </table>
@@ -204,7 +204,7 @@ export default function BulkQuestionImport() {
       <Dialog open={resultOpen} onOpenChange={setResultOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Import Result</DialogTitle>
+            <DialogTitle>Hasil Impor</DialogTitle>
           </DialogHeader>
 
           {result && (
@@ -216,7 +216,7 @@ export default function BulkQuestionImport() {
                       <CheckCircle className="h-5 w-5 text-green-600" />
                       <div>
                         <p className="text-sm text-muted-foreground">
-                          Created
+                          Dibuat
                         </p>
                         <p className="text-2xl font-bold">{result.success}</p>
                       </div>
@@ -228,7 +228,7 @@ export default function BulkQuestionImport() {
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-5 w-5 text-red-600" />
                       <div>
-                        <p className="text-sm text-muted-foreground">Failed</p>
+                        <p className="text-sm text-muted-foreground">Gagal</p>
                         <p className="text-2xl font-bold">{result.failed}</p>
                       </div>
                     </div>
@@ -238,7 +238,7 @@ export default function BulkQuestionImport() {
 
               {result.data?.errors && result.data.errors.length > 0 && (
                 <div className="space-y-2">
-                  <p className="font-medium text-sm">Errors:</p>
+                  <p className="font-medium text-sm">Kesalahan:</p>
                   <div className="max-h-60 overflow-y-auto space-y-1 pr-2">
                     {result.data.errors.map((err: any, idx: number) => (
                       <div key={idx} className="text-sm p-2 bg-red-50 rounded text-red-700 border border-red-100">
@@ -254,7 +254,7 @@ export default function BulkQuestionImport() {
           )}
 
           <DialogFooter>
-            <Button onClick={() => setResultOpen(false)}>Close</Button>
+            <Button onClick={() => setResultOpen(false)}>Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

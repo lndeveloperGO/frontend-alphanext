@@ -62,7 +62,13 @@ export const authService = {
   /**
    * Update user profile
    */
-  async updateProfile(data: { name: string; email: string }) {
+  async updateProfile(data: { 
+    name: string; 
+    email: string;
+    phone?: string;
+    school_origin?: string;
+    birth_date?: string;
+  }) {
     try {
       const apiBaseUrl = getApiBaseUrl();
       const response = await fetch(`${apiBaseUrl}/me/profile`, {

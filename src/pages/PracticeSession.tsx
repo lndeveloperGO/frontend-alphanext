@@ -635,8 +635,11 @@ export default function PracticeSession() {
                   </p>
 
                   <Badge
-                    variant={isPassed ? "success" : "destructive"}
-                    className="px-6 py-2 text-lg font-bold rounded-full stagger-3 animate-slide-up shadow-sm"
+                    variant={isPassed ? "secondary" : "destructive"}
+                    className={cn(
+                      "px-6 py-2 text-lg font-bold rounded-full stagger-3 animate-slide-up shadow-sm",
+                      isPassed && "bg-success text-success-foreground hover:bg-success/80"
+                    )}
                   >
                     {isPassed ? "LULUS" : "TIDAK LULUS"}
                   </Badge>
