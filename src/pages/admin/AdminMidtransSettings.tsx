@@ -116,6 +116,16 @@ export default function AdminMidtransSettings() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {(settings.server_key || settings.client_key) && (
+                                <Alert className="bg-amber-50 border-amber-200">
+                                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                                    <AlertTitle className="text-amber-800">Peringatan Maintenance</AlertTitle>
+                                    <AlertDescription className="text-amber-700 font-medium">
+                                        Bagian ini jangan diganti, hanya boleh dilakukan oleh maintainer.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+
                             <div className="grid gap-2">
                                 <Label htmlFor="server_key">Server Key</Label>
                                 <Input
