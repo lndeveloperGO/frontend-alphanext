@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ShoppingCart, CheckCircle2, Clock, XCircle, ArrowLeft, Package, DollarSign, AlertCircle } from "lucide-react";
 import { orderService, Order, OrderStatus } from "@/lib/orderService";
 import { useSnap } from "@/hooks/useSnap";
+import { midtransService } from "@/lib/midtransService";
 
 export default function UserOrders() {
   const navigate = useNavigate();
@@ -110,7 +111,14 @@ export default function UserOrders() {
       }
 
       if (token) {
-        snapPay(token, {
+        // Get keys and environment dynamically
+        const configRes = await midtransService.getPublicSettings();
+        const config = {
+          clientKey: configRes.data.client_key,
+          isProduction: configRes.data.is_production
+        };
+
+        snapPay(token, config, {
           onSuccess: (result: any) => {
             console.log("Payment success", result);
             toast({
