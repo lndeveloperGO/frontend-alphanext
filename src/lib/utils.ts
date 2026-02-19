@@ -26,3 +26,29 @@ export function shuffleArray<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+export function formatGoogleDriveEmbedUrl(url: string | null): string {
+  if (!url) return "";
+  if (url.includes("drive.google.com/file/d/")) {
+    // Convert /view to /preview
+    return url.replace(/\/view(\?.*)?$/, "/preview");
+  }
+  return url;
+}
+
+export function getFileIdFromDriveUrl(url: string | null): string | null {
+  if (!url) return null;
+  const match = url.match(/\/file\/d\/([^\/\?]+)/);
+  return match ? match[1] : null;
+}
+
+export function formatGoogleDriveDownloadUrl(url: string | null): string {
+  const fileId = getFileIdFromDriveUrl(url);
+  if (!fileId) return url || "";
+  
+  const downloadUrl = `/uc?export=download&id=${fileId}`;
+  
+  // Use our internal Vite proxy (defined in vite.config.ts) to bypass CORS during development
+  // This will proxy /google-drive/... to https://docs.google.com/...
+  return `/google-drive${downloadUrl}`;
+}

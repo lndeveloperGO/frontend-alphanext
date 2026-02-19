@@ -242,7 +242,7 @@ export default function AdminMaterials() {
                 <TableHead>Tipe</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Akses</TableHead>
-                <TableHead>Detail</TableHead>
+                {/* <TableHead>Detail</TableHead> */}
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -294,11 +294,11 @@ export default function AdminMaterials() {
                         {material.is_free ? "Gratis" : "Premium"}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       {material.type === "video"
                         ? `${material.duration || 0} mnt`
                         : `${material.pages || 0} hal`}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         {material.type === "video" && (
@@ -411,7 +411,7 @@ export default function AdminMaterials() {
                     placeholder="https://example.com/book.pdf"
                   />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="pages">Pages</Label>
                   <Input
                     id="pages"
@@ -419,7 +419,7 @@ export default function AdminMaterials() {
                     value={formData.pages}
                     onChange={(e) => setFormData({ ...formData, pages: parseInt(e.target.value) || 0 })}
                   />
-                </div>
+                </div> */}
               </div>
             ) : (
               <div className="space-y-2">

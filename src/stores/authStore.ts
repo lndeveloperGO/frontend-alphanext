@@ -21,7 +21,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (name: string, email: string, password: string, phone?: string, school_origin?: string, birth_date?: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, phone?: string, school_origin?: string, birth_date?: string) => Promise<{ success: boolean; error?: string; errors?: Record<string, string[]> }>;
   logout: () => void;
   setUser: (user: User) => void;
 }
@@ -99,7 +99,11 @@ export const useAuthStore = create<AuthState>()(
 
           if (!response.ok) {
             const error = await response.json();
-            return { success: false, error: error.message || 'Registration failed' };
+            return { 
+              success: false, 
+              error: error.message || 'Registration failed',
+              errors: error.errors
+            };
           }
 
           // Registrasi berhasil — tidak auto-login; user harus login di halaman login

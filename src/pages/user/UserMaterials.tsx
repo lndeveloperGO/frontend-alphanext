@@ -149,11 +149,11 @@ export default function UserMaterials() {
       <CardContent className="pt-0">
         <div className="flex items-center justify-between">
           <Badge variant="outline">{material.category}</Badge>
-          <span className="text-sm text-muted-foreground">
+          {/* <span className="text-sm text-muted-foreground">
             {material.type === "video"
               ? `${material.duration} min`
               : `${material.pages} pages`}
-          </span>
+          </span> */}
         </div>
       </CardContent>
     </Card>
@@ -198,11 +198,11 @@ export default function UserMaterials() {
             </p>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="outline" className="text-xs">{material.category}</Badge>
-              <span className="text-xs text-muted-foreground">
+              {/* <span className="text-xs text-muted-foreground">
                 {material.type === "video"
                   ? `${material.duration} min`
                   : `${material.pages} pages`}
-              </span>
+              </span> */}
             </div>
           </div>
         </div>

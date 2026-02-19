@@ -64,9 +64,18 @@ export default function RegisterPage() {
       });
       navigate("/login", { replace: true });
     } else {
+      let errorMessage = result.error || "Terjadi kesalahan. Coba lagi.";
+
+      if (result.errors) {
+        const detailErrors = Object.values(result.errors).flat();
+        if (detailErrors.length > 0) {
+          errorMessage = detailErrors.join(" ");
+        }
+      }
+
       toast({
         title: "Pendaftaran gagal",
-        description: result.error || "Terjadi kesalahan. Coba lagi.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
