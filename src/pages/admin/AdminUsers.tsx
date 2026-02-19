@@ -73,6 +73,9 @@ export default function AdminUsers() {
     password: "",
     role: "user" as "admin" | "user",
     is_active: true,
+    school_origin: "",
+    phone: "",
+    birth_date: "",
   });
 
   // Fetch users from API
@@ -129,6 +132,9 @@ export default function AdminUsers() {
         password: "",
         role: user.role,
         is_active: user.is_active,
+        school_origin: user.school_origin || "",
+        phone: user.phone || "",
+        birth_date: user.birth_date ? user.birth_date.split('T')[0] : "",
       });
     } else {
       setEditingUser(null);
@@ -137,7 +143,10 @@ export default function AdminUsers() {
         email: "",
         password: "",
         role: "user",
-        is_active: true
+        is_active: true,
+        school_origin: "",
+        phone: "",
+        birth_date: "",
       });
     }
     setIsDialogOpen(true);
@@ -170,6 +179,9 @@ export default function AdminUsers() {
           name: formData.name,
           role: formData.role,
           is_active: formData.is_active,
+          school_origin: formData.school_origin,
+          phone: formData.phone,
+          birth_date: formData.birth_date,
         };
 
         await userService.updateUser(editingUser.id, updateData);
@@ -182,6 +194,9 @@ export default function AdminUsers() {
           password: formData.password,
           role: formData.role,
           is_active: formData.is_active,
+          school_origin: formData.school_origin,
+          phone: formData.phone,
+          birth_date: formData.birth_date,
         };
 
         await userService.createUser(createData);
@@ -336,6 +351,7 @@ export default function AdminUsers() {
               <TableRow>
                 <TableHead>Pengguna</TableHead>
                 <TableHead>Email</TableHead>
+                <TableHead>Asal Sekolah / HP</TableHead>
                 <TableHead>Peran</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Dibuat</TableHead>
@@ -376,6 +392,12 @@ export default function AdminUsers() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div className="font-medium text-muted-foreground">{user.school_origin || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{user.phone || "-"}</div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={user.role === "admin" ? "default" : "secondary"}>
                         {user.role}
@@ -502,6 +524,38 @@ export default function AdminUsers() {
               {editingUser && (
                 <p className="text-xs text-muted-foreground">Email tidak dapat diubah</p>
               )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="school_origin">Asal Sekolah</Label>
+              <Input
+                id="school_origin"
+                value={formData.school_origin}
+                onChange={(e) => setFormData({ ...formData, school_origin: e.target.value })}
+                placeholder="Masukkan asal sekolah"
+                disabled={loading}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">No. Telepon</Label>
+                <Input
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+62..."
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="birth_date">Tanggal Lahir</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={formData.birth_date}
+                  onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+                  disabled={loading}
+                />
+              </div>
             </div>
             {!editingUser && (
               <div className="space-y-2">

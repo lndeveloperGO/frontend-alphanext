@@ -25,6 +25,7 @@ import {
   User,
   Tag,
   ShoppingCart,
+  CreditCard,
 } from "lucide-react";
 
 interface NavItem {
@@ -46,6 +47,7 @@ const adminNavItems: NavItem[] = [
   { title: "Materi", href: "/admin/materials", icon: BookOpen },
   // { title: "Rankings", href: "/admin/rankings", icon: Trophy },
   { title: "Profil", href: "/admin/profile", icon: User },
+  { title: "Pengaturan Midtrans", href: "/admin/midtrans-settings", icon: CreditCard },
 ];
 
 const userNavItems: NavItem[] = [

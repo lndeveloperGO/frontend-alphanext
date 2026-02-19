@@ -11,6 +11,9 @@ export interface User {
   email: string;
   role: UserRole;
   is_active: boolean;
+  school_origin?: string;
+  phone?: string;
+  birth_date?: string;
   created_at: string;
   avatar?: string;
 }
@@ -41,6 +44,9 @@ export interface CreateUserInput {
   password: string;
   role: UserRole;
   is_active: boolean;
+  school_origin?: string;
+  phone?: string;
+  birth_date?: string;
 }
 
 export interface UpdateUserInput {
@@ -48,6 +54,9 @@ export interface UpdateUserInput {
   email?: string;
   role?: UserRole;
   is_active?: boolean;
+  school_origin?: string;
+  phone?: string;
+  birth_date?: string;
 }
 
 export interface GetUsersParams {

@@ -32,6 +32,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import PackageQuestions from "./pages/admin/PackageQuestions";
 import BulkQuestionImport from "./pages/admin/BulkQuestionImport";
 import AdminPackageMaterials from "./pages/admin/AdminPackageMaterials";
+import AdminMidtransSettings from "./pages/admin/AdminMidtransSettings";
 
 // User Pages
 import UserDashboard from "./pages/user/UserDashboard";
@@ -105,6 +106,7 @@ const App = () => (
             <Route path="/admin/rankings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminRankings /></ProtectedRoute>} />
             <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={["admin"]}><AdminProfile /></ProtectedRoute>} />
             <Route path="/admin/orders" element={<ProtectedRoute allowedRoles={["admin"]}><AdminOrders /></ProtectedRoute>} />
+            <Route path="/admin/midtrans-settings" element={<ProtectedRoute allowedRoles={["admin"]}><AdminMidtransSettings /></ProtectedRoute>} />
 
             {/* User Routes */}
             <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["user"]}><UserDashboard /></ProtectedRoute>} />
