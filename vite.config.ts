@@ -16,6 +16,14 @@ export default defineConfig(({ mode }) => {
       hmr: {
         overlay: false,
       },
+      proxy: {
+        "/google-drive": {
+          target: "https://docs.google.com",
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/google-drive/, ""),
+          secure: true,
+        },
+      },
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
     resolve: {

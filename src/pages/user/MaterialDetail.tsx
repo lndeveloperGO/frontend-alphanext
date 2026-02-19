@@ -11,6 +11,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -26,7 +33,8 @@ import {
   LockOpen,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { isYouTube, isMP4, getYouTubeVideoId } from "@/lib/utils";
+import { isYouTube, isMP4, getYouTubeVideoId, formatGoogleDriveEmbedUrl, formatGoogleDriveDownloadUrl } from "@/lib/utils";
+import { FlipbookPDF } from "@/components/materials/FlipbookPDF";
 
 export default function MaterialDetail() {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +47,8 @@ export default function MaterialDetail() {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [completedParts, setCompletedParts] = useState<Set<number>>(new Set());
   const [isVideoEnded, setIsVideoEnded] = useState(false);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [pdfViewMode, setPdfViewMode] = useState<"book" | "standard">("standard");
 
   // Refs for YouTube player
   const youtubePlayerRef = useRef<any>(null);
@@ -256,7 +266,7 @@ export default function MaterialDetail() {
                 {material.type === "video" ? (
                   <span>{material.duration} menit total</span>
                 ) : (
-                  <span>{material.pages} halaman</span>
+                  <span></span>
                 )}
               </div>
             </div>
@@ -434,10 +444,10 @@ export default function MaterialDetail() {
                     <Card
                       key={part.id}
                       className={`cursor-pointer transition-colors ${isCurrent
-                          ? "ring-2 ring-primary bg-primary/5"
-                          : isUnlocked
-                            ? "hover:bg-muted/50"
-                            : "opacity-60 cursor-not-allowed"
+                        ? "ring-2 ring-primary bg-primary/5"
+                        : isUnlocked
+                          ? "hover:bg-muted/50"
+                          : "opacity-60 cursor-not-allowed"
                         }`}
                       onClick={() => handlePartSelect(index)}
                     >
@@ -497,27 +507,79 @@ export default function MaterialDetail() {
         ) : (
           /* Ebook Viewer */
           <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Baca Ebook</h3>
-                <p className="mb-4 max-w-sm text-sm text-muted-foreground">
-                  Anda belum memiliki paket Tryout Akbar. Beli paket di Paket Saya untuk mengikuti tryout skala besar.
-                </p>
-                <p className="text-muted-foreground mb-6">
-                  Klik tombol di bawah untuk membuka ebook di tab baru
-                </p>
-                <Button
-                  size="lg"
-                  onClick={() => window.open(material.ebook_url, "_blank")}
-                >
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Baca Ebook
-                </Button>
-                <p className="text-sm text-muted-foreground mt-4">
-                  {material.pages} halaman • format PDF
-                </p>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">Baca Ebook</CardTitle>
+                <div className="flex gap-2">
+                  {showPdfViewer && (
+                    <Select
+                      value={pdfViewMode}
+                      onValueChange={(value: "book" | "standard") => setPdfViewMode(value)}
+                    >
+                      <SelectTrigger className="w-32 h-8 text-xs">
+                        <SelectValue placeholder="Mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="book">Mode Buku</SelectItem>
+                        <SelectItem value="standard">Mode Biasa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Button
+                    variant={showPdfViewer ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowPdfViewer(!showPdfViewer)}
+                    
+                  >
+                    {showPdfViewer ? "Tutup Reader" : "Baca di Sini"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(material.ebook_url || "", "_blank")}
+                  >
+                    Buka di Tab Baru
+                  </Button>
+                </div>
               </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {showPdfViewer ? (
+                <>
+                  {pdfViewMode === "book" ? (
+                    <FlipbookPDF url={formatGoogleDriveDownloadUrl(material.ebook_url)} />
+                  ) : (
+                    <div className="w-full h-[800px] border rounded-lg overflow-hidden bg-muted mt-4">
+                      <iframe
+                        src={formatGoogleDriveEmbedUrl(material.ebook_url)}
+                        className="w-full h-full"
+                        title={material.title}
+                        allow="autoplay"
+                      />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">{material.title}</h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Materi ebook tersedia dalam format PDF. Anda dapat membacanya langsung di sini atau membukanya di tab baru.
+                  </p>
+                  <div className="flex justify-center gap-4">
+                    <Button
+                      size="lg"
+                      onClick={() => setShowPdfViewer(true)}
+                    >
+                      <BookOpen className="mr-2 h-5 w-5" />
+                      Mulai Membaca
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    {material.pages} halaman • format PDF
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
